@@ -26,6 +26,7 @@ export const CoinCard = ({
   return (
     <button
       type="button"
+      data-testid="coin-card"
       onClick={() => onSelect(coin)}
       className={`w-full rounded-3xl border p-4 text-left transition hover:-translate-y-0.5 hover:border-cyan-300/40 hover:bg-slate-900/90 ${
         isSelected
