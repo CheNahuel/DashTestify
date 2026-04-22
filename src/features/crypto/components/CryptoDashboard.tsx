@@ -265,6 +265,31 @@ export const CryptoDashboard = ({
     );
   };
 
+  const resetDashboard = () => {
+    const resetParams = new URLSearchParams();
+
+    if (searchParams?.get("mockData") === "1") {
+      resetParams.set("mockData", "1");
+    }
+
+    if (searchParams?.get("marketUnavailable") === "1") {
+      resetParams.set("marketUnavailable", "1");
+    }
+
+    setSearch("");
+    setDays(DEFAULT_DAYS);
+    setSort(DEFAULT_SORT);
+    setTrend(DEFAULT_TREND);
+    setFavoritesOnly(false);
+    setSelectedCoinId(coins[0]?.id ?? "");
+
+    const nextUrl = resetParams.toString()
+      ? `${pathname}?${resetParams.toString()}`
+      : pathname;
+
+    router.replace(nextUrl, { scroll: false });
+  };
+
   const addJournalEntry = (coinId: string, note: string) => {
     setJournalByCoin((current) => {
       const nextEntries = [
@@ -351,6 +376,15 @@ export const CryptoDashboard = ({
         </div>
 
         <div className="mb-6 flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            data-testid="reset-dashboard"
+            onClick={resetDashboard}
+            className="rounded-full border border-cyan-300/30 bg-cyan-300/10 px-4 py-2 text-sm font-semibold text-cyan-100 transition hover:border-cyan-300/60 hover:bg-cyan-300/20"
+          >
+            Reset dashboard
+          </button>
+
           <button
             type="button"
             data-testid="favorites-filter"

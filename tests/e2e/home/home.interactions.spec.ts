@@ -16,6 +16,28 @@ test("sorts gainers and syncs controls into the URL", async ({ page }) => {
   await expect(page).toHaveURL(/sort=change-desc/);
 });
 
+test("reset dashboard returns filters to the default home state", async ({ page }) => {
+  await setupDashboardRoutes(page);
+  await page.goto(
+    "/?mockData=1&selectedCoin=solana&sort=change-desc&trend=gainers&days=30&search=sol"
+  );
+  await waitForDashboardData(page);
+
+  await page.getByTestId("favorites-filter").click();
+  await expect(page.getByTestId("favorites-filter")).toHaveAttribute("aria-pressed", "true");
+
+  await page.getByTestId("reset-dashboard").click();
+
+  await expect(page.getByTestId("search-input")).toHaveValue("");
+  await expect(page.getByTestId("sort-select")).toHaveValue("market-cap-desc");
+  await expect(page.getByTestId("trend-select")).toHaveValue("all");
+  await expect(page.getByTestId("range-button-7")).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByTestId("favorites-filter")).toHaveAttribute("aria-pressed", "false");
+  await expect(page).toHaveURL(
+    /\?mockData=1&selectedCoin=bitcoin&sort=market-cap-desc&trend=all&days=7$/
+  );
+});
+
 test("watchlist survives a reload and can be filtered", async ({ page }) => {
   await setupDashboardRoutes(page);
   await page.goto("/?mockData=1");
