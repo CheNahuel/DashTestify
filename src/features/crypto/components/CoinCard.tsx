@@ -27,6 +27,9 @@ export const CoinCard = ({
     <button
       type="button"
       data-testid="coin-card"
+      data-coin-id={coin.id}
+      aria-label={`Select ${coin.name}`}
+      aria-pressed={isSelected}
       onClick={() => onSelect(coin)}
       className={`w-full rounded-3xl border p-4 text-left transition hover:-translate-y-0.5 hover:border-cyan-300/40 hover:bg-slate-900/90 ${
         isSelected

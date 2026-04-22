@@ -20,6 +20,6 @@ test("mocked coins API", async ({ page }) => {
 
   await page.goto("http://localhost:3000");
 
-  await expect(page.getByRole("heading", { name: "Bitcoin" })).toBeVisible();
-  await expect(page.getByText('$').first()).toBeVisible();
+  await expect(page.getByTestId("selected-asset-name")).toHaveText("Bitcoin");
+  await expect(page.getByTestId("selected-asset-price")).toContainText("$");
 });

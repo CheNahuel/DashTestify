@@ -50,15 +50,19 @@ export const CoinChart = ({ data }: { data: CoinHistory | undefined }) => {
 
   if (!formatted.length) {
     return (
-      <div className="flex h-[260px] items-center justify-center rounded-3xl border border-white/10 bg-slate-950/40 text-sm text-slate-400">
+      <div
+        data-testid="coin-chart-empty"
+        className="flex h-[260px] items-center justify-center rounded-3xl border border-white/10 bg-slate-950/40 text-sm text-slate-400"
+      >
         No historical data available for this selection.
       </div>
     );
   }
 
   return (
-    <ResponsiveContainer width="100%" height={260}>
-      <LineChart data={formatted} margin={{ top: 8, right: 8, left: 0, bottom: 8 }}>
+    <div data-testid="coin-chart">
+      <ResponsiveContainer width="100%" height={260}>
+        <LineChart data={formatted} margin={{ top: 8, right: 8, left: 0, bottom: 8 }}>
         <XAxis
           dataKey="time"
           tickFormatter={formatXAxis}
@@ -93,5 +97,6 @@ export const CoinChart = ({ data }: { data: CoinHistory | undefined }) => {
         />
       </LineChart>
     </ResponsiveContainer>
+    </div>
   );
 };

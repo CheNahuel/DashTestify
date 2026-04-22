@@ -92,7 +92,10 @@ export const CryptoDashboard = ({
         </div>
 
         {error || marketUnavailable ? (
-          <div className="rounded-3xl border border-rose-500/30 bg-rose-500/10 p-4 text-rose-100">
+          <div
+            data-testid="market-error-banner"
+            className="rounded-3xl border border-rose-500/30 bg-rose-500/10 p-4 text-rose-100"
+          >
             We couldn&apos;t refresh the market feed right now. If CoinCap is
             rate-limiting requests, the dashboard will recover automatically in a
             moment.
@@ -108,12 +111,16 @@ export const CryptoDashboard = ({
                     <p className="text-sm uppercase tracking-[0.3em] text-slate-400">
                       Selected Asset
                     </p>
-                    <h2 className="mt-2 text-3xl font-semibold text-white">
+                    <h2
+                      data-testid="selected-asset-name"
+                      className="mt-2 text-3xl font-semibold text-white"
+                    >
                       {selectedCoin.name}
                     </h2>
-                    <p className="mt-2 text-slate-300">
+                    <p data-testid="selected-asset-price" className="mt-2 text-slate-300">
                       {currencyFormatter.format(selectedCoin.current_price)}
                       <span
+                        data-testid="selected-asset-change"
                         className={`ml-3 text-sm font-semibold ${
                           selectedCoin.price_change_percentage_24h >= 0
                             ? "text-emerald-300"
@@ -155,7 +162,9 @@ export const CryptoDashboard = ({
                     Loading chart data...
                   </div>
                 ) : (
-                  <CoinChart data={history} />
+                  <div data-testid="selected-coin-chart">
+                    <CoinChart data={history} />
+                  </div>
                 )}
 
                 <div className="mt-6 grid gap-4 md:grid-cols-3">
@@ -195,7 +204,7 @@ export const CryptoDashboard = ({
               </p>
             </div>
 
-            <div className="grid gap-3">
+            <div className="grid gap-3" data-testid="coins-list">
               {filteredCoins.map((coin) => (
                 <CoinCard
                   key={coin.id}

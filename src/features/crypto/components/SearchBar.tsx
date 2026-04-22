@@ -11,6 +11,8 @@ export const SearchBar = ({
     <input
       type="text"
       placeholder="Search crypto..."
+      aria-label="Search crypto"
+      data-testid="search-input"
       value={value}
       onChange={(e) => onChange(e.target.value)}
       className="w-full p-2 border rounded-lg mb-4"
