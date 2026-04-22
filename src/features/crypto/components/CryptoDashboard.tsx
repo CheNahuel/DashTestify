@@ -209,17 +209,8 @@ export const CryptoDashboard = ({
       params.delete("selectedCoin");
     }
 
-    if (days !== DEFAULT_DAYS) {
-      params.set("days", String(days));
-    } else {
-      params.delete("days");
-    }
-
-    if (sort !== DEFAULT_SORT) {
-      params.set("sort", sort);
-    } else {
-      params.delete("sort");
-    }
+    params.set("days", String(days));
+    params.set("sort", sort);
 
     if (favoritesOnly) {
       params.set("favoritesOnly", "1");
@@ -227,11 +218,7 @@ export const CryptoDashboard = ({
       params.delete("favoritesOnly");
     }
 
-    if (trend !== DEFAULT_TREND) {
-      params.set("trend", trend);
-    } else {
-      params.delete("trend");
-    }
+    params.set("trend", trend);
 
     const currentQueryString = searchParams?.toString() ?? "";
     const nextQueryString = params.toString();
@@ -310,8 +297,8 @@ export const CryptoDashboard = ({
   return (
     <Container>
       <section className="mb-8 rounded-[2rem] border border-white/10 bg-slate-950/70 p-6 shadow-2xl shadow-slate-950/40 backdrop-blur md:p-8">
-        <div className="mb-8 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-          <div className="max-w-2xl">
+        <div className="mb-8 grid gap-6 xl:grid-cols-[minmax(0,1.25fr)_minmax(320px,0.95fr)] xl:items-end">
+          <div className="max-w-4xl">
             <p className="mb-3 text-sm uppercase tracking-[0.35em] text-cyan-300">
               Crypto Intelligence
             </p>
@@ -324,40 +311,42 @@ export const CryptoDashboard = ({
             </p>
           </div>
 
-          <div className="grid w-full max-w-2xl gap-3 md:grid-cols-[minmax(0,1.4fr)_180px_160px]">
+          <div className="grid gap-3 rounded-[1.75rem] border border-white/10 bg-slate-950/45 p-4 md:p-5">
             <SearchBar value={search} onChange={setSearch} />
 
-            <label className="grid gap-2 text-sm text-slate-300">
-              Sort
-              <select
-                data-testid="sort-select"
-                value={sort}
-                onChange={(event) => setSort(event.target.value as SortOption)}
-                className="rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-sm text-white outline-none transition focus:border-cyan-300/60"
-              >
-                {SORT_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className="grid gap-2 text-sm text-slate-300">
+                Sort
+                <select
+                  data-testid="sort-select"
+                  value={sort}
+                  onChange={(event) => setSort(event.target.value as SortOption)}
+                  className="rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-sm text-white outline-none transition focus:border-cyan-300/60"
+                >
+                  {SORT_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
 
-            <label className="grid gap-2 text-sm text-slate-300">
-              Trend
-              <select
-                data-testid="trend-select"
-                value={trend}
-                onChange={(event) => setTrend(event.target.value as TrendOption)}
-                className="rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-sm text-white outline-none transition focus:border-cyan-300/60"
-              >
-                {TREND_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
+              <label className="grid gap-2 text-sm text-slate-300">
+                Trend
+                <select
+                  data-testid="trend-select"
+                  value={trend}
+                  onChange={(event) => setTrend(event.target.value as TrendOption)}
+                  className="rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-sm text-white outline-none transition focus:border-cyan-300/60"
+                >
+                  {TREND_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
           </div>
         </div>
 

@@ -1,10 +1,11 @@
 import { test, expect } from "@playwright/test";
-import { setupDashboardRoutes } from "./fixtures";
+import { setupDashboardRoutes, waitForDashboardData } from "./fixtures";
 
 test("search filters coins", async ({ page }) => {
   await setupDashboardRoutes(page);
 
   await page.goto("/?mockData=1");
+  await waitForDashboardData(page);
 
   const searchInput = page.getByTestId("search-input");
 
@@ -18,7 +19,10 @@ test("search filters coins", async ({ page }) => {
 test("query params preselect coin, search, range, and trend", async ({ page }) => {
   await setupDashboardRoutes(page);
 
-  await page.goto("/?mockData=1&selectedCoin=solana&search=sol&days=30&trend=gainers");
+  await page.goto(
+    "/?mockData=1&selectedCoin=solana&sort=market-cap-desc&trend=gainers&days=30&search=sol"
+  );
+  await waitForDashboardData(page);
 
   await expect(page.getByTestId("search-input")).toHaveValue("sol");
   await expect(page.getByTestId("selected-asset-name")).toHaveText("Solana");
@@ -30,6 +34,7 @@ test("displays no match message when search returns nothing", async ({ page }) =
   await setupDashboardRoutes(page);
 
   await page.goto("/?mockData=1");
+  await waitForDashboardData(page);
 
   const searchInput = page.getByTestId("search-input");
 

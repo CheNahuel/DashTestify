@@ -1,9 +1,10 @@
 import { test, expect } from "@playwright/test";
-import { setupDashboardRoutes } from "./fixtures";
+import { setupDashboardRoutes, waitForDashboardData } from "./fixtures";
 
 test("sorts gainers and syncs controls into the URL", async ({ page }) => {
   await setupDashboardRoutes(page);
   await page.goto("/?mockData=1");
+  await waitForDashboardData(page);
 
   await page.getByTestId("trend-select").selectOption("gainers");
   await page.getByTestId("sort-select").selectOption("change-desc");
@@ -18,6 +19,7 @@ test("sorts gainers and syncs controls into the URL", async ({ page }) => {
 test("watchlist survives a reload and can be filtered", async ({ page }) => {
   await setupDashboardRoutes(page);
   await page.goto("/?mockData=1");
+  await waitForDashboardData(page);
 
   await page.getByTestId("favorite-toggle-solana").click();
   await expect(page.getByTestId("favorite-toggle-solana")).toContainText("Saved");
@@ -33,7 +35,8 @@ test("watchlist survives a reload and can be filtered", async ({ page }) => {
 
 test("journal notes validate, persist, and can be deleted", async ({ page }) => {
   await setupDashboardRoutes(page);
-  await page.goto("/?mockData=1&selectedCoin=bitcoin");
+  await page.goto("/?mockData=1&selectedCoin=bitcoin&sort=market-cap-desc&trend=all&days=7");
+  await waitForDashboardData(page);
 
   await page.getByTestId("journal-input").fill("Too short");
   await page.getByTestId("journal-submit").click();
@@ -56,7 +59,8 @@ test("journal notes validate, persist, and can be deleted", async ({ page }) => 
 
 test("price alert form handles validation and success", async ({ page }) => {
   await setupDashboardRoutes(page);
-  await page.goto("/?mockData=1&selectedCoin=bitcoin");
+  await page.goto("/?mockData=1&selectedCoin=bitcoin&sort=market-cap-desc&trend=all&days=7");
+  await waitForDashboardData(page);
 
   await page.getByTestId("price-alert-email").fill("trader@example.com");
   await page.getByTestId("price-alert-target").fill("50000");

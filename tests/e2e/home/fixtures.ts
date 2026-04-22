@@ -58,3 +58,8 @@ export const setupDashboardRoutes = async (page: Page) => {
     await route.fulfill({ json: historyMock });
   });
 };
+
+export const waitForDashboardData = async (page: Page) => {
+  await page.waitForResponse("**/api/coins/markets*");
+  await page.getByTestId("coin-card").first().waitFor();
+};
