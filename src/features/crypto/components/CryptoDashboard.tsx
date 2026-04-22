@@ -1,6 +1,7 @@
 "use client";
 
-import { useDeferredValue, useState } from "react";
+import { useDeferredValue, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Container } from "@/components/Container";
 import { CoinCard } from "./CoinCard";
 import { CoinChart } from "./CoinChart";
@@ -30,15 +31,46 @@ const compactFormatter = new Intl.NumberFormat("en-US", {
 export const CryptoDashboard = ({
   initialCoins,
   marketUnavailable = false,
+  initialSearch = "",
+  initialSelectedCoinId,
+  initialDays = 7,
 }: {
   initialCoins: Coin[];
   marketUnavailable?: boolean;
+  initialSearch?: string;
+  initialSelectedCoinId?: string;
+  initialDays?: number;
 }) => {
+  const searchParams = useSearchParams();
+  const querySearch = searchParams?.get("search") ?? initialSearch;
+  const querySelectedCoin = searchParams?.get("selectedCoin") ?? initialSelectedCoinId;
+  const queryDays = Number(searchParams?.get("days") ?? initialDays);
+
   const { data: coins = initialCoins, isFetching, error } = useCoins(initialCoins);
-  const [search, setSearch] = useState("");
-  const [selectedCoinId, setSelectedCoinId] = useState(initialCoins[0]?.id ?? "");
-  const [days, setDays] = useState(7);
+  const [search, setSearch] = useState(querySearch);
+  const [selectedCoinId, setSelectedCoinId] = useState(
+    querySelectedCoin ?? initialCoins[0]?.id ?? ""
+  );
+  const [days, setDays] = useState(queryDays);
   const deferredSearch = useDeferredValue(search);
+
+  useEffect(() => {
+    if (querySearch !== search) {
+      setSearch(querySearch);
+    }
+  }, [querySearch]);
+
+  useEffect(() => {
+    if (querySelectedCoin && querySelectedCoin !== selectedCoinId) {
+      setSelectedCoinId(querySelectedCoin);
+    }
+  }, [querySelectedCoin]);
+
+  useEffect(() => {
+    if (queryDays !== days) {
+      setDays(queryDays);
+    }
+  }, [queryDays]);
 
   const filteredCoins = coins.filter((coin) => {
     const query = deferredSearch.trim().toLowerCase();
@@ -138,6 +170,8 @@ export const CryptoDashboard = ({
                       <button
                         key={filter.value}
                         type="button"
+                        data-testid={`range-button-${filter.value}`}
+                        aria-pressed={days === filter.value}
                         onClick={() => setDays(filter.value)}
                         className={`rounded-full px-4 py-2 text-sm font-medium transition ${
                           days === filter.value
@@ -183,7 +217,10 @@ export const CryptoDashboard = ({
                 </div>
               </>
             ) : (
-              <div className="flex h-full min-h-[420px] items-center justify-center rounded-3xl border border-dashed border-white/10 bg-slate-950/30 text-slate-400">
+              <div
+                data-testid="no-match-message"
+                className="flex h-full min-h-[420px] items-center justify-center rounded-3xl border border-dashed border-white/10 bg-slate-950/30 text-slate-400"
+              >
                 No coins match your search yet.
               </div>
             )}
