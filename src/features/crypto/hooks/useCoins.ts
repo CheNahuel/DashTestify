@@ -7,7 +7,8 @@ export const useCoins = (initialData?: Coin[]) => {
     queryKey: ["coins"],
     queryFn: getCoins,
     initialData,
-    staleTime: 60_000,
+    staleTime: 0,
+    refetchOnMount: "always",
     refetchOnWindowFocus: false,
     retry: (failureCount, error) => {
       if (error instanceof Error && error.message.includes("429")) {

@@ -10,12 +10,12 @@ export const SearchBar = ({
   return (
     <input
       type="text"
-      placeholder="Search crypto..."
+      placeholder="Search by coin name or symbol"
       aria-label="Search crypto"
       data-testid="search-input"
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="w-full p-2 border rounded-lg mb-4"
+      className="w-full rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-cyan-300/60"
     />
   );
 };

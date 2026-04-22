@@ -1,26 +1,14 @@
 import { test, expect } from "@playwright/test";
+import { setupDashboardRoutes } from "./fixtures";
 
 test("coin shows price and percentage", async ({ page }) => {
-  await page.route("**/api/coins/markets*", async (route) => {
-    await route.fulfill({
-      json: [
-        {
-          id: "bitcoin",
-          name: "Bitcoin",
-          symbol: "btc",
-          current_price: 50000,
-          price_change_percentage_24h: 5,
-          image: "test.png",
-          market_cap: 1000000000,
-          total_volume: 50000000,
-        },
-      ],
-    });
-  });
+  await setupDashboardRoutes(page);
 
-  await page.goto("http://localhost:3000");
+  await page.goto("/?mockData=1");
 
-  await expect(page.getByTestId("selected-asset-name")).toHaveText("Bitcoin");
+  await expect(page.getByTestId("selected-asset-name")).toHaveText("Ethereum");
   await expect(page.getByTestId("selected-asset-price")).toContainText("$");
   await expect(page.getByTestId("selected-asset-change")).toContainText("%");
+  await expect(page.getByTestId("journal-note-count")).toHaveText("0 notes");
+  await expect(page.getByTestId("price-alert-submit")).toBeVisible();
 });

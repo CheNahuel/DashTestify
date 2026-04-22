@@ -1,36 +1,169 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Crypto Intelligence Dashboard
+
+A modern, responsive cryptocurrency tracking dashboard built with Next.js 16, featuring real-time price data, interactive charts, and comprehensive end-to-end testing.
+
+## Features
+
+- **Real-time Crypto Data**: Live price tracking from CoinCap API
+- **Interactive Charts**: Historical price visualization with multiple time ranges (24H, 7D, 30D, 90D)
+- **Smart Search**: Filter cryptocurrencies by name or symbol
+- **Market Overview**: Top coins snapshot with market cap and volume data
+- **Responsive Design**: Optimized for desktop and mobile devices
+- **Dark Theme**: Modern UI with Tailwind CSS styling
+
+## Tech Stack
+
+- **Framework**: Next.js 16 (App Router)
+- **Styling**: Tailwind CSS 4
+- **State Management**: TanStack Query (React Query)
+- **Charts**: Recharts
+- **Testing**: Playwright (E2E)
+- **API**: CoinCap API
+- **TypeScript**: Full type safety
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
 
+- Node.js 18+
+- npm, yarn, pnpm, or bun
+
+### Installation
+
+1. Clone the repository:
+```bash
+git clone <repository-url>
+cd DashTestify1
+```
+
+2. Install dependencies:
+```bash
+npm install
+# or
+yarn install
+# or
+pnpm install
+```
+
+3. Run the development server:
 ```bash
 npm run dev
 # or
 yarn dev
 # or
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+4. Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Testing
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### End-to-End Tests
 
-## Learn More
+Run the complete test suite:
+```bash
+npm run test:e2e
+```
 
-To learn more about Next.js, take a look at the following resources:
+Run tests with UI mode:
+```bash
+npm run test:e2e:ui
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+View test reports:
+```bash
+npm run test:e2e:report
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Test Coverage
 
-## Deploy on Vercel
+The test suite covers:
+- **Data Display**: Coin price and percentage rendering
+- **Search Functionality**: Filtering and no-match states
+- **API Error Handling**: Network failure scenarios
+- **Query Parameters**: URL-based state management
+- **Chart Interactions**: Time range selection
+- **Mocked APIs**: Deterministic test data
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Project Structure
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```
+├── app/
+│   ├── api/coins/markets/     # CoinCap API proxy
+│   ├── globals.css           # Global styles
+│   ├── layout.tsx            # Root layout
+│   └── page.tsx              # Home page
+├── components/
+│   ├── Container.tsx         # Layout wrapper
+│   └── features/crypto/      # Crypto-specific components
+│       ├── components/       # UI components
+│       ├── hooks/           # React hooks
+│       ├── server/          # Server-side utilities
+│       └── types/           # TypeScript types
+├── lib/
+│   └── api-client.ts        # Axios configuration
+├── tests/
+│   └── e2e/                 # End-to-end tests
+│       └── home/            # Home page tests
+├── test-results/            # Playwright reports
+└── playwright.config.ts     # Playwright configuration
+```
+
+## API Integration
+
+The dashboard integrates with the [CoinCap API](https://docs.coincap.io/) to fetch:
+- Top cryptocurrencies by market cap
+- Real-time price data
+- Historical price charts
+- Market statistics
+
+## Development
+
+### Available Scripts
+
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run start` - Start production server
+- `npm run lint` - Run ESLint
+- `npm run test:e2e` - Run e2e tests
+- `npm run test:e2e:ui` - Run tests with UI
+- `npm run test:e2e:report` - View test reports
+
+### Environment Variables
+
+No environment variables are required. The app uses the public CoinCap API.
+
+## Deployment
+
+### Vercel (Recommended)
+
+1. Connect your GitHub repository to Vercel
+2. Deploy automatically on push to main branch
+3. The app is optimized for Vercel's edge runtime
+
+### Other Platforms
+
+The app can be deployed to any platform supporting Next.js:
+- Netlify
+- Railway
+- DigitalOcean App Platform
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests for new functionality
+5. Ensure all tests pass
+6. Submit a pull request
+
+## License
+
+This project is open source and available under the [MIT License](LICENSE).
+
+## Acknowledgments
+
+- [CoinCap API](https://coincap.io/) for cryptocurrency data
+- [Next.js](https://nextjs.org/) for the React framework
+- [Tailwind CSS](https://tailwindcss.com/) for styling
+- [Playwright](https://playwright.dev/) for testing

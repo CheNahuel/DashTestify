@@ -6,6 +6,7 @@ export const useCoinHistory = (coinId: string | null, days: number) => {
     queryKey: ["coin-history", coinId, days],
     queryFn: () => getCoinHistory(coinId!, days),
     enabled: Boolean(coinId),
+    refetchOnMount: "always",
     refetchOnWindowFocus: false,
     retry: (failureCount, error) => {
       if (
