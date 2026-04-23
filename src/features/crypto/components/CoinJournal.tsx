@@ -59,12 +59,12 @@ export const CoinJournal = ({
     <div className="rounded-3xl border border-white/10 bg-slate-900/70 p-5">
       <div className="mb-4 flex items-center justify-between gap-3">
         <div>
-          <p className="text-sm uppercase tracking-[0.3em] text-slate-400">Trade Journal</p>
+          <p className="text-sm uppercase tracking-wider whitespace-nowrap text-slate-400">Trade Journal</p>
           <h3 className="mt-2 text-xl font-semibold text-white">Notes for {coinName}</h3>
         </div>
         <p
           data-testid="journal-note-count"
-          className="rounded-full border border-white/10 bg-slate-950/70 px-3 py-1 text-xs uppercase tracking-[0.25em] text-slate-400"
+          className="rounded-full border border-white/10 bg-slate-950/70 px-3 py-1 text-xs uppercase tracking-wider whitespace-nowrap text-slate-400"
         >
           {noteCountLabel}
         </p>
@@ -115,17 +115,21 @@ export const CoinJournal = ({
               className="rounded-2xl border border-white/10 bg-slate-950/60 p-4"
             >
               <div className="flex items-start justify-between gap-3">
-                <p className="text-sm leading-6 text-slate-200">{entry.body}</p>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm leading-6 text-slate-200 break-all whitespace-pre-wrap">
+                    {entry.body}
+                  </p>
+                </div>
                 <button
                   type="button"
                   data-testid={`delete-note-${entry.id}`}
                   onClick={() => onDeleteEntry(coinId, entry.id)}
-                  className="rounded-full border border-white/10 px-3 py-1 text-xs uppercase tracking-[0.25em] text-slate-400 transition hover:border-rose-400/50 hover:text-rose-200"
+                  className="rounded-full border border-white/10 px-3 py-1 text-xs uppercase tracking-wider whitespace-nowrap text-slate-400 transition hover:border-rose-400/50 hover:text-rose-200"
                 >
                   Delete
                 </button>
               </div>
-              <p className="mt-3 text-xs uppercase tracking-[0.2em] text-slate-500">
+              <p className="mt-3 text-xs uppercase tracking-wider whitespace-nowrap text-slate-500">
                 {formatDate(entry.createdAt)}
               </p>
             </article>

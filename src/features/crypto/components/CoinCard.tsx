@@ -55,7 +55,7 @@ export const CoinCard = ({
           />
           <div className="min-w-0">
             <p className="truncate font-semibold">{coin.name}</p>
-            <p className="text-sm uppercase tracking-[0.2em] text-slate-400">
+            <p className="text-sm uppercase tracking-wider whitespace-nowrap text-slate-400">
               {coin.symbol}
             </p>
           </div>
@@ -67,7 +67,7 @@ export const CoinCard = ({
           aria-pressed={isFavorite}
           aria-label={`${isFavorite ? "Remove" : "Add"} ${coin.name} ${isFavorite ? "from" : "to"} watchlist`}
           onClick={() => onToggleFavorite(coin)}
-          className={`rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.25em] transition ${
+          className={`rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wider whitespace-nowrap transition ${
             isFavorite
               ? "border-amber-300/50 bg-amber-300/15 text-amber-100"
               : "border-white/10 bg-slate-950/70 text-slate-400 hover:border-amber-300/40 hover:text-amber-100"
@@ -101,13 +101,13 @@ export const CoinCard = ({
 
         <div className="grid grid-cols-2 gap-3 text-sm text-slate-400">
           <div>
-            <p className="mb-1 text-xs uppercase tracking-[0.2em]">Market Cap</p>
+            <p className="mb-1 text-xs uppercase tracking-wider whitespace-nowrap">Market Cap</p>
             <p className="text-slate-100">
               ${compactFormatter.format(coin.market_cap)}
             </p>
           </div>
           <div>
-            <p className="mb-1 text-xs uppercase tracking-[0.2em]">Volume</p>
+            <p className="mb-1 text-xs uppercase tracking-wider whitespace-nowrap">Volume</p>
             <p className="text-slate-100">
               ${compactFormatter.format(coin.total_volume)}
             </p>

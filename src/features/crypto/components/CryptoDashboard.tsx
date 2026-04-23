@@ -324,7 +324,7 @@ export const CryptoDashboard = ({
       <section className="mb-8 rounded-[2rem] border border-white/10 bg-slate-950/70 p-6 shadow-2xl shadow-slate-950/40 backdrop-blur md:p-8">
         <div className="mb-8 grid gap-6 xl:grid-cols-[minmax(0,1.25fr)_minmax(320px,0.95fr)] xl:items-end">
           <div className="max-w-4xl">
-            <p className="mb-3 text-sm uppercase tracking-[0.35em] text-cyan-300">
+            <p className="mb-3 text-sm uppercase tracking-wider whitespace-nowrap text-cyan-300">
               Crypto Intelligence
             </p>
             <h1 className="text-4xl font-semibold tracking-tight text-white md:text-5xl">
@@ -425,7 +425,7 @@ export const CryptoDashboard = ({
                 <>
                   <div className="mb-6 flex flex-col gap-4 border-b border-white/10 pb-5 md:flex-row md:items-end md:justify-between">
                     <div>
-                      <p className="text-sm uppercase tracking-[0.3em] text-slate-400">
+                      <p className="text-sm uppercase tracking-wider whitespace-nowrap text-slate-400">
                         Selected Asset
                       </p>
                       <div className="mt-2 flex flex-wrap items-center gap-3">
@@ -440,7 +440,7 @@ export const CryptoDashboard = ({
                           data-testid="selected-asset-favorite"
                           aria-pressed={favoriteIds.includes(selectedCoin.id)}
                           onClick={() => toggleFavorite(selectedCoin)}
-                          className={`rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.25em] transition ${
+                          className={`rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wider whitespace-nowrap transition ${
                             favoriteIds.includes(selectedCoin.id)
                               ? "border-amber-300/50 bg-amber-300/15 text-amber-100"
                               : "border-white/10 bg-slate-950/70 text-slate-400 hover:border-amber-300/40 hover:text-amber-100"
@@ -553,7 +553,7 @@ export const CryptoDashboard = ({
           <aside className="rounded-3xl border border-white/10 bg-slate-900/60 p-5">
             <div className="mb-4 flex items-center justify-between">
               <div>
-                <p className="text-sm uppercase tracking-[0.3em] text-slate-400">
+                <p className="text-sm uppercase tracking-wider whitespace-nowrap text-slate-400">
                   Market Snapshot
                 </p>
                 <h2 className="mt-2 text-2xl font-semibold text-white">Top Coins</h2>
@@ -592,7 +592,7 @@ export const CryptoDashboard = ({
 const StatusPill = ({ label, value }: { label: string; value: string }) => {
   return (
     <div className="rounded-full border border-white/10 bg-slate-900/80 px-4 py-2">
-      <p className="text-[10px] uppercase tracking-[0.25em] text-slate-500">{label}</p>
+      <p className="text-[10px] uppercase tracking-wider whitespace-nowrap text-slate-500">{label}</p>
       <p className="mt-1 text-sm font-semibold text-slate-100">{value}</p>
     </div>
   );
@@ -601,7 +601,7 @@ const StatusPill = ({ label, value }: { label: string; value: string }) => {
 const StatCard = ({ label, value }: { label: string; value: string }) => {
   return (
     <div className="rounded-3xl border border-white/10 bg-slate-950/40 p-4">
-      <p className="text-xs uppercase tracking-[0.25em] text-slate-400">{label}</p>
+      <p className="text-xs uppercase tracking-wider whitespace-nowrap text-slate-400">{label}</p>
       <p className="mt-2 text-xl font-semibold text-white">{value}</p>
     </div>
   );

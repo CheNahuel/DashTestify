@@ -55,7 +55,7 @@ export const PriceAlertForm = ({
   return (
     <div className="rounded-3xl border border-white/10 bg-slate-900/70 p-5">
       <div className="mb-4">
-        <p className="text-sm uppercase tracking-[0.3em] text-slate-400">Price Alert</p>
+        <p className="text-sm uppercase tracking-wider whitespace-nowrap text-slate-400">Price Alert</p>
         <h3 className="mt-2 text-xl font-semibold text-white">Simulate a trading alert</h3>
         <p className="mt-2 text-sm text-slate-300">
           This uses a Server Action so your Playwright tests can cover validation,
@@ -109,7 +109,7 @@ export const PriceAlertForm = ({
         </label>
 
         <div className="flex items-center justify-between gap-3">
-          <p className="text-xs uppercase tracking-[0.25em] text-slate-500">
+          <p className="text-xs uppercase tracking-wider whitespace-nowrap text-slate-500">
             Current: ${currentPrice.toFixed(2)}
           </p>
           <SubmitButton />
