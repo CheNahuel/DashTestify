@@ -1,4 +1,4 @@
-import { expect, test, waitForDashboardData } from "../../fixtures/testSetup";
+import { expect, test, waitForDashboardData } from "@tests/fixtures/testSetup";
 
 test("search filters coins", async ({ dashboardData, dashboardPage }) => {
   await dashboardPage.goto(dashboardData.urls.home);

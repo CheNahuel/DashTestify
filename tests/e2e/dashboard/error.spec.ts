@@ -1,4 +1,4 @@
-import { expect, test } from "../../fixtures/testSetup";
+import { expect, test } from "@tests/fixtures/testSetup";
 
 test("handles market error", async ({ dashboardPage }) => {
   await dashboardPage.goto("/?marketUnavailable=1");

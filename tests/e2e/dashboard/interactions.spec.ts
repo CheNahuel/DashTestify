@@ -1,5 +1,5 @@
-import { expect, test, waitForDashboardData } from "../../fixtures/testSetup";
-import { expectUrlPath } from "../../utils/commonUtils";
+import { expect, test, waitForDashboardData } from "@tests/fixtures/testSetup";
+import { expectUrlPath } from "@tests/utils/commonUtils";
 
 test("sorts gainers and syncs controls into the URL", async ({
   dashboardData,

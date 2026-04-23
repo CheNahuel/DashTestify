@@ -1,7 +1,7 @@
 import { test as base } from "@playwright/test";
-import testData from "../data/testData.json";
-import { DashboardPage } from "../pages/DashboardPage";
-import { initializeBrowserStorage, waitForDashboardData } from "../utils/commonUtils";
+import testData from "@tests/data/testData.json";
+import { DashboardPage } from "@tests//pages/DashboardPage";
+import { initializeBrowserStorage, waitForDashboardData } from "@tests/utils/commonUtils";
 
 type DashboardFixture = (typeof testData)["dashboard"];
 

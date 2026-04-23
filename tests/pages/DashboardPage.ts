@@ -1,5 +1,5 @@
 import { expect, Locator, Page } from "@playwright/test";
-import { getRangeButtonTestId } from "../utils/dateUtils";
+import { getRangeButtonTestId } from "@tests//utils/dateUtils";
 
 export class DashboardPage {
   readonly page: Page;
