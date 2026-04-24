@@ -2,16 +2,42 @@
 
 import { startTransition, useDeferredValue, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import dynamic from "next/dynamic";
 import Image from "next/image";
 import { Container } from "@/components/Container";
 import { CoinCard } from "./CoinCard";
 import { CoinChart } from "./CoinChart";
 import { CoinJournal, type CoinJournalEntry } from "./CoinJournal";
-import { PriceAlertForm } from "./PriceAlertForm";
 import { SearchBar } from "./SearchBar";
 import { useCoinHistory } from "../hooks/useCoinHistory";
 import { useCoins } from "../hooks/useCoins";
 import { Coin } from "../types/coin";
+
+const PriceAlertForm = dynamic(
+  () => import("./PriceAlertForm").then((mod) => ({ default: mod.PriceAlertForm })),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="rounded-3xl border border-white/10 bg-slate-900/70 p-5 max-h-[725px] overflow-y-auto">
+        <div className="mb-4">
+          <p className="text-sm uppercase tracking-wider whitespace-nowrap text-slate-400">
+            Price Alert
+          </p>
+          <div className="mt-2 flex items-center gap-2">
+            <div className="h-6 w-6 rounded-full bg-slate-700 animate-pulse" />
+            <div className="h-6 bg-slate-700 rounded animate-pulse w-48" />
+          </div>
+        </div>
+        <div className="animate-pulse">
+          <div className="h-4 bg-slate-700 rounded mb-4 w-32" />
+          <div className="h-10 bg-slate-700 rounded mb-4" />
+          <div className="h-10 bg-slate-700 rounded mb-4" />
+          <div className="h-10 bg-slate-700 rounded w-24 ml-auto" />
+        </div>
+      </div>
+    ),
+  },
+);
 
 const DAY_FILTERS = [
   { label: "24H", value: 1 },

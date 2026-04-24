@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useEffect, useRef, useState, startTransition } from "react";
 import { useFormStatus } from "react-dom";
 import Image from "next/image";
 import { submitPriceAlert } from "@/app/actions";
@@ -130,6 +130,7 @@ export const PriceAlertForm = ({
     initialPriceAlertFormState,
   );
   const formRef = useRef<HTMLFormElement>(null);
+  const processedSubmissionRef = useRef<string | null>(null);
   const errors = state?.errors ?? {};
   const status = state?.status ?? "idle";
   const message = state?.message ?? "";
@@ -147,23 +148,32 @@ export const PriceAlertForm = ({
   const [successMessage, setSuccessMessage] = useState<string>("");
 
   useEffect(() => {
-    if (status !== "success" || !state?.submittedAlert) return;
+    if (status === "success" && state?.submittedAlert) {
+      // Prevent processing the same submission multiple times
+      const submissionId = `${state.submittedAlert.coinId}-${state.submittedAlert.targetPrice}-${state.submittedAlert.email}`;
+      if (processedSubmissionRef.current === submissionId) return;
+      processedSubmissionRef.current = submissionId;
 
-    const newAlert: PriceAlert = {
-      id: crypto.randomUUID(),
-      coinId: state.submittedAlert.coinId,
-      coinName: state.submittedAlert.coinName,
-      coinImage: state.submittedAlert.coinImage,
-      email: state.submittedAlert.email,
-      targetPrice: state.submittedAlert.targetPrice,
-      createdAt: new Date().toISOString(),
-    };
+      const newAlert: PriceAlert = {
+        id: crypto.randomUUID(),
+        coinId: state.submittedAlert.coinId,
+        coinName: state.submittedAlert.coinName,
+        coinImage: state.submittedAlert.coinImage,
+        email: state.submittedAlert.email,
+        targetPrice: state.submittedAlert.targetPrice,
+        createdAt: new Date().toISOString(),
+      };
 
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setAlerts((prev) => [...prev, newAlert]);
+      startTransition(() => {
+        setAlerts((prev) => [...prev, newAlert]);
+        setSuccessMessage(state.message || "");
+      });
 
-    formRef.current?.reset();
-    setSuccessMessage(state.message || "");
+      formRef.current?.reset();
+
+      // Clear success message after 3 seconds
+      setTimeout(() => setSuccessMessage(""), 3000);
+    }
   }, [status, state?.submittedAlert, state?.message]);
 
   useEffect(() => {
@@ -282,7 +292,7 @@ export const PriceAlertForm = ({
       {deleteMessage && (
         <div
           data-testid="delete-alert-message"
-          className="mt-4 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm text-emerald-300"
+          className="mt-4 text-sm text-orange-400"
         >
           {deleteMessage}
         </div>
