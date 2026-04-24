@@ -2,6 +2,7 @@
 
 import { startTransition, useDeferredValue, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import Image from "next/image";
 import { Container } from "@/components/Container";
 import { CoinCard } from "./CoinCard";
 import { CoinChart } from "./CoinChart";
@@ -67,14 +68,10 @@ const safeParseJson = <T,>(value: string | null, fallback: T): T => {
 };
 
 const parseSortOption = (value: string | undefined): SortOption =>
-  SORT_OPTIONS.some((option) => option.value === value)
-    ? (value as SortOption)
-    : DEFAULT_SORT;
+  SORT_OPTIONS.some((option) => option.value === value) ? (value as SortOption) : DEFAULT_SORT;
 
 const parseTrendOption = (value: string | undefined): TrendOption =>
-  TREND_OPTIONS.some((option) => option.value === value)
-    ? (value as TrendOption)
-    : DEFAULT_TREND;
+  TREND_OPTIONS.some((option) => option.value === value) ? (value as TrendOption) : DEFAULT_TREND;
 
 const sortCoins = (coins: Coin[], sort: SortOption) => {
   const sorted = [...coins];
@@ -82,13 +79,9 @@ const sortCoins = (coins: Coin[], sort: SortOption) => {
   sorted.sort((left, right) => {
     switch (sort) {
       case "change-desc":
-        return (
-          right.price_change_percentage_24h - left.price_change_percentage_24h
-        );
+        return right.price_change_percentage_24h - left.price_change_percentage_24h;
       case "change-asc":
-        return (
-          left.price_change_percentage_24h - right.price_change_percentage_24h
-        );
+        return left.price_change_percentage_24h - right.price_change_percentage_24h;
       case "price-desc":
         return right.current_price - left.current_price;
       case "price-asc":
@@ -128,7 +121,7 @@ export const CryptoDashboard = ({
   const { data: coins = initialCoins, isFetching, error } = useCoins(initialCoins);
   const [search, setSearch] = useState(initialSearch);
   const [selectedCoinId, setSelectedCoinId] = useState(
-    initialSelectedCoinId ?? initialCoins[0]?.id ?? ""
+    initialSelectedCoinId ?? initialCoins[0]?.id ?? "",
   );
   const [days, setDays] = useState(initialDays);
   const [sort, setSort] = useState<SortOption>(parseSortOption(initialSort));
@@ -143,11 +136,11 @@ export const CryptoDashboard = ({
   useEffect(() => {
     const storedFavoriteIds = safeParseJson<string[]>(
       localStorage.getItem(WATCHLIST_STORAGE_KEY),
-      []
+      [],
     );
     const storedJournal = safeParseJson<JournalByCoin>(
       localStorage.getItem(JOURNAL_STORAGE_KEY),
-      {}
+      {},
     );
 
     startTransition(() => {
@@ -189,8 +182,7 @@ export const CryptoDashboard = ({
     return sortCoins(nextCoins, sort);
   }, [coins, deferredSearch, favoriteIds, favoritesOnly, sort, trend]);
 
-  const selectedCoin =
-    filteredCoins.find((coin) => coin.id === selectedCoinId) ?? filteredCoins[0];
+  const selectedCoin = filteredCoins.find((coin) => coin.id === selectedCoinId) ?? filteredCoins[0];
 
   useEffect(() => {
     const params = new URLSearchParams(searchParams?.toString() ?? "");
@@ -264,14 +256,14 @@ export const CryptoDashboard = ({
   const selectedDaysLabel = DAY_FILTERS.find((f) => f.value === days)?.label ?? `${days}d`;
 
   const selectedCoinNotes =
-    selectedCoin && hasHydratedStorage ? journalByCoin[selectedCoin.id] ?? [] : [];
+    selectedCoin && hasHydratedStorage ? (journalByCoin[selectedCoin.id] ?? []) : [];
   const watchlistCount = hasHydratedStorage ? favoriteIds.length : 0;
 
   const toggleFavorite = (coin: Coin) => {
     setFavoriteIds((current) =>
       current.includes(coin.id)
         ? current.filter((entry) => entry !== coin.id)
-        : [...current, coin.id]
+        : [...current, coin.id],
     );
   };
 
@@ -293,9 +285,7 @@ export const CryptoDashboard = ({
     setFavoritesOnly(false);
     setSelectedCoinId(coins[0]?.id ?? "");
 
-    const nextUrl = resetParams.toString()
-      ? `${pathname}?${resetParams.toString()}`
-      : pathname;
+    const nextUrl = resetParams.toString() ? `${pathname}?${resetParams.toString()}` : pathname;
 
     router.replace(nextUrl, { scroll: false });
   };
@@ -341,11 +331,10 @@ export const CryptoDashboard = ({
           </h1>
           <p className="mt-4 text-base text-slate-300">
             <span className="block">
-              Monitor real-time prices, filter top movers, manage your watchlist, and set price alerts.
+              Monitor real-time prices, filter top movers, manage your watchlist, and set price
+              alerts.
             </span>
-            <span className="block">
-              All in one streamlined dashboard.
-            </span>
+            <span className="block">All in one streamlined dashboard.</span>
           </p>
         </div>
 
@@ -401,10 +390,11 @@ export const CryptoDashboard = ({
                 data-testid="favorites-filter"
                 aria-pressed={favoritesOnly}
                 onClick={() => setFavoritesOnly((current) => !current)}
-                className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${favoritesOnly
+                className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
+                  favoritesOnly
                     ? "border-amber-300/50 bg-amber-300/15 text-amber-100"
                     : "border-white/10 bg-slate-900/80 text-slate-300 hover:border-amber-300/30 hover:text-amber-100"
-                  }`}
+                }`}
               >
                 Watchlist only
               </button>
@@ -413,7 +403,6 @@ export const CryptoDashboard = ({
               <StatusPill label="Watchlist" value={String(watchlistCount)} />
             </div>
           </div>
-
         </div>
 
         {error || marketUnavailable ? (
@@ -421,9 +410,8 @@ export const CryptoDashboard = ({
             data-testid="market-error-banner"
             className="mb-6 rounded-3xl border border-rose-500/30 bg-rose-500/10 p-4 text-rose-100"
           >
-            We couldn&apos;t refresh the market feed right now. If CoinCap is
-            rate-limiting requests, the dashboard will recover automatically in a
-            moment.
+            We couldn&apos;t refresh the market feed right now. If CoinCap is rate-limiting
+            requests, the dashboard will recover automatically in a moment.
           </div>
         ) : null}
 
@@ -439,9 +427,11 @@ export const CryptoDashboard = ({
                       </p>
                       <div className="mt-2 flex flex-wrap items-center gap-3">
                         <div className="flex items-center gap-3">
-                          <img
+                          <Image
                             src={selectedCoin.image}
                             alt={selectedCoin.name}
+                            width={40}
+                            height={40}
                             className="h-10 w-10 rounded-full"
                           />
                           <h2
@@ -456,10 +446,11 @@ export const CryptoDashboard = ({
                           data-testid="selected-asset-favorite"
                           aria-pressed={favoriteIds.includes(selectedCoin.id)}
                           onClick={() => toggleFavorite(selectedCoin)}
-                          className={`rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wider whitespace-nowrap transition ${favoriteIds.includes(selectedCoin.id)
+                          className={`rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wider whitespace-nowrap transition ${
+                            favoriteIds.includes(selectedCoin.id)
                               ? "border-amber-300/50 bg-amber-300/15 text-amber-100"
                               : "border-white/10 bg-slate-950/70 text-slate-400 hover:border-amber-300/40 hover:text-amber-100"
-                            }`}
+                          }`}
                         >
                           {favoriteIds.includes(selectedCoin.id)
                             ? "In Watchlist"
@@ -470,10 +461,9 @@ export const CryptoDashboard = ({
                         {currencyFormatter.format(selectedCoin.current_price)}
                         <span
                           data-testid="selected-asset-change"
-                          className={`ml-3 text-sm font-semibold ${selectedRangeChange >= 0
-                              ? "text-emerald-300"
-                              : "text-rose-300"
-                            }`}
+                          className={`ml-3 text-sm font-semibold ${
+                            selectedRangeChange >= 0 ? "text-emerald-300" : "text-rose-300"
+                          }`}
                         >
                           {selectedRangeChange >= 0 ? "+" : ""}
                           {selectedRangeChange.toFixed(2)}% in {selectedDaysLabel}
@@ -489,10 +479,11 @@ export const CryptoDashboard = ({
                           data-testid={`range-button-${filter.value}`}
                           aria-pressed={days === filter.value}
                           onClick={() => setDays(filter.value)}
-                          className={`rounded-full px-4 py-2 text-sm font-medium transition ${days === filter.value
+                          className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+                            days === filter.value
                               ? "bg-cyan-300 text-slate-950"
                               : "bg-slate-800 text-slate-300 hover:bg-slate-700"
-                            }`}
+                          }`}
                         >
                           {filter.label}
                         </button>
@@ -593,8 +584,8 @@ export const CryptoDashboard = ({
                 ))
               ) : (
                 <div className="rounded-2xl border border-dashed border-white/10 bg-slate-950/40 p-4 text-sm text-slate-400">
-                  No assets match the active filters. Try clearing the watchlist
-                  filter or switching the trend selector.
+                  No assets match the active filters. Try clearing the watchlist filter or switching
+                  the trend selector.
                 </div>
               )}
             </div>
@@ -608,7 +599,9 @@ export const CryptoDashboard = ({
 const StatusPill = ({ label, value }: { label: string; value: string }) => {
   return (
     <div className="rounded-full border border-white/10 bg-slate-900/80 px-4 py-2">
-      <p className="text-[10px] uppercase tracking-wider whitespace-nowrap text-slate-500 text-center">{label}</p>
+      <p className="text-[10px] uppercase tracking-wider whitespace-nowrap text-slate-500 text-center">
+        {label}
+      </p>
       <p className="mt-1 text-sm font-semibold text-slate-100 text-center">{value}</p>
     </div>
   );
@@ -617,7 +610,9 @@ const StatusPill = ({ label, value }: { label: string; value: string }) => {
 const StatCard = ({ label, value }: { label: string; value: string }) => {
   return (
     <div className="rounded-3xl border border-white/10 bg-slate-950/40 p-4">
-      <p className="text-xs uppercase tracking-wider whitespace-nowrap text-slate-400 text-center">{label}</p>
+      <p className="text-xs uppercase tracking-wider whitespace-nowrap text-slate-400 text-center">
+        {label}
+      </p>
       <p className="mt-1 text-lg font-semibold text-slate-300 text-center">{value}</p>
     </div>
   );

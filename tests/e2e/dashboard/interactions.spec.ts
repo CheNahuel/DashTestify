@@ -1,10 +1,7 @@
 import { expect, test, waitForDashboardData } from "@tests/fixtures/testSetup";
 import { expectUrlPath } from "@tests/utils/commonUtils";
 
-test("sorts gainers and syncs controls into the URL", async ({
-  dashboardData,
-  dashboardPage,
-}) => {
+test("sorts gainers and syncs controls into the URL", async ({ dashboardData, dashboardPage }) => {
   await dashboardPage.goto(dashboardData.urls.home);
   await waitForDashboardData(dashboardPage.page);
 
@@ -12,7 +9,7 @@ test("sorts gainers and syncs controls into the URL", async ({
   await dashboardPage.selectSort("change-desc");
 
   await expect(dashboardPage.page.locator('[data-testid="coin-card"]').first()).toContainText(
-    "Solana"
+    "Solana",
   );
   await expect(dashboardPage.page).toHaveURL(/trend=gainers/);
   await expect(dashboardPage.page).toHaveURL(/sort=change-desc/);
@@ -23,7 +20,7 @@ test("reset dashboard returns filters to the default home state", async ({
   dashboardPage,
 }) => {
   await dashboardPage.goto(
-    "/?mockData=1&selectedCoin=solana&sort=change-desc&trend=gainers&days=30&search=sol"
+    "/?mockData=1&selectedCoin=solana&sort=change-desc&trend=gainers&days=30&search=sol",
   );
   await waitForDashboardData(dashboardPage.page);
 
@@ -57,7 +54,7 @@ test("watchlist survives a reload and can be filtered", async ({
 
   await expect(dashboardPage.page.locator('[data-testid="coin-card"]')).toHaveCount(1);
   await expect(dashboardPage.page.locator('[data-testid="coin-card"]').first()).toContainText(
-    "Solana"
+    "Solana",
   );
 });
 
@@ -73,7 +70,7 @@ test("journal notes validate, persist, and can be deleted", async ({
   await expect(dashboardPage.journalError).toContainText("at least 10 characters");
 
   await dashboardPage.journalInput.fill(
-    "Watching the breakout level and waiting for higher volume confirmation."
+    "Watching the breakout level and waiting for higher volume confirmation.",
   );
   await dashboardPage.journalSubmit.click();
 
@@ -110,10 +107,7 @@ test("price alert form handles validation and success", async ({
   await expect(dashboardPage.alertTable).toContainText("trader@example.com");
 });
 
-test("price alerts persist across page reloads", async ({
-  dashboardData,
-  dashboardPage,
-}) => {
+test("price alerts persist across page reloads", async ({ dashboardData, dashboardPage }) => {
   await dashboardPage.goto(dashboardData.urls.bitcoinDefault);
   await waitForDashboardData(dashboardPage.page);
 
@@ -146,13 +140,17 @@ test("price alerts can be deleted with confirmation message", async ({
 
   // Get the alert ID from the delete button
   const deleteButton = dashboardPage.page.locator('[data-testid^="delete-alert-"]');
-  const alertId = await deleteButton.getAttribute('data-testid').then(id => id?.replace('delete-alert-', ''));
+  const alertId = await deleteButton
+    .getAttribute("data-testid")
+    .then((id) => id?.replace("delete-alert-", ""));
 
   // Delete the alert
   await dashboardPage.deleteAlert(alertId!);
 
   // Check that the delete confirmation message appears
-  await expect(dashboardPage.deleteAlertMessage).toContainText("Alert for Bitcoin at $65000.00 has been deleted");
+  await expect(dashboardPage.deleteAlertMessage).toContainText(
+    "Alert for Bitcoin at $65000.00 has been deleted",
+  );
 
   // Check that the alert is removed from the table
   await expect(dashboardPage.alertTable).not.toContainText("delete@example.com");
@@ -172,14 +170,10 @@ test("success message auto-disappears after 3 seconds", async ({
   await expect(dashboardPage.priceAlertMessage).toContainText("Alert saved for Bitcoin");
 
   // Wait for the message to auto-disappear
-  await dashboardPage.page.waitForTimeout(3500);
-  await expect(dashboardPage.priceAlertMessage).toHaveText("");
+  await expect(dashboardPage.priceAlertMessage).toHaveText("", { timeout: 4000 });
 });
 
-test("delete message auto-disappears after 3 seconds", async ({
-  dashboardData,
-  dashboardPage,
-}) => {
+test("delete message auto-disappears after 3 seconds", async ({ dashboardData, dashboardPage }) => {
   await dashboardPage.goto(dashboardData.urls.bitcoinDefault);
   await waitForDashboardData(dashboardPage.page);
 
@@ -192,12 +186,13 @@ test("delete message auto-disappears after 3 seconds", async ({
 
   // Get the alert ID and delete it
   const deleteButton = dashboardPage.page.locator('[data-testid^="delete-alert-"]');
-  const alertId = await deleteButton.getAttribute('data-testid').then(id => id?.replace('delete-alert-', ''));
+  const alertId = await deleteButton
+    .getAttribute("data-testid")
+    .then((id) => id?.replace("delete-alert-", ""));
   await dashboardPage.deleteAlert(alertId!);
 
   await expect(dashboardPage.deleteAlertMessage).toContainText("has been deleted");
 
   // Wait for the message to auto-disappear
-  await dashboardPage.page.waitForTimeout(3500);
-  await expect(dashboardPage.deleteAlertMessage).not.toBeVisible();
+  await expect(dashboardPage.deleteAlertMessage).toBeHidden({ timeout: 4000 });
 });

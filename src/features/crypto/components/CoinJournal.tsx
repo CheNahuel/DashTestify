@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useMemo, useState } from "react";
+import Image from "next/image";
 
 export type CoinJournalEntry = {
   id: string;
@@ -61,11 +62,15 @@ export const CoinJournal = ({
     <div className="rounded-3xl border border-white/10 bg-slate-900/70 p-5 max-h-[725px] overflow-y-auto">
       <div className="mb-4 flex items-center justify-between gap-3">
         <div>
-          <p className="text-sm uppercase tracking-wider whitespace-nowrap text-slate-400">Trade Journal</p>
+          <p className="text-sm uppercase tracking-wider whitespace-nowrap text-slate-400">
+            Trade Journal
+          </p>
           <div className="mt-2 flex items-center gap-2">
-            <img
+            <Image
               src={coinImage}
               alt={coinName}
+              width={24}
+              height={24}
               className="h-6 w-6 rounded-full"
             />
             <h3 className="text-xl font-semibold text-white">Notes for {coinName}</h3>

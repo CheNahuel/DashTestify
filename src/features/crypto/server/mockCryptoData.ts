@@ -1,20 +1,70 @@
 import { Coin, CoinHistory } from "../types/coin";
 
 const CRYPTO_DATA = [
-  { name: "Bitcoin", symbol: "BTC", basePrice: 68000, image: "https://assets.coincap.io/assets/icons/btc@2x.png" },
-  { name: "Ethereum", symbol: "ETH", basePrice: 3500, image: "https://assets.coincap.io/assets/icons/eth@2x.png" },
-  { name: "Solana", symbol: "SOL", basePrice: 145, image: "https://assets.coincap.io/assets/icons/sol@2x.png" },
-  { name: "Cardano", symbol: "ADA", basePrice: 0.60, image: "https://assets.coincap.io/assets/icons/ada@2x.png" },
-  { name: "Dogecoin", symbol: "DOGE", basePrice: 0.15, image: "https://assets.coincap.io/assets/icons/doge@2x.png" },
-  { name: "Chainlink", symbol: "LINK", basePrice: 18, image: "https://assets.coincap.io/assets/icons/link@2x.png" },
-  { name: "Polkadot", symbol: "DOT", basePrice: 8.5, image: "https://assets.coincap.io/assets/icons/dot@2x.png" },
-  { name: "Avalanche", symbol: "AVAX", basePrice: 42, image: "https://assets.coincap.io/assets/icons/avax@2x.png" },
-  { name: "Polygon", symbol: "MATIC", basePrice: 0.85, image: "https://assets.coincap.io/assets/icons/matic@2x.png" },
-  { name: "Uniswap", symbol: "UNI", basePrice: 12, image: "https://assets.coincap.io/assets/icons/uni@2x.png" },
+  {
+    name: "Bitcoin",
+    symbol: "BTC",
+    basePrice: 68000,
+    image: "https://assets.coincap.io/assets/icons/btc@2x.png",
+  },
+  {
+    name: "Ethereum",
+    symbol: "ETH",
+    basePrice: 3500,
+    image: "https://assets.coincap.io/assets/icons/eth@2x.png",
+  },
+  {
+    name: "Solana",
+    symbol: "SOL",
+    basePrice: 145,
+    image: "https://assets.coincap.io/assets/icons/sol@2x.png",
+  },
+  {
+    name: "Cardano",
+    symbol: "ADA",
+    basePrice: 0.6,
+    image: "https://assets.coincap.io/assets/icons/ada@2x.png",
+  },
+  {
+    name: "Dogecoin",
+    symbol: "DOGE",
+    basePrice: 0.15,
+    image: "https://assets.coincap.io/assets/icons/doge@2x.png",
+  },
+  {
+    name: "Chainlink",
+    symbol: "LINK",
+    basePrice: 18,
+    image: "https://assets.coincap.io/assets/icons/link@2x.png",
+  },
+  {
+    name: "Polkadot",
+    symbol: "DOT",
+    basePrice: 8.5,
+    image: "https://assets.coincap.io/assets/icons/dot@2x.png",
+  },
+  {
+    name: "Avalanche",
+    symbol: "AVAX",
+    basePrice: 42,
+    image: "https://assets.coincap.io/assets/icons/avax@2x.png",
+  },
+  {
+    name: "Polygon",
+    symbol: "MATIC",
+    basePrice: 0.85,
+    image: "https://assets.coincap.io/assets/icons/matic@2x.png",
+  },
+  {
+    name: "Uniswap",
+    symbol: "UNI",
+    basePrice: 12,
+    image: "https://assets.coincap.io/assets/icons/uni@2x.png",
+  },
 ];
 
 const generateRandomCoins = (): Coin[] => {
-  return CRYPTO_DATA.map((crypto, index) => {
+  return CRYPTO_DATA.map((crypto) => {
     const id = crypto.symbol.toLowerCase();
     const volatility = Math.random() * 0.1 + 0.05; // 5-15% volatility
     const change = (Math.random() - 0.5) * 2 * volatility;
@@ -57,7 +107,7 @@ const pointsForDays = (days: number) => {
 
 const getHistoricalBasePrice = (currentPrice: number, days: number, coinId: string) => {
   // Use coinId as seed for deterministic but varied historical data
-  const seed = coinId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  const seed = coinId.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
   const random = (Math.sin(seed + days) + 1) / 2; // Deterministic random based on coin and days
 
   // Generate realistic starting price based on time period
@@ -71,14 +121,14 @@ const generateRealisticPriceMovement = (
   endPrice: number,
   totalPoints: number,
   days: number,
-  coinId: string
+  coinId: string,
 ) => {
   const prices = [];
   const volatility = days <= 1 ? 0.02 : days <= 7 ? 0.05 : days <= 30 ? 0.08 : 0.12;
   const trendStrength = days <= 1 ? 0.1 : days <= 7 ? 0.3 : days <= 30 ? 0.5 : 0.7;
 
   // Use coinId for deterministic noise
-  const seed = coinId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  const seed = coinId.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
 
   for (let i = 0; i <= totalPoints; i++) {
     const progress = i / totalPoints;
@@ -123,7 +173,7 @@ export const getMockCoinHistory = (coinId: string, days: number): CoinHistory =>
     coin.current_price,
     totalPoints,
     days,
-    coinId
+    coinId,
   );
 
   return {
