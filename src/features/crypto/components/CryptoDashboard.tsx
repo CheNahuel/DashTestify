@@ -338,7 +338,7 @@ export const CryptoDashboard = ({
             Crypto Intelligence
           </p>
           <h1 className="text-4xl font-semibold tracking-tight text-white md:text-5xl">
-            Track the market. Manage your assets. Act with confidence.
+            Track the crypto market with real-time insights.
           </h1>
           <p className="mt-4 text-base text-slate-300">
             <span className="block">
@@ -414,11 +414,7 @@ export const CryptoDashboard = ({
           </button>
 
           <StatusPill label="Visible Coins" value={String(filteredCoins.length)} />
-          <StatusPill label="Saved" value={String(watchlistCount)} />
-          <StatusPill
-            label="Query State"
-            value={searchParams?.toString() ? "Synced" : "Default"}
-          />
+          <StatusPill label="Watchlist" value={String(watchlistCount)} />
         </div>
 
         {error || marketUnavailable ? (

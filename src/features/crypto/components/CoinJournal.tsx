@@ -72,7 +72,7 @@ export const CoinJournal = ({
 
       <form onSubmit={handleSubmit} className="grid gap-3">
         <label className="grid gap-2 text-sm text-slate-200">
-          Thesis / catalyst note
+          Add a note
           <textarea
             name="journalNote"
             data-testid="journal-input"
@@ -139,7 +139,7 @@ export const CoinJournal = ({
             data-testid="journal-empty"
             className="rounded-2xl border border-dashed border-white/10 bg-slate-950/40 p-4 text-sm text-slate-400"
           >
-            No notes yet. Use this journal to track your thoughts, catalysts, and ideas for this coin.
+            No notes yet. Add your first insight to start tracking this asset.
           </div>
         )}
       </div>

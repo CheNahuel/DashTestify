@@ -173,17 +173,13 @@ export const PriceAlertForm = ({
       <div className="mb-4">
         <p className="text-sm uppercase tracking-wider whitespace-nowrap text-slate-400">Price Alert</p>
         <h3 className="mt-2 text-xl font-semibold text-white">Create Price Alert for {coinName}</h3>
-        <p className="mt-2 text-sm text-slate-300">
-          Set a price alert to get notified when this asset reaches your target. 
-          Stay ahead of market moves without constantly monitoring the chart.
-        </p>
       </div>
 
       <form ref={formRef} action={formAction} className="grid gap-4">
         <input type="hidden" name="coinId" value={coinId} />
 
         <label className="grid gap-2 text-sm text-slate-200">
-          Email
+          Enter your email to receive alerts
           <input
             type="email"
             name="email"
@@ -203,7 +199,7 @@ export const PriceAlertForm = ({
         </label>
 
         <label className="grid gap-2 text-sm text-slate-200">
-          Target Price
+          Notify me when price reaches
           <input
             type="number"
             name="targetPrice"
