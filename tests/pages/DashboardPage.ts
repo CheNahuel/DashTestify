@@ -23,6 +23,9 @@ export class DashboardPage {
   readonly priceAlertSubmit: Locator;
   readonly priceAlertMessage: Locator;
   readonly priceAlertTargetError: Locator;
+  readonly priceAlertEmailError: Locator;
+  readonly deleteAlertMessage: Locator;
+  readonly alertTable: Locator;
   readonly marketErrorBanner: Locator;
   readonly noMatchMessage: Locator;
 
@@ -48,6 +51,9 @@ export class DashboardPage {
     this.priceAlertSubmit = page.getByTestId("price-alert-submit");
     this.priceAlertMessage = page.getByTestId("price-alert-message");
     this.priceAlertTargetError = page.getByTestId("price-alert-target-error");
+    this.priceAlertEmailError = page.getByTestId("price-alert-email-error");
+    this.deleteAlertMessage = page.getByTestId("delete-alert-message");
+    this.alertTable = page.getByTestId("alert-table");
     this.marketErrorBanner = page.getByTestId("market-error-banner");
     this.noMatchMessage = page.getByTestId("no-match-message");
   }
@@ -85,5 +91,9 @@ export class DashboardPage {
 
   coinCard(coinId: string) {
     return this.page.locator(`[data-testid="coin-card"][data-coin-id="${coinId}"]`);
+  }
+
+  async deleteAlert(alertId: string) {
+    await this.page.getByTestId(`delete-alert-${alertId}`).click();
   }
 }

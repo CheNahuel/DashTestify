@@ -105,4 +105,99 @@ test("price alert form handles validation and success", async ({
   await dashboardPage.priceAlertSubmit.click();
 
   await expect(dashboardPage.priceAlertMessage).toContainText("Alert saved for Bitcoin");
+  await expect(dashboardPage.alertTable).toContainText("Bitcoin");
+  await expect(dashboardPage.alertTable).toContainText("$55000.00");
+  await expect(dashboardPage.alertTable).toContainText("trader@example.com");
+});
+
+test("price alerts persist across page reloads", async ({
+  dashboardData,
+  dashboardPage,
+}) => {
+  await dashboardPage.goto(dashboardData.urls.bitcoinDefault);
+  await waitForDashboardData(dashboardPage.page);
+
+  await dashboardPage.priceAlertEmail.fill("persistence@example.com");
+  await dashboardPage.priceAlertTarget.fill("60000");
+  await dashboardPage.priceAlertSubmit.click();
+
+  await expect(dashboardPage.alertTable).toContainText("persistence@example.com");
+
+  await dashboardPage.page.reload();
+  await waitForDashboardData(dashboardPage.page);
+
+  await expect(dashboardPage.alertTable).toContainText("persistence@example.com");
+  await expect(dashboardPage.alertTable).toContainText("$60000.00");
+});
+
+test("price alerts can be deleted with confirmation message", async ({
+  dashboardData,
+  dashboardPage,
+}) => {
+  await dashboardPage.goto(dashboardData.urls.bitcoinDefault);
+  await waitForDashboardData(dashboardPage.page);
+
+  // Create an alert first
+  await dashboardPage.priceAlertEmail.fill("delete@example.com");
+  await dashboardPage.priceAlertTarget.fill("65000");
+  await dashboardPage.priceAlertSubmit.click();
+
+  await expect(dashboardPage.alertTable).toContainText("delete@example.com");
+
+  // Get the alert ID from the delete button
+  const deleteButton = dashboardPage.page.locator('[data-testid^="delete-alert-"]');
+  const alertId = await deleteButton.getAttribute('data-testid').then(id => id?.replace('delete-alert-', ''));
+
+  // Delete the alert
+  await dashboardPage.deleteAlert(alertId!);
+
+  // Check that the delete confirmation message appears
+  await expect(dashboardPage.deleteAlertMessage).toContainText("Alert for Bitcoin at $65000.00 has been deleted");
+
+  // Check that the alert is removed from the table
+  await expect(dashboardPage.alertTable).not.toContainText("delete@example.com");
+});
+
+test("success message auto-disappears after 3 seconds", async ({
+  dashboardData,
+  dashboardPage,
+}) => {
+  await dashboardPage.goto(dashboardData.urls.bitcoinDefault);
+  await waitForDashboardData(dashboardPage.page);
+
+  await dashboardPage.priceAlertEmail.fill("auto@example.com");
+  await dashboardPage.priceAlertTarget.fill("70000");
+  await dashboardPage.priceAlertSubmit.click();
+
+  await expect(dashboardPage.priceAlertMessage).toContainText("Alert saved for Bitcoin");
+
+  // Wait for the message to auto-disappear
+  await dashboardPage.page.waitForTimeout(3500);
+  await expect(dashboardPage.priceAlertMessage).toHaveText("");
+});
+
+test("delete message auto-disappears after 3 seconds", async ({
+  dashboardData,
+  dashboardPage,
+}) => {
+  await dashboardPage.goto(dashboardData.urls.bitcoinDefault);
+  await waitForDashboardData(dashboardPage.page);
+
+  // Create an alert first
+  await dashboardPage.priceAlertEmail.fill("temp@example.com");
+  await dashboardPage.priceAlertTarget.fill("75000");
+  await dashboardPage.priceAlertSubmit.click();
+
+  await expect(dashboardPage.alertTable).toContainText("temp@example.com");
+
+  // Get the alert ID and delete it
+  const deleteButton = dashboardPage.page.locator('[data-testid^="delete-alert-"]');
+  const alertId = await deleteButton.getAttribute('data-testid').then(id => id?.replace('delete-alert-', ''));
+  await dashboardPage.deleteAlert(alertId!);
+
+  await expect(dashboardPage.deleteAlertMessage).toContainText("has been deleted");
+
+  // Wait for the message to auto-disappear
+  await dashboardPage.page.waitForTimeout(3500);
+  await expect(dashboardPage.deleteAlertMessage).not.toBeVisible();
 });

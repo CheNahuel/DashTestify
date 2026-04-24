@@ -56,7 +56,7 @@ export const CoinJournal = ({
   };
 
   return (
-    <div className="rounded-3xl border border-white/10 bg-slate-900/70 p-5 max-h-[525px] overflow-y-auto">
+    <div className="rounded-3xl border border-white/10 bg-slate-900/70 p-5 max-h-[725px] overflow-y-auto">
       <div className="mb-4 flex items-center justify-between gap-3">
         <div>
           <p className="text-sm uppercase tracking-wider whitespace-nowrap text-slate-400">Trade Journal</p>
@@ -139,8 +139,7 @@ export const CoinJournal = ({
             data-testid="journal-empty"
             className="rounded-2xl border border-dashed border-white/10 bg-slate-950/40 p-4 text-sm text-slate-400"
           >
-            No notes saved yet. Add one so your tests can assert creation, persistence,
-            and deletion.
+            No notes yet. Use this journal to track your thoughts, catalysts, and ideas for this coin.
           </div>
         )}
       </div>

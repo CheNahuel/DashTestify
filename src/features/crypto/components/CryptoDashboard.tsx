@@ -333,18 +333,22 @@ export const CryptoDashboard = ({
     <Container>
       <section className="mb-8 rounded-[2rem] border border-white/10 bg-slate-950/70 p-6 shadow-2xl shadow-slate-950/40 backdrop-blur md:p-8">
         <div className="mb-8 grid gap-6 xl:grid-cols-[minmax(0,1.25fr)_minmax(320px,0.95fr)] xl:items-end">
-          <div className="max-w-4xl">
-            <p className="mb-3 text-sm uppercase tracking-wider whitespace-nowrap text-cyan-300">
-              Crypto Intelligence
-            </p>
-            <h1 className="text-4xl font-semibold tracking-tight text-white md:text-5xl">
-              Track prices, manage a watchlist, and simulate investor workflows.
-            </h1>
-            <p className="mt-4 text-base text-slate-300">
-              Search, sort, filter gainers and losers, save favorites, create notes,
-              and submit a price alert form that exercises modern Next.js behavior.
-            </p>
-          </div>
+        <div className="max-w-4xl">
+          <p className="mb-3 text-sm uppercase tracking-wider whitespace-nowrap text-cyan-300">
+            Crypto Intelligence
+          </p>
+          <h1 className="text-4xl font-semibold tracking-tight text-white md:text-5xl">
+            Track the market. Manage your assets. Act with confidence.
+          </h1>
+          <p className="mt-4 text-base text-slate-300">
+            <span className="block">
+              Monitor real-time prices, filter top movers, manage your watchlist, and set price alerts.
+            </span>
+            <span className="block">
+              All in one streamlined dashboard.
+            </span>
+          </p>
+        </div>
 
           <div className="grid gap-3 rounded-[1.75rem] border border-white/10 bg-slate-950/45 p-4 md:p-5">
             <SearchBar value={search} onChange={setSearch} />
@@ -560,7 +564,7 @@ export const CryptoDashboard = ({
             ) : null}
           </div>
 
-          <aside className="rounded-3xl border border-white/10 bg-slate-900/60 p-5 max-h-[1200px] overflow-y-auto">
+          <aside className="rounded-3xl border border-white/10 bg-slate-900/60 p-5 max-h-[1400px] overflow-y-auto">
             <div className="mb-4 flex items-center justify-between">
               <div>
                 <p className="text-sm uppercase tracking-wider whitespace-nowrap text-slate-400">
