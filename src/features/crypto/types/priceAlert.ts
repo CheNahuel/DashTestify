@@ -8,6 +8,7 @@ export type PriceAlertFormState = {
   submittedAlert?: {
     coinId: string;
     coinName: string;
+    coinImage: string;
     email: string;
     targetPrice: number;
   };

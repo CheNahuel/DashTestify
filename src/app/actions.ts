@@ -5,6 +5,7 @@ import { PriceAlertFormState } from "@/features/crypto/types/priceAlert";
 type PriceAlertContext = {
   coinId: string;
   coinName: string;
+  coinImage: string;
   currentPrice: number;
 };
 
@@ -56,6 +57,7 @@ export async function submitPriceAlert(
     submittedAlert: {
       coinId: context.coinId,
       coinName: context.coinName,
+      coinImage: context.coinImage,
       email,
       targetPrice,
     },

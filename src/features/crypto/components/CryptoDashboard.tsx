@@ -439,12 +439,19 @@ export const CryptoDashboard = ({
                         Selected Asset
                       </p>
                       <div className="mt-2 flex flex-wrap items-center gap-3">
-                        <h2
-                          data-testid="selected-asset-name"
-                          className="text-3xl font-semibold text-white"
-                        >
-                          {selectedCoin.name}
-                        </h2>
+                        <div className="flex items-center gap-3">
+                          <img
+                            src={selectedCoin.image}
+                            alt={selectedCoin.name}
+                            className="h-10 w-10 rounded-full"
+                          />
+                          <h2
+                            data-testid="selected-asset-name"
+                            className="text-3xl font-semibold text-white"
+                          >
+                            {selectedCoin.name}
+                          </h2>
+                        </div>
                         <button
                           type="button"
                           data-testid="selected-asset-favorite"
@@ -547,11 +554,13 @@ export const CryptoDashboard = ({
                 <PriceAlertForm
                   coinId={selectedCoin.id}
                   coinName={selectedCoin.name}
+                  coinImage={selectedCoin.image}
                   currentPrice={selectedCoin.current_price}
                 />
                 <CoinJournal
                   coinId={selectedCoin.id}
                   coinName={selectedCoin.name}
+                  coinImage={selectedCoin.image}
                   entries={selectedCoinNotes}
                   onAddEntry={addJournalEntry}
                   onDeleteEntry={deleteJournalEntry}

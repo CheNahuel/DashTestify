@@ -12,6 +12,7 @@ type PriceAlert = {
   id: string;
   coinId: string;
   coinName: string;
+  coinImage: string;
   email: string;
   targetPrice: number;
   createdAt: string;
@@ -66,7 +67,16 @@ const AlertTable = ({
             ) : (
               alerts.map((alert) => (
                 <tr key={alert.id} className="border-b border-white/5 last:border-b-0">
-                  <td className="px-3 py-2 text-slate-200 text-sm whitespace-pre-wrap">{alert.coinName}</td>
+                  <td className="px-3 py-2 text-slate-200 text-sm whitespace-pre-wrap">
+                    <div className="flex items-center gap-2">
+                      <img
+                        src={alert.coinImage}
+                        alt={alert.coinName}
+                        className="h-5 w-5 rounded-full"
+                      />
+                      {alert.coinName}
+                    </div>
+                  </td>
                   <td className="px-3 py-2 text-slate-200 text-sm whitespace-pre-wrap">${alert.targetPrice.toFixed(2)}</td>
                   <td className="px-3 py-2 text-slate-200 text-sm whitespace-pre-wrap">{alert.email}</td>
                   <td className="px-3 py-2 text-center">
@@ -93,15 +103,18 @@ const AlertTable = ({
 export const PriceAlertForm = ({
   coinId,
   coinName,
+  coinImage,
   currentPrice,
 }: {
   coinId: string;
   coinName: string;
+  coinImage: string;
   currentPrice: number;
 }) => {
   const action = submitPriceAlert.bind(null, {
     coinId,
     coinName,
+    coinImage,
     currentPrice,
   });
   const [state, formAction] = useActionState<PriceAlertFormState, FormData>(
@@ -133,6 +146,7 @@ export const PriceAlertForm = ({
         id: crypto.randomUUID(),
         coinId: state.submittedAlert.coinId,
         coinName: state.submittedAlert.coinName,
+        coinImage: state.submittedAlert.coinImage,
         email: state.submittedAlert.email,
         targetPrice: state.submittedAlert.targetPrice,
         createdAt: new Date().toISOString(),
@@ -172,7 +186,14 @@ export const PriceAlertForm = ({
     <div className="rounded-3xl border border-white/10 bg-slate-900/70 p-5 max-h-[725px] overflow-y-auto">
       <div className="mb-4">
         <p className="text-sm uppercase tracking-wider whitespace-nowrap text-slate-400">Price Alert</p>
-        <h3 className="mt-2 text-xl font-semibold text-white">Create Price Alert for {coinName}</h3>
+        <div className="mt-2 flex items-center gap-2">
+          <img
+            src={coinImage}
+            alt={coinName}
+            className="h-6 w-6 rounded-full"
+          />
+          <h3 className="text-xl font-semibold text-white">Create Price Alert for {coinName}</h3>
+        </div>
       </div>
 
       <form ref={formRef} action={formAction} className="grid gap-4">

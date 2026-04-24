@@ -19,12 +19,14 @@ const formatDate = (value: string) =>
 export const CoinJournal = ({
   coinId,
   coinName,
+  coinImage,
   entries,
   onAddEntry,
   onDeleteEntry,
 }: {
   coinId: string;
   coinName: string;
+  coinImage: string;
   entries: CoinJournalEntry[];
   onAddEntry: (coinId: string, note: string) => void;
   onDeleteEntry: (coinId: string, noteId: string) => void;
@@ -60,7 +62,14 @@ export const CoinJournal = ({
       <div className="mb-4 flex items-center justify-between gap-3">
         <div>
           <p className="text-sm uppercase tracking-wider whitespace-nowrap text-slate-400">Trade Journal</p>
-          <h3 className="mt-2 text-xl font-semibold text-white">Notes for {coinName}</h3>
+          <div className="mt-2 flex items-center gap-2">
+            <img
+              src={coinImage}
+              alt={coinName}
+              className="h-6 w-6 rounded-full"
+            />
+            <h3 className="text-xl font-semibold text-white">Notes for {coinName}</h3>
+          </div>
         </div>
         <p
           data-testid="journal-note-count"
