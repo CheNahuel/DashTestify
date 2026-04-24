@@ -61,7 +61,7 @@ export const CoinChart = ({ data }: { data: CoinHistory | undefined }) => {
 
   return (
     <div data-testid="coin-chart">
-      <ResponsiveContainer width="100%" height={260}>
+      <ResponsiveContainer width="100%" height={360}>
         <LineChart data={formatted} margin={{ top: 8, right: 8, left: 0, bottom: 8 }}>
         <XAxis
           dataKey="time"
@@ -72,6 +72,7 @@ export const CoinChart = ({ data }: { data: CoinHistory | undefined }) => {
           axisLine={false}
         />
         <YAxis
+          domain={["dataMin", "dataMax"]}
           tickFormatter={(value) => `$${Number(value).toFixed(0)}`}
           width={64}
           stroke="#94a3b8"

@@ -253,6 +253,16 @@ export const CryptoDashboard = ({
     historyPrices.length > 0 ? Math.max(...historyPrices) : selectedCoin?.current_price;
   const selectedRangeLow =
     historyPrices.length > 0 ? Math.min(...historyPrices) : selectedCoin?.current_price;
+  
+  // Calculate price change for selected range
+  const selectedRangeChange =
+    historyPrices.length > 0
+      ? ((selectedCoin?.current_price - historyPrices[0]) / historyPrices[0]) * 100
+      : selectedCoin?.price_change_percentage_24h;
+  
+  // Get the label for the selected days (e.g., "24H", "7D", etc.)
+  const selectedDaysLabel = DAY_FILTERS.find((f) => f.value === days)?.label ?? `${days}d`;
+  
   const selectedCoinNotes =
     selectedCoin && hasHydratedStorage ? journalByCoin[selectedCoin.id] ?? [] : [];
   const watchlistCount = hasHydratedStorage ? favoriteIds.length : 0;
@@ -456,13 +466,13 @@ export const CryptoDashboard = ({
                         <span
                           data-testid="selected-asset-change"
                           className={`ml-3 text-sm font-semibold ${
-                            selectedCoin.price_change_percentage_24h >= 0
+                            selectedRangeChange >= 0
                               ? "text-emerald-300"
                               : "text-rose-300"
                           }`}
                         >
-                          {selectedCoin.price_change_percentage_24h >= 0 ? "+" : ""}
-                          {selectedCoin.price_change_percentage_24h.toFixed(2)}% in 24h
+                          {selectedRangeChange >= 0 ? "+" : ""}
+                          {selectedRangeChange.toFixed(2)}% in {selectedDaysLabel}
                         </span>
                       </p>
                     </div>
@@ -550,7 +560,7 @@ export const CryptoDashboard = ({
             ) : null}
           </div>
 
-          <aside className="rounded-3xl border border-white/10 bg-slate-900/60 p-5">
+          <aside className="rounded-3xl border border-white/10 bg-slate-900/60 p-5 max-h-[1200px] overflow-y-auto">
             <div className="mb-4 flex items-center justify-between">
               <div>
                 <p className="text-sm uppercase tracking-wider whitespace-nowrap text-slate-400">
@@ -573,6 +583,7 @@ export const CryptoDashboard = ({
                     isFavorite={favoriteIds.includes(coin.id)}
                     onSelect={(nextCoin) => setSelectedCoinId(nextCoin.id)}
                     onToggleFavorite={toggleFavorite}
+                    days={days}
                   />
                 ))
               ) : (
@@ -602,7 +613,7 @@ const StatCard = ({ label, value }: { label: string; value: string }) => {
   return (
     <div className="rounded-3xl border border-white/10 bg-slate-950/40 p-4">
       <p className="text-xs uppercase tracking-wider whitespace-nowrap text-slate-400">{label}</p>
-      <p className="mt-2 text-xl font-semibold text-white">{value}</p>
+      <p className="mt-1 text-lg font-semibold text-slate-300">{value}</p>
     </div>
   );
 };

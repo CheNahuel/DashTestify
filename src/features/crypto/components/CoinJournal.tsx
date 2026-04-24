@@ -56,7 +56,7 @@ export const CoinJournal = ({
   };
 
   return (
-    <div className="rounded-3xl border border-white/10 bg-slate-900/70 p-5">
+    <div className="rounded-3xl border border-white/10 bg-slate-900/70 p-5 max-h-[525px] overflow-y-auto">
       <div className="mb-4 flex items-center justify-between gap-3">
         <div>
           <p className="text-sm uppercase tracking-wider whitespace-nowrap text-slate-400">Trade Journal</p>

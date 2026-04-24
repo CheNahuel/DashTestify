@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { Coin } from "../types/coin";
+import { useCoinHistory } from "../hooks/useCoinHistory";
 
 const currencyFormatter = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -18,14 +19,24 @@ export const CoinCard = ({
   isFavorite,
   onSelect,
   onToggleFavorite,
+  days = 1,
 }: {
   coin: Coin;
   isSelected: boolean;
   isFavorite: boolean;
   onSelect: (coin: Coin) => void;
   onToggleFavorite: (coin: Coin) => void;
+  days?: number;
 }) => {
-  const isPositive = coin.price_change_percentage_24h >= 0;
+  const { data: history } = useCoinHistory(coin.id, days);
+  
+  const historyPrices = history?.prices.map(([, price]) => price) ?? [];
+  const priceChange =
+    historyPrices.length > 0
+      ? ((coin.current_price - historyPrices[0]) / historyPrices[0]) * 100
+      : coin.price_change_percentage_24h;
+  
+  const isPositive = priceChange >= 0;
 
   return (
     <article
@@ -95,7 +106,7 @@ export const CoinCard = ({
             }`}
           >
             {isPositive ? "+" : ""}
-            {coin.price_change_percentage_24h.toFixed(2)}%
+            {priceChange.toFixed(2)}%
           </p>
         </div>
 
