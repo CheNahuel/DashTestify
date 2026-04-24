@@ -253,16 +253,16 @@ export const CryptoDashboard = ({
     historyPrices.length > 0 ? Math.max(...historyPrices) : selectedCoin?.current_price;
   const selectedRangeLow =
     historyPrices.length > 0 ? Math.min(...historyPrices) : selectedCoin?.current_price;
-  
+
   // Calculate price change for selected range
   const selectedRangeChange =
     historyPrices.length > 0
       ? ((selectedCoin?.current_price - historyPrices[0]) / historyPrices[0]) * 100
       : selectedCoin?.price_change_percentage_24h;
-  
+
   // Get the label for the selected days (e.g., "24H", "7D", etc.)
   const selectedDaysLabel = DAY_FILTERS.find((f) => f.value === days)?.label ?? `${days}d`;
-  
+
   const selectedCoinNotes =
     selectedCoin && hasHydratedStorage ? journalByCoin[selectedCoin.id] ?? [] : [];
   const watchlistCount = hasHydratedStorage ? favoriteIds.length : 0;
@@ -332,8 +332,7 @@ export const CryptoDashboard = ({
   return (
     <Container>
       <section className="mb-8 rounded-[2rem] border border-white/10 bg-slate-950/70 p-6 shadow-2xl shadow-slate-950/40 backdrop-blur md:p-8">
-        <div className="mb-8 grid gap-6 xl:grid-cols-[minmax(0,1.25fr)_minmax(320px,0.95fr)] xl:items-end">
-        <div className="max-w-4xl">
+        <div className="max-w-5xl mb-6">
           <p className="mb-3 text-sm uppercase tracking-wider whitespace-nowrap text-cyan-300">
             Crypto Intelligence
           </p>
@@ -350,7 +349,8 @@ export const CryptoDashboard = ({
           </p>
         </div>
 
-          <div className="grid gap-3 rounded-[1.75rem] border border-white/10 bg-slate-950/45 p-4 md:p-5">
+        <div className="mb-6 grid gap-6 xl:grid-cols-[1.35fr_0.95fr] xl:items-end">
+          <div className="grid gap-4 rounded-[1.75rem] border border-white/10 bg-slate-950/45 p-4 md:p-5">
             <SearchBar value={search} onChange={setSearch} />
 
             <div className="grid gap-3 sm:grid-cols-2">
@@ -386,35 +386,34 @@ export const CryptoDashboard = ({
                 </select>
               </label>
             </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 w-full">
+              <button
+                type="button"
+                data-testid="reset-dashboard"
+                onClick={resetDashboard}
+                className="rounded-full border border-cyan-300/30 bg-cyan-300/10 px-4 py-2 text-sm font-semibold text-cyan-100 transition hover:border-cyan-300/60 hover:bg-cyan-300/20"
+              >
+                Reset dashboard
+              </button>
+
+              <button
+                type="button"
+                data-testid="favorites-filter"
+                aria-pressed={favoritesOnly}
+                onClick={() => setFavoritesOnly((current) => !current)}
+                className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${favoritesOnly
+                    ? "border-amber-300/50 bg-amber-300/15 text-amber-100"
+                    : "border-white/10 bg-slate-900/80 text-slate-300 hover:border-amber-300/30 hover:text-amber-100"
+                  }`}
+              >
+                Watchlist only
+              </button>
+
+              <StatusPill label="Visible Coins" value={String(filteredCoins.length)} />
+              <StatusPill label="Watchlist" value={String(watchlistCount)} />
+            </div>
           </div>
-        </div>
 
-        <div className="mb-6 flex flex-wrap items-center gap-3">
-          <button
-            type="button"
-            data-testid="reset-dashboard"
-            onClick={resetDashboard}
-            className="rounded-full border border-cyan-300/30 bg-cyan-300/10 px-4 py-2 text-sm font-semibold text-cyan-100 transition hover:border-cyan-300/60 hover:bg-cyan-300/20"
-          >
-            Reset dashboard
-          </button>
-
-          <button
-            type="button"
-            data-testid="favorites-filter"
-            aria-pressed={favoritesOnly}
-            onClick={() => setFavoritesOnly((current) => !current)}
-            className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
-              favoritesOnly
-                ? "border-amber-300/50 bg-amber-300/15 text-amber-100"
-                : "border-white/10 bg-slate-900/80 text-slate-300 hover:border-amber-300/30 hover:text-amber-100"
-            }`}
-          >
-            Watchlist only
-          </button>
-
-          <StatusPill label="Visible Coins" value={String(filteredCoins.length)} />
-          <StatusPill label="Watchlist" value={String(watchlistCount)} />
         </div>
 
         {error || marketUnavailable ? (
@@ -457,11 +456,10 @@ export const CryptoDashboard = ({
                           data-testid="selected-asset-favorite"
                           aria-pressed={favoriteIds.includes(selectedCoin.id)}
                           onClick={() => toggleFavorite(selectedCoin)}
-                          className={`rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wider whitespace-nowrap transition ${
-                            favoriteIds.includes(selectedCoin.id)
+                          className={`rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wider whitespace-nowrap transition ${favoriteIds.includes(selectedCoin.id)
                               ? "border-amber-300/50 bg-amber-300/15 text-amber-100"
                               : "border-white/10 bg-slate-950/70 text-slate-400 hover:border-amber-300/40 hover:text-amber-100"
-                          }`}
+                            }`}
                         >
                           {favoriteIds.includes(selectedCoin.id)
                             ? "In Watchlist"
@@ -472,11 +470,10 @@ export const CryptoDashboard = ({
                         {currencyFormatter.format(selectedCoin.current_price)}
                         <span
                           data-testid="selected-asset-change"
-                          className={`ml-3 text-sm font-semibold ${
-                            selectedRangeChange >= 0
+                          className={`ml-3 text-sm font-semibold ${selectedRangeChange >= 0
                               ? "text-emerald-300"
                               : "text-rose-300"
-                          }`}
+                            }`}
                         >
                           {selectedRangeChange >= 0 ? "+" : ""}
                           {selectedRangeChange.toFixed(2)}% in {selectedDaysLabel}
@@ -492,11 +489,10 @@ export const CryptoDashboard = ({
                           data-testid={`range-button-${filter.value}`}
                           aria-pressed={days === filter.value}
                           onClick={() => setDays(filter.value)}
-                          className={`rounded-full px-4 py-2 text-sm font-medium transition ${
-                            days === filter.value
+                          className={`rounded-full px-4 py-2 text-sm font-medium transition ${days === filter.value
                               ? "bg-cyan-300 text-slate-950"
                               : "bg-slate-800 text-slate-300 hover:bg-slate-700"
-                          }`}
+                            }`}
                         >
                           {filter.label}
                         </button>
@@ -612,8 +608,8 @@ export const CryptoDashboard = ({
 const StatusPill = ({ label, value }: { label: string; value: string }) => {
   return (
     <div className="rounded-full border border-white/10 bg-slate-900/80 px-4 py-2">
-      <p className="text-[10px] uppercase tracking-wider whitespace-nowrap text-slate-500">{label}</p>
-      <p className="mt-1 text-sm font-semibold text-slate-100">{value}</p>
+      <p className="text-[10px] uppercase tracking-wider whitespace-nowrap text-slate-500 text-center">{label}</p>
+      <p className="mt-1 text-sm font-semibold text-slate-100 text-center">{value}</p>
     </div>
   );
 };
@@ -621,8 +617,8 @@ const StatusPill = ({ label, value }: { label: string; value: string }) => {
 const StatCard = ({ label, value }: { label: string; value: string }) => {
   return (
     <div className="rounded-3xl border border-white/10 bg-slate-950/40 p-4">
-      <p className="text-xs uppercase tracking-wider whitespace-nowrap text-slate-400">{label}</p>
-      <p className="mt-1 text-lg font-semibold text-slate-300">{value}</p>
+      <p className="text-xs uppercase tracking-wider whitespace-nowrap text-slate-400 text-center">{label}</p>
+      <p className="mt-1 text-lg font-semibold text-slate-300 text-center">{value}</p>
     </div>
   );
 };
