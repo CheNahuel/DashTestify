@@ -1,6 +1,6 @@
-# Crypto Intelligence Dashboard
+# Crypto Intelligence Dashboard (Next.js + Playwright E2E Testing)
 
-A modern cryptocurrency dashboard built with Next.js, focused on real-time data visualization and robust end-to-end testing using Playwright.
+A modern cryptocurrency dashboard built with Next.js, showcasing real-time data visualization and a production-like end-to-end testing setup using Playwright.
 
 ---
 
@@ -12,8 +12,6 @@ A modern cryptocurrency dashboard built with Next.js, focused on real-time data 
 
 👉 https://chenahuel.github.io/DashTestify/
 
----
-
 ## 🚀 Features
 
 - Real-time crypto data from CoinCap API
@@ -23,7 +21,9 @@ A modern cryptocurrency dashboard built with Next.js, focused on real-time data 
 - Trade journal with validation logic
 - Responsive dark UI
 
----
+## 🎯 Why Playwright
+
+This project was built to explore modern end-to-end testing approaches using Playwright, focusing on reliability, speed, and maintainability compared to traditional frameworks.
 
 ## 🧪 Testing Strategy
 
@@ -37,7 +37,9 @@ This project emphasizes test reliability and maintainability:
 - **CI integration with GitHub Actions**
 - **Automated HTML reports published via GitHub Pages**
 
----
+## 🤖 AI-assisted Development
+
+AI tools were used to support test case generation, code review, and test validation, improving development speed and overall testing efficiency.
 
 ## 🛠 Tech Stack
 
@@ -49,9 +51,7 @@ This project emphasizes test reliability and maintainability:
 - Playwright (E2E Testing)
 - CoinCap API
 
----
-
-## 📂 Project Structure
+### 📂 Project Structure
 
 ```
 src/
@@ -80,34 +80,39 @@ tests/
 └── utils/                  # Test utilities
 ```
 
+### ▶️ Run Application
+
+```bash
+npm install
+npm run dev
+```
+
 ### 🧪 Run Tests
 
 ```bash
-npx playwright test
+npm run test:e2e
 ```
 
 ### 📊 Open Report
 
 ```bash
-npx playwright show-report
+npm run test:e2e:report
 ```
-
----
 
 ## ⚙️ CI/CD
 
-- GitHub Actions runs tests on every push/PR
-- Playwright HTML reports are published automatically via GitHub Pages
-
----
+- GitHub Actions pipeline runs automated tests on every push and pull request  
+- Test execution acts as a quality gate before deployment  
+- On successful validation, the application is automatically deployed to Vercel  
+- Playwright HTML reports are published via GitHub Pages  
 
 ## 📈 What This Project Demonstrates
 
-- Building scalable frontend architecture
-- Designing robust E2E testing strategies
-- Handling real-world API data and failures
-- Writing maintainable and reliable tests
-- Integrating CI pipelines and reporting
+- Designing scalable and maintainable test automation frameworks  
+- Implementing reliable end-to-end testing strategies with Playwright  
+- Integrating CI/CD pipelines with automated reporting  
+- Applying best practices for test stability and maintainability  
+- Using AI-assisted workflows to enhance testing efficiency  
 
 ## 📄 License
 
