@@ -33,8 +33,7 @@ export default async function Home({
     params.favoritesOnly === "1";
 
   const isMissingCanonicalDefaults =
-    hasDashboardState &&
-    (!params.days || !params.sort || !params.trend);
+    hasDashboardState && (!params.days || !params.sort || !params.trend);
 
   if (isMissingCanonicalDefaults) {
     const canonicalParams = new URLSearchParams();
@@ -67,9 +66,7 @@ export default async function Home({
   }
 
   const shouldUseMockClientData = params.mockData === "1";
-  const initialCoins: Coin[] = shouldUseMockClientData
-    ? []
-    : await getCoinsFromCoinCap();
+  const initialCoins: Coin[] = shouldUseMockClientData ? [] : await getCoinsFromCoinCap();
   const marketUnavailable = params.marketUnavailable === "1";
   const initialSearch = params.search ?? "";
   const initialSelectedCoinId = params.selectedCoin;

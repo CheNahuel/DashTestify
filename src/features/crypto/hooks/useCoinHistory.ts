@@ -9,10 +9,7 @@ export const useCoinHistory = (coinId: string | null, days: number) => {
     refetchOnMount: "always",
     refetchOnWindowFocus: false,
     retry: (failureCount, error) => {
-      if (
-        error instanceof Error &&
-        error.message.toLowerCase().includes("rate limit")
-      ) {
+      if (error instanceof Error && error.message.toLowerCase().includes("rate limit")) {
         return false;
       }
 

@@ -18,5 +18,4 @@ export const expectUrlPath = async (page: Page, expectedPath: string) => {
   await expect(page).toHaveURL(new RegExp(`${escapeRegExp(expectedPath)}$`));
 };
 
-const escapeRegExp = (value: string) =>
-  value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");

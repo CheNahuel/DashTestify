@@ -25,7 +25,7 @@ export async function GET() {
             ? "CoinCap rate limit reached. Please wait a moment and try again."
             : "Unable to load market data.",
       },
-      { status }
+      { status },
     );
   }
 }

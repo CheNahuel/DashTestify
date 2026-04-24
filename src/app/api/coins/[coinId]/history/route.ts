@@ -34,7 +34,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
             ? "CoinCap rate limit reached before fresh historical data could be fetched. Please wait a moment and try again."
             : "Unable to load historical data.",
       },
-      { status }
+      { status },
     );
   }
 }

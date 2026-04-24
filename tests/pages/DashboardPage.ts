@@ -85,7 +85,7 @@ export class DashboardPage {
   async expectRangeSelected(days: number) {
     await expect(this.page.getByTestId(getRangeButtonTestId(days))).toHaveAttribute(
       "aria-pressed",
-      "true"
+      "true",
     );
   }
 

@@ -1,4 +1,4 @@
-'use server';
+"use server";
 
 import { PriceAlertFormState } from "@/features/crypto/types/priceAlert";
 
@@ -20,7 +20,7 @@ const parseTargetPrice = (value: FormDataEntryValue | null) => {
 export async function submitPriceAlert(
   context: PriceAlertContext,
   _prevState: PriceAlertFormState,
-  formData: FormData
+  formData: FormData,
 ): Promise<PriceAlertFormState> {
   const emailValue = formData.get("email");
   const targetPriceValue = formData.get("targetPrice");

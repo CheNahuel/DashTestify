@@ -33,7 +33,7 @@ const getHistoryInterval = (days: number) => {
 
 export const getCoinHistoryFromCoinCap = async (
   coinId: string,
-  days: number
+  days: number,
 ): Promise<CoinHistory> => {
   const cacheKey = buildHistoryCacheKey(coinId, days);
   const cached = historyCache.get(cacheKey);
@@ -52,14 +52,11 @@ export const getCoinHistoryFromCoinCap = async (
           start: now - days * 24 * 60 * 60 * 1000,
           end: now,
         },
-      }
+      },
     );
 
     const data: CoinHistory = {
-      prices: response.data.data.map((point) => [
-        point.time,
-        Number(point.priceUsd),
-      ]),
+      prices: response.data.data.map((point) => [point.time, Number(point.priceUsd)]),
     };
 
     historyCache.set(cacheKey, {

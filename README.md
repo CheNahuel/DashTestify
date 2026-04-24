@@ -5,9 +5,11 @@ A modern cryptocurrency dashboard built with Next.js, focused on real-time data 
 ---
 
 ## 🌐 Live Demo
+
 👉 https://dash-testify.vercel.app/
 
 ## 🧪 Test Report (Playwright)
+
 👉 https://chenahuel.github.io/DashTestify/
 
 ---

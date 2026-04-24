@@ -29,13 +29,13 @@ export const CoinCard = ({
   days?: number;
 }) => {
   const { data: history } = useCoinHistory(coin.id, days);
-  
+
   const historyPrices = history?.prices.map(([, price]) => price) ?? [];
   const priceChange =
     historyPrices.length > 0
       ? ((coin.current_price - historyPrices[0]) / historyPrices[0]) * 100
       : coin.price_change_percentage_24h;
-  
+
   const isPositive = priceChange >= 0;
 
   return (
@@ -88,21 +88,13 @@ export const CoinCard = ({
         </button>
       </div>
 
-      <button
-        type="button"
-        onClick={() => onSelect(coin)}
-        className="block w-full text-left"
-      >
+      <button type="button" onClick={() => onSelect(coin)} className="block w-full text-left">
         <div className="mb-4 flex items-center justify-between">
-          <p className="text-lg font-bold">
-            {currencyFormatter.format(coin.current_price)}
-          </p>
+          <p className="text-lg font-bold">{currencyFormatter.format(coin.current_price)}</p>
 
           <p
             className={`rounded-full px-2.5 py-1 text-sm font-semibold ${
-              isPositive
-                ? "bg-emerald-500/10 text-emerald-300"
-                : "bg-rose-500/10 text-rose-300"
+              isPositive ? "bg-emerald-500/10 text-emerald-300" : "bg-rose-500/10 text-rose-300"
             }`}
           >
             {isPositive ? "+" : ""}
@@ -113,15 +105,11 @@ export const CoinCard = ({
         <div className="grid grid-cols-2 gap-3 text-sm text-slate-400">
           <div>
             <p className="mb-1 text-xs uppercase tracking-wider whitespace-nowrap">Market Cap</p>
-            <p className="text-slate-100">
-              ${compactFormatter.format(coin.market_cap)}
-            </p>
+            <p className="text-slate-100">${compactFormatter.format(coin.market_cap)}</p>
           </div>
           <div>
             <p className="mb-1 text-xs uppercase tracking-wider whitespace-nowrap">Volume</p>
-            <p className="text-slate-100">
-              ${compactFormatter.format(coin.total_volume)}
-            </p>
+            <p className="text-slate-100">${compactFormatter.format(coin.total_volume)}</p>
           </div>
         </div>
       </button>
