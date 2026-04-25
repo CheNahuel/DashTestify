@@ -101,18 +101,18 @@ npm run test:e2e:report
 
 ## ⚙️ CI/CD
 
-- GitHub Actions pipeline runs automated tests on every push and pull request  
-- Test execution acts as a quality gate before deployment  
-- On successful validation, the application is automatically deployed to Vercel  
-- Playwright HTML reports are published via GitHub Pages  
+- GitHub Actions pipeline runs automated tests on every push and pull request
+- Test execution acts as a quality gate before deployment
+- On successful validation, the application is automatically deployed to Vercel
+- Playwright HTML reports are published via GitHub Pages
 
 ## 📈 What This Project Demonstrates
 
-- Designing scalable and maintainable test automation frameworks  
-- Implementing reliable end-to-end testing strategies with Playwright  
-- Integrating CI/CD pipelines with automated reporting  
-- Applying best practices for test stability and maintainability  
-- Using AI-assisted workflows to enhance testing efficiency  
+- Designing scalable and maintainable test automation frameworks
+- Implementing reliable end-to-end testing strategies with Playwright
+- Integrating CI/CD pipelines with automated reporting
+- Applying best practices for test stability and maintainability
+- Using AI-assisted workflows to enhance testing efficiency
 
 ## 📄 License
 

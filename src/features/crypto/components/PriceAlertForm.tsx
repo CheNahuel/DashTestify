@@ -290,10 +290,7 @@ export const PriceAlertForm = ({
       </form>
 
       {deleteMessage && (
-        <div
-          data-testid="delete-alert-message"
-          className="mt-4 text-sm text-orange-400"
-        >
+        <div data-testid="delete-alert-message" className="mt-4 text-sm text-orange-400">
           {deleteMessage}
         </div>
       )}
