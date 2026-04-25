@@ -58,7 +58,10 @@ export const CoinCard = ({
           className="flex min-w-0 flex-1 items-center gap-3 text-left"
         >
           <Image
-            src={coin.image}
+            src={
+              coin.image ||
+              `data:image/svg+xml;base64,${btoa(`<svg width="40" height="40" xmlns="http://www.w3.org/2000/svg"><circle cx="20" cy="20" r="18" fill="#64748b"/><text x="20" y="25" text-anchor="middle" font-family="Arial" font-size="12" fill="white">${coin.symbol.slice(0, 2).toUpperCase()}</text></svg>`)}`
+            }
             alt={coin.name}
             width={40}
             height={40}
@@ -77,7 +80,10 @@ export const CoinCard = ({
           data-testid={`favorite-toggle-${coin.id}`}
           aria-pressed={isFavorite}
           aria-label={`${isFavorite ? "Remove" : "Add"} ${coin.name} ${isFavorite ? "from" : "to"} watchlist`}
-          onClick={() => onToggleFavorite(coin)}
+          onClick={() => {
+            onToggleFavorite(coin);
+            onSelect(coin);
+          }}
           className={`rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wider whitespace-nowrap transition ${
             isFavorite
               ? "border-amber-300/50 bg-amber-300/15 text-amber-100"

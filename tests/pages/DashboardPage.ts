@@ -28,6 +28,7 @@ export class DashboardPage {
   readonly alertTable: Locator;
   readonly marketErrorBanner: Locator;
   readonly noMatchMessage: Locator;
+  readonly watchlistCountPill: Locator;
 
   constructor(page: Page) {
     this.page = page;
@@ -56,6 +57,7 @@ export class DashboardPage {
     this.alertTable = page.getByTestId("alert-table");
     this.marketErrorBanner = page.getByTestId("market-error-banner");
     this.noMatchMessage = page.getByTestId("no-match-message");
+    this.watchlistCountPill = page.getByTestId("status-pill-watchlist");
   }
 
   async goto(path: string) {

@@ -188,6 +188,15 @@ export const CryptoDashboard = ({
     }
   }, [journalByCoin, hasHydratedStorage]);
 
+  // Reset selectedCoinId if it doesn't exist in available coins
+  useEffect(() => {
+    if (coins.length > 0 && selectedCoinId && !coins.find((coin) => coin.id === selectedCoinId)) {
+      startTransition(() => {
+        setSelectedCoinId(coins[0]?.id ?? "");
+      });
+    }
+  }, [coins, selectedCoinId]);
+
   const filteredCoins = useMemo(() => {
     const normalizedSearch = deferredSearch.trim().toLowerCase();
 
@@ -209,6 +218,9 @@ export const CryptoDashboard = ({
   }, [coins, deferredSearch, favoriteIds, favoritesOnly, sort, trend]);
 
   const selectedCoin = filteredCoins.find((coin) => coin.id === selectedCoinId) ?? filteredCoins[0];
+
+  // Show loading state when no coins are available yet
+  const isLoading = coins.length === 0 && isFetching;
 
   useEffect(() => {
     const params = new URLSearchParams(searchParams?.toString() ?? "");
@@ -425,8 +437,16 @@ export const CryptoDashboard = ({
                 Watchlist only
               </button>
 
-              <StatusPill label="Visible Coins" value={String(filteredCoins.length)} />
-              <StatusPill label="Watchlist" value={String(watchlistCount)} />
+              <StatusPill
+                label="Visible Coins"
+                value={String(filteredCoins.length)}
+                testId="status-pill-visible-coins"
+              />
+              <StatusPill
+                label="Watchlist"
+                value={String(watchlistCount)}
+                testId="status-pill-watchlist"
+              />
             </div>
           </div>
         </div>
@@ -444,7 +464,31 @@ export const CryptoDashboard = ({
         <div className="grid gap-6 xl:grid-cols-[1.35fr_0.95fr]">
           <div className="grid gap-6">
             <div className="rounded-3xl border border-white/10 bg-slate-900/80 p-5">
-              {selectedCoin ? (
+              {isLoading ? (
+                <div className="animate-pulse">
+                  <div className="mb-6 flex flex-col gap-4 border-b border-white/10 pb-5 md:flex-row md:items-end md:justify-between">
+                    <div>
+                      <p className="text-sm uppercase tracking-wider whitespace-nowrap text-slate-400">
+                        Selected Asset
+                      </p>
+                      <div className="mt-2 flex flex-wrap items-center gap-3">
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 rounded-full bg-slate-700" />
+                          <div className="h-8 bg-slate-700 rounded w-32" />
+                        </div>
+                        <div className="h-8 bg-slate-700 rounded w-24" />
+                      </div>
+                      <div className="mt-2 h-6 bg-slate-700 rounded w-48" />
+                    </div>
+                  </div>
+                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                    <div className="h-20 bg-slate-700 rounded" />
+                    <div className="h-20 bg-slate-700 rounded" />
+                    <div className="h-20 bg-slate-700 rounded" />
+                    <div className="h-20 bg-slate-700 rounded" />
+                  </div>
+                </div>
+              ) : selectedCoin ? (
                 <>
                   <div className="mb-6 flex flex-col gap-4 border-b border-white/10 pb-5 md:flex-row md:items-end md:justify-between">
                     <div>
@@ -454,7 +498,10 @@ export const CryptoDashboard = ({
                       <div className="mt-2 flex flex-wrap items-center gap-3">
                         <div className="flex items-center gap-3">
                           <Image
-                            src={selectedCoin.image}
+                            src={
+                              selectedCoin.image ||
+                              `data:image/svg+xml;base64,${btoa(`<svg width="40" height="40" xmlns="http://www.w3.org/2000/svg"><circle cx="20" cy="20" r="18" fill="#64748b"/><text x="20" y="25" text-anchor="middle" font-family="Arial" font-size="12" fill="white">${selectedCoin.symbol.slice(0, 2).toUpperCase()}</text></svg>`)}`
+                            }
                             alt={selectedCoin.name}
                             width={40}
                             height={40}
@@ -562,7 +609,7 @@ export const CryptoDashboard = ({
               )}
             </div>
 
-            {selectedCoin ? (
+            {selectedCoin && !isLoading ? (
               <div className="grid gap-6 lg:grid-cols-[1fr_1fr]">
                 <PriceAlertForm
                   coinId={selectedCoin.id}
@@ -622,9 +669,20 @@ export const CryptoDashboard = ({
   );
 };
 
-const StatusPill = ({ label, value }: { label: string; value: string }) => {
+const StatusPill = ({
+  label,
+  value,
+  testId,
+}: {
+  label: string;
+  value: string;
+  testId?: string;
+}) => {
   return (
-    <div className="rounded-full border border-white/10 bg-slate-900/80 px-4 py-2">
+    <div
+      className="rounded-full border border-white/10 bg-slate-900/80 px-4 py-2"
+      data-testid={testId}
+    >
       <p className="text-[10px] uppercase tracking-wider whitespace-nowrap text-slate-500 text-center">
         {label}
       </p>

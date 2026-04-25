@@ -72,7 +72,10 @@ const AlertTable = ({
                   <td className="px-3 py-2 text-slate-200 text-sm whitespace-pre-wrap">
                     <div className="flex items-center gap-2">
                       <Image
-                        src={alert.coinImage}
+                        src={
+                          alert.coinImage ||
+                          `data:image/svg+xml;base64,${btoa(`<svg width="20" height="20" xmlns="http://www.w3.org/2000/svg"><circle cx="10" cy="10" r="8" fill="#64748b"/><text x="10" y="13" text-anchor="middle" font-family="Arial" font-size="6" fill="white">${alert.coinId.slice(0, 2).toUpperCase()}</text></svg>`)}`
+                        }
                         alt={alert.coinName}
                         width={20}
                         height={20}
@@ -167,9 +170,8 @@ export const PriceAlertForm = ({
       startTransition(() => {
         setAlerts((prev) => [...prev, newAlert]);
         setSuccessMessage(state.message || "");
+        formRef.current?.reset();
       });
-
-      formRef.current?.reset();
 
       // Clear success message after 3 seconds
       setTimeout(() => setSuccessMessage(""), 3000);
@@ -218,7 +220,10 @@ export const PriceAlertForm = ({
         </p>
         <div className="mt-2 flex items-center gap-2">
           <Image
-            src={coinImage}
+            src={
+              coinImage ||
+              `data:image/svg+xml;base64,${btoa(`<svg width="24" height="24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10" fill="#64748b"/><text x="12" y="16" text-anchor="middle" font-family="Arial" font-size="8" fill="white">${coinId.slice(0, 2).toUpperCase()}</text></svg>`)}`
+            }
             alt={coinName}
             width={24}
             height={24}

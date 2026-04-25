@@ -21,16 +21,19 @@ const toNumber = (value: string | null | undefined) => {
   return Number.isFinite(parsed) ? parsed : 0;
 };
 
-const mapAssetToCoin = (asset: CoinCapAsset): Coin => ({
-  id: asset.id,
-  name: asset.name,
-  symbol: asset.symbol,
-  current_price: toNumber(asset.priceUsd),
-  price_change_percentage_24h: toNumber(asset.changePercent24Hr),
-  image: `https://assets.coincap.io/assets/icons/${asset.symbol.toLowerCase()}@2x.png`,
-  market_cap: toNumber(asset.marketCapUsd),
-  total_volume: toNumber(asset.volumeUsd24Hr),
-});
+const mapAssetToCoin = (asset: CoinCapAsset): Coin => {
+  const symbol = asset.symbol?.toLowerCase() || "unknown";
+  return {
+    id: asset.id,
+    name: asset.name,
+    symbol: asset.symbol,
+    current_price: toNumber(asset.priceUsd),
+    price_change_percentage_24h: toNumber(asset.changePercent24Hr),
+    image: `https://assets.coincap.io/assets/icons/${symbol}@2x.png`,
+    market_cap: toNumber(asset.marketCapUsd),
+    total_volume: toNumber(asset.volumeUsd24Hr),
+  };
+};
 
 export const getCoinsFromCoinCap = async (): Promise<Coin[]> => {
   const now = Date.now();

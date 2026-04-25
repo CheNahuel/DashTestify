@@ -196,3 +196,81 @@ test("delete message auto-disappears after 3 seconds", async ({ dashboardData, d
   // Wait for the message to auto-disappear
   await expect(dashboardPage.deleteAlertMessage).toBeHidden({ timeout: 4000 });
 });
+
+test("watchlist counter increments and decrements correctly with multiple toggles", async ({
+  dashboardData,
+  dashboardPage,
+}) => {
+  await dashboardPage.goto(dashboardData.urls.home);
+  await waitForDashboardData(dashboardPage.page);
+
+  // Verify watchlist starts at 0
+  await expect(dashboardPage.watchlistCountPill).toContainText("0");
+
+  // Add Bitcoin to watchlist
+  await dashboardPage.toggleFavorite("bitcoin");
+  await expect(dashboardPage.watchlistCountPill).toContainText("1");
+  await expect(dashboardPage.page.getByTestId("favorite-toggle-bitcoin")).toContainText("Saved");
+
+  // Add Ethereum to watchlist
+  await dashboardPage.toggleFavorite("ethereum");
+  await expect(dashboardPage.watchlistCountPill).toContainText("2");
+  await expect(dashboardPage.page.getByTestId("favorite-toggle-ethereum")).toContainText("Saved");
+
+  // Add Solana to watchlist
+  await dashboardPage.toggleFavorite("solana");
+  await expect(dashboardPage.watchlistCountPill).toContainText("3");
+  await expect(dashboardPage.page.getByTestId("favorite-toggle-solana")).toContainText("Saved");
+
+  // Remove Ethereum from watchlist
+  await dashboardPage.toggleFavorite("ethereum");
+  await expect(dashboardPage.watchlistCountPill).toContainText("2");
+  await expect(dashboardPage.page.getByTestId("favorite-toggle-ethereum")).toContainText("Watch");
+
+  // Remove Bitcoin from watchlist
+  await dashboardPage.toggleFavorite("bitcoin");
+  await expect(dashboardPage.watchlistCountPill).toContainText("1");
+  await expect(dashboardPage.page.getByTestId("favorite-toggle-bitcoin")).toContainText("Watch");
+
+  // Remove Solana from watchlist
+  await dashboardPage.toggleFavorite("solana");
+  await expect(dashboardPage.watchlistCountPill).toContainText("0");
+  await expect(dashboardPage.page.getByTestId("favorite-toggle-solana")).toContainText("Watch");
+});
+
+test("watchlist counter persists after reload with multiple items", async ({
+  dashboardData,
+  dashboardPage,
+}) => {
+  await dashboardPage.goto(dashboardData.urls.home);
+  await waitForDashboardData(dashboardPage.page);
+
+  // Add multiple coins to watchlist
+  await dashboardPage.toggleFavorite("bitcoin");
+  await dashboardPage.toggleFavorite("ethereum");
+  await dashboardPage.toggleFavorite("solana");
+
+  await expect(dashboardPage.watchlistCountPill).toContainText("3");
+
+  // Reload and verify watchlist persists
+  await dashboardPage.page.reload();
+  await waitForDashboardData(dashboardPage.page);
+
+  await expect(dashboardPage.watchlistCountPill).toContainText("3");
+  await expect(dashboardPage.page.getByTestId("favorite-toggle-bitcoin")).toContainText("Saved");
+  await expect(dashboardPage.page.getByTestId("favorite-toggle-ethereum")).toContainText("Saved");
+  await expect(dashboardPage.page.getByTestId("favorite-toggle-solana")).toContainText("Saved");
+
+  // Remove one and verify count updates
+  await dashboardPage.toggleFavorite("ethereum");
+  await expect(dashboardPage.watchlistCountPill).toContainText("2");
+
+  // Reload again and verify persistence
+  await dashboardPage.page.reload();
+  await waitForDashboardData(dashboardPage.page);
+
+  await expect(dashboardPage.watchlistCountPill).toContainText("2");
+  await expect(dashboardPage.page.getByTestId("favorite-toggle-bitcoin")).toContainText("Saved");
+  await expect(dashboardPage.page.getByTestId("favorite-toggle-ethereum")).toContainText("Watch");
+  await expect(dashboardPage.page.getByTestId("favorite-toggle-solana")).toContainText("Saved");
+});

@@ -67,7 +67,10 @@ export const CoinJournal = ({
           </p>
           <div className="mt-2 flex items-center gap-2">
             <Image
-              src={coinImage}
+              src={
+                coinImage ||
+                `data:image/svg+xml;base64,${btoa(`<svg width="24" height="24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10" fill="#64748b"/><text x="12" y="16" text-anchor="middle" font-family="Arial" font-size="8" fill="white">${coinId.slice(0, 2).toUpperCase()}</text></svg>`)}`
+              }
               alt={coinName}
               width={24}
               height={24}
