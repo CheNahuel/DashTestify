@@ -21,7 +21,7 @@ test("toggle shows 'Mock data' when mockData=1 is in URL", async ({
   await dashboardPage.goto(dashboardData.urls.home); // /?mockData=1
   await waitForDashboardData(dashboardPage.page);
 
-  await expect(dashboardPage.dataSourceToggle).toHaveText("Mock data");
+  await expect(dashboardPage.dataSourceToggle).toHaveText("Mock");
   await expect(dashboardPage.dataSourceToggle).toHaveAttribute("aria-pressed", "true");
 });
 
@@ -30,11 +30,11 @@ test("toggle shows 'Live data' when mockData param is absent", async ({ dashboar
   await expect(dashboardPage.dataSourceToggle).toBeVisible();
 
   // Skip when no API key is configured — the button is disabled and always
-  // shows "Mock data" regardless of URL params.
+  // shows "Mock" regardless of URL params.
   const isDisabled = await dashboardPage.dataSourceToggle.isDisabled();
   test.skip(isDisabled, "Requires COINCAP_API_KEY — toggle is disabled in mock-only mode");
 
-  await expect(dashboardPage.dataSourceToggle).toHaveText("Live data");
+  await expect(dashboardPage.dataSourceToggle).toHaveText("Live");
   await expect(dashboardPage.dataSourceToggle).toHaveAttribute("aria-pressed", "false");
 });
 
@@ -51,7 +51,7 @@ test("clicking toggle from mock mode removes mockData param from URL", async ({
   await dashboardPage.dataSourceToggle.click();
 
   await expect(dashboardPage.page).not.toHaveURL(/mockData=1/);
-  await expect(dashboardPage.dataSourceToggle).toHaveText("Live data");
+  await expect(dashboardPage.dataSourceToggle).toHaveText("Live");
 });
 
 test("clicking toggle from live mode adds mockData=1 to URL", async ({ dashboardPage }) => {
@@ -64,7 +64,7 @@ test("clicking toggle from live mode adds mockData=1 to URL", async ({ dashboard
   await dashboardPage.dataSourceToggle.click();
 
   await expect(dashboardPage.page).toHaveURL(/mockData=1/);
-  await expect(dashboardPage.dataSourceToggle).toHaveText("Mock data");
+  await expect(dashboardPage.dataSourceToggle).toHaveText("Mock");
 });
 
 test("toggle preserves other URL params when switching modes", async ({ dashboardPage }) => {
@@ -96,9 +96,9 @@ test("toggling back and forth stabilises on the last mode", async ({
   test.skip(isDisabled, "Requires COINCAP_API_KEY — toggle is disabled in mock-only mode");
 
   await dashboardPage.dataSourceToggle.click();
-  await expect(dashboardPage.dataSourceToggle).toHaveText("Live data");
+  await expect(dashboardPage.dataSourceToggle).toHaveText("Live");
 
   await dashboardPage.dataSourceToggle.click();
-  await expect(dashboardPage.dataSourceToggle).toHaveText("Mock data");
+  await expect(dashboardPage.dataSourceToggle).toHaveText("Mock");
   await expect(dashboardPage.page).toHaveURL(/mockData=1/);
 });

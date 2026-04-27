@@ -377,9 +377,43 @@ export const CryptoDashboard = ({
 
   return (
     <Container>
-      <section className="mb-8 rounded-[2rem] border border-white/10 bg-slate-950/70 p-6 shadow-2xl shadow-slate-950/40 backdrop-blur md:p-8">
+      <section className="relative mb-8 rounded-[2rem] border border-white/10 bg-slate-950/70 p-6 shadow-2xl shadow-slate-950/40 backdrop-blur md:p-8">
+        <button
+          type="button"
+          data-testid="data-source-toggle"
+          aria-pressed={useMock}
+          onClick={isLiveAvailable ? toggleDataSource : undefined}
+          disabled={!isLiveAvailable}
+          title={
+            !isLiveAvailable
+              ? "Set COINCAP_API_KEY to enable live data"
+              : useMock
+                ? "Switch to live data"
+                : "Switch to mock data"
+          }
+          className={`absolute top-5 right-5 md:top-7 md:right-7 flex items-center gap-2 rounded-full border px-5 py-3 text-[13px] font-bold uppercase tracking-widest transition ${
+            !isLiveAvailable
+              ? "border-slate-700/40 bg-slate-900/60 text-slate-600 cursor-not-allowed"
+              : useMock
+                ? "border-slate-600/40 bg-slate-800/60 text-slate-400 hover:border-slate-500/60 hover:text-slate-300"
+                : "border-emerald-500/30 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20"
+          }`}
+        >
+          <span className="relative flex h-2 w-2 shrink-0">
+            {!useMock && isLiveAvailable && (
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+            )}
+            <span
+              className={`relative inline-flex h-2 w-2 rounded-full ${
+                !useMock && isLiveAvailable ? "bg-emerald-400" : "bg-slate-600"
+              }`}
+            />
+          </span>
+          {useMock ? "Mock" : "Live"}
+        </button>
+
         <div className="max-w-5xl mb-6">
-          <p className="mb-3 text-sm uppercase tracking-wider whitespace-nowrap text-cyan-300">
+          <p className="mb-5 text-sm uppercase tracking-wider whitespace-nowrap text-cyan-300">
             Crypto Intelligence
           </p>
           <h1 className="text-4xl font-semibold tracking-tight text-white md:text-5xl">
@@ -431,7 +465,7 @@ export const CryptoDashboard = ({
                 </select>
               </label>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 w-full">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 w-full">
               <button
                 type="button"
                 data-testid="reset-dashboard"
@@ -453,24 +487,6 @@ export const CryptoDashboard = ({
                 }`}
               >
                 Watchlist only
-              </button>
-
-              <button
-                type="button"
-                data-testid="data-source-toggle"
-                aria-pressed={useMock}
-                onClick={isLiveAvailable ? toggleDataSource : undefined}
-                disabled={!isLiveAvailable}
-                title={!isLiveAvailable ? "Set COINCAP_API_KEY to enable live data" : undefined}
-                className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
-                  !isLiveAvailable
-                    ? "border-violet-400/30 bg-violet-400/10 text-violet-300/60 cursor-not-allowed"
-                    : useMock
-                      ? "border-violet-400/50 bg-violet-400/15 text-violet-200"
-                      : "border-emerald-400/50 bg-emerald-400/10 text-emerald-200 hover:bg-emerald-400/20"
-                }`}
-              >
-                {useMock ? "Mock data" : "Live data"}
               </button>
 
               <StatusPill
