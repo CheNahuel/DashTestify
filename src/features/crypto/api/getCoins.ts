@@ -1,7 +1,8 @@
 import { Coin } from "../types/coin";
 
-export const getCoins = async (): Promise<Coin[]> => {
-  const response = await fetch("/api/coins/markets", {
+export const getCoins = async (useMock = false): Promise<Coin[]> => {
+  const url = useMock ? "/api/coins/markets?mock=1" : "/api/coins/markets";
+  const response = await fetch(url, {
     method: "GET",
   });
 

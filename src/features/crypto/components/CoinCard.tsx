@@ -20,6 +20,7 @@ export const CoinCard = ({
   onSelect,
   onToggleFavorite,
   days = 1,
+  useMock = false,
 }: {
   coin: Coin;
   isSelected: boolean;
@@ -27,8 +28,9 @@ export const CoinCard = ({
   onSelect: (coin: Coin) => void;
   onToggleFavorite: (coin: Coin) => void;
   days?: number;
+  useMock?: boolean;
 }) => {
-  const { data: history } = useCoinHistory(coin.id, days);
+  const { data: history } = useCoinHistory(coin.id, days, useMock);
 
   const historyPrices = history?.prices.map(([, price]) => price) ?? [];
   const priceChange =

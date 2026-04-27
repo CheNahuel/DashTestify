@@ -1,10 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { getCoinHistory } from "../api/getCoinHistory";
 
-export const useCoinHistory = (coinId: string | null, days: number) => {
+export const useCoinHistory = (coinId: string | null, days: number, useMock = false) => {
   return useQuery({
-    queryKey: ["coin-history", coinId, days],
-    queryFn: () => getCoinHistory(coinId!, days),
+    queryKey: ["coin-history", coinId, days, useMock],
+    queryFn: () => getCoinHistory(coinId!, days, useMock),
     enabled: Boolean(coinId),
     refetchOnMount: "always",
     refetchOnWindowFocus: false,

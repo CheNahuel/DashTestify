@@ -14,6 +14,10 @@ export const waitForDashboardData = async (page: Page) => {
   await page.getByTestId("coin-card").first().waitFor();
 };
 
+export const waitForHistoryData = async (page: Page) => {
+  await page.waitForResponse(/.*\/api\/coins\/.*\/history.*/);
+};
+
 export const expectUrlPath = async (page: Page, expectedPath: string) => {
   await expect(page).toHaveURL(new RegExp(`${escapeRegExp(expectedPath)}$`));
 };

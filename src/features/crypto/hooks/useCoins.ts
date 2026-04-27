@@ -2,10 +2,10 @@ import { Coin } from "../types/coin";
 import { useQuery } from "@tanstack/react-query";
 import { getCoins } from "../api/getCoins";
 
-export const useCoins = (initialData?: Coin[]) => {
+export const useCoins = (initialData?: Coin[], useMock = false) => {
   return useQuery({
-    queryKey: ["coins"],
-    queryFn: getCoins,
+    queryKey: ["coins", useMock],
+    queryFn: () => getCoins(useMock),
     initialData,
     staleTime: 0,
     refetchOnMount: "always",

@@ -130,6 +130,7 @@ export const CryptoDashboard = ({
   initialSort = DEFAULT_SORT,
   initialFavoritesOnly = false,
   initialTrend = DEFAULT_TREND,
+  isLiveAvailable = false,
 }: {
   initialCoins: Coin[];
   marketUnavailable?: boolean;
@@ -139,12 +140,15 @@ export const CryptoDashboard = ({
   initialSort?: string;
   initialFavoritesOnly?: boolean;
   initialTrend?: string;
+  isLiveAvailable?: boolean;
 }) => {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const { data: coins = initialCoins, isFetching, error } = useCoins(initialCoins);
+  const useMock = !isLiveAvailable || searchParams?.get("mockData") === "1";
+
+  const { data: coins = initialCoins, isFetching, error } = useCoins(initialCoins, useMock);
   const [search, setSearch] = useState(initialSearch);
   const [selectedCoinId, setSelectedCoinId] = useState(
     initialSelectedCoinId ?? initialCoins[0]?.id ?? "",
@@ -276,7 +280,7 @@ export const CryptoDashboard = ({
     isLoading: isHistoryLoading,
     isFetching: isHistoryFetching,
     error: historyError,
-  } = useCoinHistory(selectedCoin?.id ?? null, days);
+  } = useCoinHistory(selectedCoin?.id ?? null, days, useMock);
 
   const historyPrices = history?.prices.map(([, price]) => price) ?? [];
   const selectedRangeHigh =
@@ -308,7 +312,7 @@ export const CryptoDashboard = ({
   const resetDashboard = () => {
     const resetParams = new URLSearchParams();
 
-    if (searchParams?.get("mockData") === "1") {
+    if (useMock) {
       resetParams.set("mockData", "1");
     }
 
@@ -326,6 +330,20 @@ export const CryptoDashboard = ({
     const nextUrl = resetParams.toString() ? `${pathname}?${resetParams.toString()}` : pathname;
 
     router.replace(nextUrl, { scroll: false });
+  };
+
+  const toggleDataSource = () => {
+    const params = new URLSearchParams(searchParams?.toString() ?? "");
+
+    if (useMock) {
+      params.delete("mockData");
+    } else {
+      params.set("mockData", "1");
+    }
+
+    router.replace(params.toString() ? `${pathname}?${params.toString()}` : pathname, {
+      scroll: false,
+    });
   };
 
   const addJournalEntry = (coinId: string, note: string) => {
@@ -413,7 +431,7 @@ export const CryptoDashboard = ({
                 </select>
               </label>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 w-full">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 w-full">
               <button
                 type="button"
                 data-testid="reset-dashboard"
@@ -435,6 +453,24 @@ export const CryptoDashboard = ({
                 }`}
               >
                 Watchlist only
+              </button>
+
+              <button
+                type="button"
+                data-testid="data-source-toggle"
+                aria-pressed={useMock}
+                onClick={isLiveAvailable ? toggleDataSource : undefined}
+                disabled={!isLiveAvailable}
+                title={!isLiveAvailable ? "Set COINCAP_API_KEY to enable live data" : undefined}
+                className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
+                  !isLiveAvailable
+                    ? "border-violet-400/30 bg-violet-400/10 text-violet-300/60 cursor-not-allowed"
+                    : useMock
+                      ? "border-violet-400/50 bg-violet-400/15 text-violet-200"
+                      : "border-emerald-400/50 bg-emerald-400/10 text-emerald-200 hover:bg-emerald-400/20"
+                }`}
+              >
+                {useMock ? "Mock data" : "Live data"}
               </button>
 
               <StatusPill
@@ -580,7 +616,7 @@ export const CryptoDashboard = ({
                     </div>
                   )}
 
-                  <div className="mt-6 grid gap-4 md:grid-cols-4">
+                  <div data-testid="stat-cards" className="mt-6 grid gap-4 md:grid-cols-4">
                     <StatCard
                       label="Market Cap"
                       value={`$${compactFormatter.format(selectedCoin.market_cap)}`}
@@ -653,6 +689,7 @@ export const CryptoDashboard = ({
                     onSelect={(nextCoin) => setSelectedCoinId(nextCoin.id)}
                     onToggleFavorite={toggleFavorite}
                     days={days}
+                    useMock={useMock}
                   />
                 ))
               ) : (

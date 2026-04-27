@@ -36,6 +36,10 @@ const mapAssetToCoin = (asset: CoinCapAsset): Coin => {
 };
 
 export const getCoinsFromCoinCap = async (): Promise<Coin[]> => {
+  if (!process.env.COINCAP_API_KEY) {
+    return getMockCoins();
+  }
+
   const now = Date.now();
 
   if (coinsCache && now - coinsCache.fetchedAt < COINS_TTL_MS) {

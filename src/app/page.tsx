@@ -65,7 +65,8 @@ export default async function Home({
     redirect(`/?${canonicalParams.toString()}`);
   }
 
-  const shouldUseMockClientData = params.mockData === "1";
+  const isLiveAvailable = Boolean(process.env.COINCAP_API_KEY);
+  const shouldUseMockClientData = params.mockData === "1" || !isLiveAvailable;
   const initialCoins: Coin[] = shouldUseMockClientData ? [] : await getCoinsFromCoinCap();
   const marketUnavailable = params.marketUnavailable === "1";
   const initialSearch = params.search ?? "";
@@ -85,6 +86,7 @@ export default async function Home({
       initialSort={initialSort}
       initialFavoritesOnly={initialFavoritesOnly}
       initialTrend={initialTrend}
+      isLiveAvailable={isLiveAvailable}
     />
   );
 }

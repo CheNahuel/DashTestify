@@ -1,9 +1,11 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getCoinsFromCoinCap } from "@/features/crypto/server/getCoinsFromCoinCap";
+import { getMockCoins } from "@/features/crypto/server/mockCryptoData";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const coins = await getCoinsFromCoinCap();
+    const useMock = request.nextUrl.searchParams.get("mock") === "1";
+    const coins = useMock ? getMockCoins() : await getCoinsFromCoinCap();
 
     return NextResponse.json(coins);
   } catch (error: unknown) {

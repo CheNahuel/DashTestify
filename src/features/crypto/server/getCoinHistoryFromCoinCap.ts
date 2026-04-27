@@ -35,6 +35,10 @@ export const getCoinHistoryFromCoinCap = async (
   coinId: string,
   days: number,
 ): Promise<CoinHistory> => {
+  if (!process.env.COINCAP_API_KEY) {
+    return getMockCoinHistory(coinId, days);
+  }
+
   const cacheKey = buildHistoryCacheKey(coinId, days);
   const cached = historyCache.get(cacheKey);
   const now = Date.now();

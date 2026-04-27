@@ -8,10 +8,15 @@ export class DashboardPage {
   readonly trendSelect: Locator;
   readonly favoritesFilter: Locator;
   readonly resetButton: Locator;
+  readonly dataSourceToggle: Locator;
   readonly selectedAssetName: Locator;
   readonly selectedAssetPrice: Locator;
   readonly selectedAssetChange: Locator;
+  readonly selectedAssetFavorite: Locator;
   readonly coinsList: Locator;
+  readonly coinChart: Locator;
+  readonly coinChartEmpty: Locator;
+  readonly statCards: Locator;
   readonly journalInput: Locator;
   readonly journalSubmit: Locator;
   readonly journalEntries: Locator;
@@ -29,6 +34,7 @@ export class DashboardPage {
   readonly marketErrorBanner: Locator;
   readonly noMatchMessage: Locator;
   readonly watchlistCountPill: Locator;
+  readonly visibleCoinsPill: Locator;
 
   constructor(page: Page) {
     this.page = page;
@@ -37,10 +43,15 @@ export class DashboardPage {
     this.trendSelect = page.getByTestId("trend-select");
     this.favoritesFilter = page.getByTestId("favorites-filter");
     this.resetButton = page.getByTestId("reset-dashboard");
+    this.dataSourceToggle = page.getByTestId("data-source-toggle");
     this.selectedAssetName = page.getByTestId("selected-asset-name");
     this.selectedAssetPrice = page.getByTestId("selected-asset-price");
     this.selectedAssetChange = page.getByTestId("selected-asset-change");
+    this.selectedAssetFavorite = page.getByTestId("selected-asset-favorite");
     this.coinsList = page.getByTestId("coins-list");
+    this.coinChart = page.getByTestId("coin-chart");
+    this.coinChartEmpty = page.getByTestId("coin-chart-empty");
+    this.statCards = page.getByTestId("stat-cards");
     this.journalInput = page.getByTestId("journal-input");
     this.journalSubmit = page.getByTestId("journal-submit");
     this.journalEntries = page.getByTestId("journal-entries");
@@ -58,6 +69,7 @@ export class DashboardPage {
     this.marketErrorBanner = page.getByTestId("market-error-banner");
     this.noMatchMessage = page.getByTestId("no-match-message");
     this.watchlistCountPill = page.getByTestId("status-pill-watchlist");
+    this.visibleCoinsPill = page.getByTestId("status-pill-visible-coins");
   }
 
   async goto(path: string) {
@@ -80,6 +92,14 @@ export class DashboardPage {
     await this.page.getByTestId(`favorite-toggle-${coinId}`).click();
   }
 
+  async selectRangeDays(days: number) {
+    await this.page.getByTestId(getRangeButtonTestId(days)).click();
+  }
+
+  async clickCoinCard(coinId: string) {
+    await this.coinCard(coinId).getByRole("button", { name: new RegExp(coinId, "i") }).first().click();
+  }
+
   async expectSelectedAsset(name: string) {
     await expect(this.selectedAssetName).toHaveText(name);
   }
@@ -89,6 +109,10 @@ export class DashboardPage {
       "aria-pressed",
       "true",
     );
+  }
+
+  async expectVisibleCoinsCount(count: number) {
+    await expect(this.visibleCoinsPill).toContainText(String(count));
   }
 
   coinCard(coinId: string) {
