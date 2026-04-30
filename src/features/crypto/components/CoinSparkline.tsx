@@ -20,10 +20,10 @@ export const CoinSparkline = ({
   const gradientId = `sparkline-${coinId}`;
 
   return (
-    <div data-testid="coin-sparkline" className="h-20 w-full">
-      <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
-      <AreaChart data={data} margin={{ top: 2, right: 100, left: 100, bottom: 2 }}>
-      <XAxis dataKey="time" type="number" hide={true} domain={['dataMin', 'dataMax']} />
+    <div data-testid="coin-sparkline" className="h-20 w-full relative">
+      <ResponsiveContainer width="100%"  height={58}>
+      <AreaChart data={data} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
+      <XAxis dataKey="time" type="number"  hide={true} domain={['dataMin', 'dataMax']} />
         <YAxis hide={true} domain={['auto', 'auto']} />
           <defs>
             <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
