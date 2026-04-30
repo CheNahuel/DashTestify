@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { Coin } from "../types/coin";
 import { useCoinHistory } from "../hooks/useCoinHistory";
+import { CoinSparkline } from "./CoinSparkline";
 
 const currencyFormatter = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -33,6 +34,7 @@ export const CoinCard = ({
   const { data: history } = useCoinHistory(coin.id, days, useMock);
 
   const historyPrices = history?.prices.map(([, price]) => price) ?? [];
+  const sparklinePrices = history?.prices ?? [];
   const priceChange =
     historyPrices.length > 0
       ? ((coin.current_price - historyPrices[0]) / historyPrices[0]) * 100
@@ -109,6 +111,12 @@ export const CoinCard = ({
             {priceChange.toFixed(2)}%
           </p>
         </div>
+
+        {sparklinePrices.length > 0 && (
+          <div className="h-full w-full">
+            <CoinSparkline prices={sparklinePrices} isPositive={isPositive} coinId={coin.id} />
+          </div>
+        )}
 
         <div className="grid grid-cols-2 gap-3 text-sm text-slate-400">
           <div>
