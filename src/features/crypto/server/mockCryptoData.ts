@@ -178,6 +178,7 @@ export const getMockCoins = (): Coin[] => {
 };
 
 const pointsForDays = (days: number) => {
+  if (days < 0.1) return 12; // 5-min intervals for 1H
   if (days <= 1) return 24; // Hourly for 24H
   if (days <= 7) return days * 24; // Daily for 7D
   if (days <= 30) return days * 4; // 6-hour intervals for 30D
@@ -190,7 +191,7 @@ const getHistoricalBasePrice = (currentPrice: number, days: number, coinId: stri
   const random = (Math.sin(seed + days) + 1) / 2; // Deterministic random based on coin and days
 
   // Generate realistic starting price based on time period
-  const volatility = days <= 1 ? 0.05 : days <= 7 ? 0.15 : days <= 30 ? 0.25 : 0.35;
+  const volatility = days < 0.1 ? 0.005 : days <= 1 ? 0.05 : days <= 7 ? 0.15 : days <= 30 ? 0.25 : 0.35;
   const change = (random - 0.5) * 2 * volatility;
   return Math.max(currentPrice * (1 + change), currentPrice * 0.1);
 };
@@ -203,8 +204,8 @@ const generateRealisticPriceMovement = (
   coinId: string,
 ) => {
   const prices = [];
-  const volatility = days <= 1 ? 0.02 : days <= 7 ? 0.05 : days <= 30 ? 0.08 : 0.12;
-  const trendStrength = days <= 1 ? 0.1 : days <= 7 ? 0.3 : days <= 30 ? 0.5 : 0.7;
+  const volatility = days < 0.1 ? 0.003 : days <= 1 ? 0.02 : days <= 7 ? 0.05 : days <= 30 ? 0.08 : 0.12;
+  const trendStrength = days < 0.1 ? 0.05 : days <= 1 ? 0.1 : days <= 7 ? 0.3 : days <= 30 ? 0.5 : 0.7;
 
   // Use coinId for deterministic noise
   const seed = coinId.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);

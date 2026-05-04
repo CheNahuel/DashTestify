@@ -108,6 +108,37 @@ test("reset dashboard returns filters to the default home state", async ({
 
 // ─── Chart range buttons ─────────────────────────────────────────────────────
 
+test("range button 1H is selectable and syncs URL", async ({ dashboardData, dashboardPage }) => {
+  await dashboardPage.goto(dashboardData.urls.bitcoinDefault);
+  await waitForDashboardData(dashboardPage.page);
+
+  await dashboardPage.selectRangeDays(0.0417);
+
+  await dashboardPage.expectRangeSelected(0.0417);
+  await expect(dashboardPage.page).toHaveURL(/days=0\.0417/);
+});
+
+test("1H range shows 'in 1H' label on selected asset change", async ({
+  dashboardData,
+  dashboardPage,
+}) => {
+  await dashboardPage.goto(dashboardData.urls.bitcoinDefault);
+  await waitForDashboardData(dashboardPage.page);
+
+  await dashboardPage.selectRangeDays(0.0417);
+
+  await expect(dashboardPage.selectedAssetChange).toContainText("in 1H");
+});
+
+test("1H range renders the chart", async ({ dashboardData, dashboardPage }) => {
+  await dashboardPage.goto(dashboardData.urls.bitcoinDefault);
+  await waitForDashboardData(dashboardPage.page);
+
+  await dashboardPage.selectRangeDays(0.0417);
+
+  await expect(dashboardPage.coinChart).toBeVisible();
+});
+
 test("range button 24H is selectable and syncs URL", async ({ dashboardData, dashboardPage }) => {
   await dashboardPage.goto(dashboardData.urls.bitcoinDefault);
   await waitForDashboardData(dashboardPage.page);

@@ -40,6 +40,7 @@ const PriceAlertForm = dynamic(
 );
 
 const DAY_FILTERS = [
+  { label: "1H", value: 0.0417 },
   { label: "24H", value: 1 },
   { label: "7D", value: 7 },
   { label: "30D", value: 30 },
@@ -507,25 +508,19 @@ export const CryptoDashboard = ({
             </div>
           </div>
 
-          <div className="rounded-[1.75rem] border border-white/10 bg-slate-950/45 p-4 md:p-5">
-            <p className="mb-3 text-sm uppercase tracking-wider text-slate-400">Time Range</p>
-            <div className="flex flex-wrap gap-2">
-              {DAY_FILTERS.map((filter) => (
-                <button
-                  key={filter.value}
-                  type="button"
-                  data-testid={`range-button-${filter.value}`}
-                  aria-pressed={days === filter.value}
-                  onClick={() => setDays(filter.value)}
-                  className={`rounded-full px-4 py-2 text-sm font-medium transition ${
-                    days === filter.value
-                      ? "bg-cyan-300 text-slate-950"
-                      : "bg-slate-800 text-slate-300 hover:bg-slate-700"
-                  }`}
-                >
-                  {filter.label}
-                </button>
-              ))}
+          <div className="flex h-full flex-col justify-center rounded-[1.75rem] border border-white/10 bg-slate-950/45 p-4 md:p-5">
+            <p className="mb-4 text-center text-sm uppercase tracking-wider text-slate-400">Time Range</p>
+            <div className="flex flex-col gap-3">
+              <div className="grid grid-cols-2 gap-3">
+                {DAY_FILTERS.slice(0, 2).map((filter) => (
+                  <RangeButton key={filter.value} filter={filter} active={days === filter.value} onClick={setDays} />
+                ))}
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                {DAY_FILTERS.slice(2).map((filter) => (
+                  <RangeButton key={filter.value} filter={filter} active={days === filter.value} onClick={setDays} />
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -751,6 +746,28 @@ const StatusPill = ({
     </div>
   );
 };
+
+const RangeButton = ({
+  filter,
+  active,
+  onClick,
+}: {
+  filter: { label: string; value: number };
+  active: boolean;
+  onClick: (value: number) => void;
+}) => (
+  <button
+    type="button"
+    data-testid={`range-button-${filter.value}`}
+    aria-pressed={active}
+    onClick={() => onClick(filter.value)}
+    className={`w-full rounded-full py-4 text-base font-semibold transition ${
+      active ? "bg-cyan-300 text-slate-950" : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+    }`}
+  >
+    {filter.label}
+  </button>
+);
 
 const StatCard = ({ label, value }: { label: string; value: string }) => {
   return (

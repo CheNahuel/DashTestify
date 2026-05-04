@@ -20,14 +20,9 @@ type CoinCapHistoryPoint = {
 const buildHistoryCacheKey = (coinId: string, days: number) => `${coinId}:${days}`;
 
 const getHistoryInterval = (days: number) => {
-  if (days <= 1) {
-    return "h1";
-  }
-
-  if (days <= 7) {
-    return "h6";
-  }
-
+  if (days < 0.1) return "m5";
+  if (days <= 1) return "h1";
+  if (days <= 7) return "h6";
   return "d1";
 };
 
