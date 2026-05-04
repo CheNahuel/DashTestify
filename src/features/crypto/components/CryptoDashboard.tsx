@@ -428,7 +428,7 @@ export const CryptoDashboard = ({
           </p>
         </div>
 
-        <div className="mb-6 grid gap-6 xl:grid-cols-[1.35fr_0.95fr] xl:items-end">
+        <div className="mb-6 grid gap-6 xl:grid-cols-[1.35fr_0.95fr] xl:items-start">
           <div className="grid gap-4 rounded-[1.75rem] border border-white/10 bg-slate-950/45 p-4 md:p-5">
             <SearchBar value={search} onChange={setSearch} />
 
@@ -449,13 +449,14 @@ export const CryptoDashboard = ({
                 </select>
               </label>
 
-              <label className="grid gap-2 text-sm text-slate-300">
+              <label className={`grid gap-2 text-sm ${favoritesOnly ? "text-slate-500" : "text-slate-300"}`}>
                 Trend
                 <select
                   data-testid="trend-select"
                   value={trend}
                   onChange={(event) => setTrend(event.target.value as TrendOption)}
-                  className="rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-sm text-white outline-none transition focus:border-cyan-300/60"
+                  disabled={favoritesOnly}
+                  className={`rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-sm outline-none transition ${favoritesOnly ? "cursor-not-allowed text-slate-500 opacity-50" : "text-white focus:border-cyan-300/60"}`}
                 >
                   {TREND_OPTIONS.map((option) => (
                     <option key={option.value} value={option.value}>
@@ -479,7 +480,11 @@ export const CryptoDashboard = ({
                 type="button"
                 data-testid="favorites-filter"
                 aria-pressed={favoritesOnly}
-                onClick={() => setFavoritesOnly((current) => !current)}
+                onClick={() => {
+                  const next = !favoritesOnly;
+                  setFavoritesOnly(next);
+                  if (next) setTrend("all");
+                }}
                 className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
                   favoritesOnly
                     ? "border-amber-300/50 bg-amber-300/15 text-amber-100"
@@ -499,6 +504,28 @@ export const CryptoDashboard = ({
                 value={String(watchlistCount)}
                 testId="status-pill-watchlist"
               />
+            </div>
+          </div>
+
+          <div className="rounded-[1.75rem] border border-white/10 bg-slate-950/45 p-4 md:p-5">
+            <p className="mb-3 text-sm uppercase tracking-wider text-slate-400">Time Range</p>
+            <div className="flex flex-wrap gap-2">
+              {DAY_FILTERS.map((filter) => (
+                <button
+                  key={filter.value}
+                  type="button"
+                  data-testid={`range-button-${filter.value}`}
+                  aria-pressed={days === filter.value}
+                  onClick={() => setDays(filter.value)}
+                  className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+                    days === filter.value
+                      ? "bg-cyan-300 text-slate-950"
+                      : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+                  }`}
+                >
+                  {filter.label}
+                </button>
+              ))}
             </div>
           </div>
         </div>
@@ -594,25 +621,6 @@ export const CryptoDashboard = ({
                           {selectedRangeChange.toFixed(2)}% in {selectedDaysLabel}
                         </span>
                       </p>
-                    </div>
-
-                    <div className="flex flex-wrap gap-2">
-                      {DAY_FILTERS.map((filter) => (
-                        <button
-                          key={filter.value}
-                          type="button"
-                          data-testid={`range-button-${filter.value}`}
-                          aria-pressed={days === filter.value}
-                          onClick={() => setDays(filter.value)}
-                          className={`rounded-full px-4 py-2 text-sm font-medium transition ${
-                            days === filter.value
-                              ? "bg-cyan-300 text-slate-950"
-                              : "bg-slate-800 text-slate-300 hover:bg-slate-700"
-                          }`}
-                        >
-                          {filter.label}
-                        </button>
-                      ))}
                     </div>
                   </div>
 

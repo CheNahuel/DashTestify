@@ -300,7 +300,7 @@ export const PriceAlertForm = ({
         </div>
       )}
 
-      <AlertTable alerts={alerts} onDelete={deleteAlert} />
+      <AlertTable alerts={alerts.filter((a) => a.coinId === coinId)} onDelete={deleteAlert} />
     </div>
   );
 };

@@ -145,10 +145,15 @@ npm run dev
 ### 🧪 Run Tests
 
 ```bash
+# Mock mode (default) — no API key needed, works offline and in CI
 npm run test:e2e
-```
 
-Tests always run against mock API routes regardless of whether `COINCAP_API_KEY` is set, so they work offline and in CI without a real key.
+# Live mode — requires COINCAP_API_KEY to be set in the environment
+npm run test:e2e:live
+
+# Interactive Playwright UI — mock mode
+npm run test:e2e:ui
+```
 
 ### 📊 Open Report
 
