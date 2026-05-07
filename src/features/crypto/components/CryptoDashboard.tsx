@@ -509,8 +509,8 @@ export const CryptoDashboard = ({
           </div>
 
           <div className="flex h-full flex-col justify-center rounded-[1.75rem] border border-white/10 bg-slate-950/45 p-4 md:p-5">
-            <p className="mb-4 text-center text-sm uppercase tracking-wider text-slate-400">Time Range</p>
-            <div className="flex flex-col gap-3">
+            <p className="mb-4 text-sm uppercase tracking-wider text-slate-400">Time Range</p>
+            <div className="flex h-full flex-col gap-3">
               <div className="grid grid-cols-2 gap-3">
                 {DAY_FILTERS.slice(0, 2).map((filter) => (
                   <RangeButton key={filter.value} filter={filter} active={days === filter.value} onClick={setDays} />
