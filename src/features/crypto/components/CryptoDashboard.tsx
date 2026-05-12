@@ -11,7 +11,7 @@ import { CoinJournal, type CoinJournalEntry } from "./CoinJournal";
 import { SearchBar } from "./SearchBar";
 import { useCoinHistory } from "../hooks/useCoinHistory";
 import { useCoins } from "../hooks/useCoins";
-import { Coin } from "../types/coin";
+import { Coin, CoinCapHistoryInterval } from "../types/coin";
 
 const PriceAlertForm = dynamic(
   () => import("./PriceAlertForm").then((mod) => ({ default: mod.PriceAlertForm })),
@@ -39,12 +39,16 @@ const PriceAlertForm = dynamic(
   },
 );
 
-const DAY_FILTERS = [
-  { label: "1H", value: 0.0417 },
-  { label: "24H", value: 1 },
-  { label: "7D", value: 7 },
-  { label: "30D", value: 30 },
-  { label: "90D", value: 90 },
+const INTERVAL_FILTERS = [
+  { label: "H1", value: "h1" },
+  { label: "H2", value: "h2" },
+  { label: "H6", value: "h6" },
+  { label: "H12", value: "h12" },
+  { label: "D1", value: "d1" },
+  { label: "M1", value: "m1" },
+  { label: "M5", value: "m5" },
+  { label: "M15", value: "m15" },
+  { label: "M30", value: "m30" },
 ] as const;
 
 const SORT_OPTIONS = [
@@ -63,7 +67,7 @@ const TREND_OPTIONS = [
 
 const DEFAULT_SORT = "market-cap-desc";
 const DEFAULT_TREND = "all";
-const DEFAULT_DAYS = 7;
+const DEFAULT_INTERVAL: CoinCapHistoryInterval = "h1";
 const WATCHLIST_STORAGE_KEY = "dashtestify.watchlist";
 const JOURNAL_STORAGE_KEY = "dashtestify.journal";
 
@@ -127,7 +131,7 @@ export const CryptoDashboard = ({
   marketUnavailable = false,
   initialSearch = "",
   initialSelectedCoinId,
-  initialDays = DEFAULT_DAYS,
+  initialInterval = DEFAULT_INTERVAL,
   initialSort = DEFAULT_SORT,
   initialFavoritesOnly = false,
   initialTrend = DEFAULT_TREND,
@@ -137,7 +141,7 @@ export const CryptoDashboard = ({
   marketUnavailable?: boolean;
   initialSearch?: string;
   initialSelectedCoinId?: string;
-  initialDays?: number;
+  initialInterval?: CoinCapHistoryInterval;
   initialSort?: string;
   initialFavoritesOnly?: boolean;
   initialTrend?: string;
@@ -154,7 +158,7 @@ export const CryptoDashboard = ({
   const [selectedCoinId, setSelectedCoinId] = useState(
     initialSelectedCoinId ?? initialCoins[0]?.id ?? "",
   );
-  const [days, setDays] = useState(initialDays);
+  const [interval, setInterval] = useState<CoinCapHistoryInterval>(initialInterval);
   const [sort, setSort] = useState<SortOption>(parseSortOption(initialSort));
   const [trend, setTrend] = useState<TrendOption>(parseTrendOption(initialTrend));
   const [favoritesOnly, setFavoritesOnly] = useState(initialFavoritesOnly);
@@ -244,7 +248,7 @@ export const CryptoDashboard = ({
       params.delete("selectedCoin");
     }
 
-    params.set("days", String(days));
+    params.set("interval", interval);
     params.set("sort", sort);
 
     if (favoritesOnly) {
@@ -264,8 +268,8 @@ export const CryptoDashboard = ({
       });
     }
   }, [
-    days,
     favoritesOnly,
+    interval,
     pathname,
     router,
     search,
@@ -281,7 +285,7 @@ export const CryptoDashboard = ({
     isLoading: isHistoryLoading,
     isFetching: isHistoryFetching,
     error: historyError,
-  } = useCoinHistory(selectedCoin?.id ?? null, days, useMock);
+  } = useCoinHistory(selectedCoin?.id ?? null, interval, useMock);
 
   const historyPrices = history?.prices.map(([, price]) => price) ?? [];
   const selectedRangeHigh =
@@ -295,8 +299,8 @@ export const CryptoDashboard = ({
       ? ((selectedCoin?.current_price - historyPrices[0]) / historyPrices[0]) * 100
       : selectedCoin?.price_change_percentage_24h;
 
-  // Get the label for the selected days (e.g., "24H", "7D", etc.)
-  const selectedDaysLabel = DAY_FILTERS.find((f) => f.value === days)?.label ?? `${days}d`;
+  const selectedIntervalLabel =
+    INTERVAL_FILTERS.find((filter) => filter.value === interval)?.label ?? interval;
 
   const selectedCoinNotes =
     selectedCoin && hasHydratedStorage ? (journalByCoin[selectedCoin.id] ?? []) : [];
@@ -322,7 +326,7 @@ export const CryptoDashboard = ({
     }
 
     setSearch("");
-    setDays(DEFAULT_DAYS);
+    setInterval(DEFAULT_INTERVAL);
     setSort(DEFAULT_SORT);
     setTrend(DEFAULT_TREND);
     setFavoritesOnly(false);
@@ -512,17 +516,37 @@ export const CryptoDashboard = ({
 
           <div className="flex h-full flex-col justify-center rounded-[1.5rem] border border-white/10 bg-slate-950/45 p-3 sm:rounded-[1.75rem] sm:p-4 md:p-5">
             <p className="mb-3 text-xs uppercase tracking-wider text-slate-400 sm:mb-4 sm:text-sm">
-              Time Range
+              History Interval
             </p>
             <div className="flex h-full flex-col gap-2 sm:gap-3">
-              <div className="grid grid-cols-2 gap-2 sm:gap-3">
-                {DAY_FILTERS.slice(0, 2).map((filter) => (
-                  <RangeButton key={filter.value} filter={filter} active={days === filter.value} onClick={setDays} />
+              <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                {INTERVAL_FILTERS.slice(0, 3).map((filter) => (
+                  <RangeButton
+                    key={filter.value}
+                    filter={filter}
+                    active={interval === filter.value}
+                    onClick={setInterval}
+                  />
                 ))}
               </div>
               <div className="grid grid-cols-3 gap-2 sm:gap-3">
-                {DAY_FILTERS.slice(2).map((filter) => (
-                  <RangeButton key={filter.value} filter={filter} active={days === filter.value} onClick={setDays} />
+                {INTERVAL_FILTERS.slice(3, 6).map((filter) => (
+                  <RangeButton
+                    key={filter.value}
+                    filter={filter}
+                    active={interval === filter.value}
+                    onClick={setInterval}
+                  />
+                ))}
+              </div>
+              <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                {INTERVAL_FILTERS.slice(6).map((filter) => (
+                  <RangeButton
+                    key={filter.value}
+                    filter={filter}
+                    active={interval === filter.value}
+                    onClick={setInterval}
+                  />
                 ))}
               </div>
             </div>
@@ -620,7 +644,7 @@ export const CryptoDashboard = ({
                           }`}
                         >
                           {selectedRangeChange >= 0 ? "+" : ""}
-                          {selectedRangeChange.toFixed(2)}% in {selectedDaysLabel}
+                          {selectedRangeChange.toFixed(2)}% in {selectedIntervalLabel}
                         </span>
                       </p>
                     </div>
@@ -717,7 +741,7 @@ export const CryptoDashboard = ({
                     isFavorite={favoriteIds.includes(coin.id)}
                     onSelect={(nextCoin) => setSelectedCoinId(nextCoin.id)}
                     onToggleFavorite={toggleFavorite}
-                    days={days}
+                    interval={interval}
                     useMock={useMock}
                   />
                 ))
@@ -762,9 +786,9 @@ const RangeButton = ({
   active,
   onClick,
 }: {
-  filter: { label: string; value: number };
+  filter: { label: string; value: CoinCapHistoryInterval };
   active: boolean;
-  onClick: (value: number) => void;
+  onClick: (value: CoinCapHistoryInterval) => void;
 }) => (
   <button
     type="button"

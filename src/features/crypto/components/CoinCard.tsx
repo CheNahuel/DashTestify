@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { Coin } from "../types/coin";
+import { Coin, CoinCapHistoryInterval } from "../types/coin";
 import { useCoinHistory } from "../hooks/useCoinHistory";
 import { CoinSparkline } from "./CoinSparkline";
 
@@ -20,7 +20,7 @@ export const CoinCard = ({
   isFavorite,
   onSelect,
   onToggleFavorite,
-  days = 1,
+  interval = "h1",
   useMock = false,
 }: {
   coin: Coin;
@@ -28,10 +28,10 @@ export const CoinCard = ({
   isFavorite: boolean;
   onSelect: (coin: Coin) => void;
   onToggleFavorite: (coin: Coin) => void;
-  days?: number;
+  interval?: CoinCapHistoryInterval;
   useMock?: boolean;
 }) => {
-  const { data: history } = useCoinHistory(coin.id, days, useMock);
+  const { data: history } = useCoinHistory(coin.id, interval, useMock);
 
   const historyPrices = history?.prices.map(([, price]) => price) ?? [];
   const sparklinePrices = history?.prices ?? [];

@@ -9,12 +9,16 @@ const currencyFormatter = new Intl.NumberFormat("en-US", {
   maximumFractionDigits: 2,
 });
 
-const compactCurrency = (value: number) => {
+const formatSmallCurrency = (value: number) => {
   if (!Number.isFinite(value)) return "";
 
   if (Math.abs(value) >= 1_000_000_000) return `$${(value / 1_000_000_000).toFixed(2)}B`;
   if (Math.abs(value) >= 1_000_000) return `$${(value / 1_000_000).toFixed(2)}M`;
   if (Math.abs(value) >= 1_000) return `$${(value / 1_000).toFixed(2)}K`;
+
+  if (Math.abs(value) < 1) {
+    return `$${value.toFixed(8)}`; // keep tiny coin prices visible
+  }
 
   return currencyFormatter.format(value);
 };
@@ -37,7 +41,7 @@ const formatTooltipValue = (value: string | number | readonly (string | number)[
   const rawValue = Array.isArray(value) ? value[0] : value;
   const numericValue = typeof rawValue === "number" ? rawValue : Number(rawValue);
 
-  return Number.isFinite(numericValue) ? currencyFormatter.format(numericValue) : "";
+  return Number.isFinite(numericValue) ? formatSmallCurrency(numericValue) : "";
 };
 
 export const CoinChart = ({ data }: { data: CoinHistory | undefined }) => {
@@ -75,7 +79,7 @@ export const CoinChart = ({ data }: { data: CoinHistory | undefined }) => {
           />
           <YAxis
             domain={["dataMin", "dataMax"]}
-            tickFormatter={(value) => compactCurrency(Number(value))}
+            tickFormatter={(value) => formatSmallCurrency(Number(value))}
             width={72}
             stroke="#94a3b8"
             tickLine={false}

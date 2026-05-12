@@ -53,7 +53,7 @@ test("query params preselect coin, search, range, and trend", async ({
 
   await expect(dashboardPage.searchInput).toHaveValue("sol");
   await dashboardPage.expectSelectedAsset("Solana");
-  await dashboardPage.expectRangeSelected(30);
+  await dashboardPage.expectRangeSelected("h6");
   await expect(dashboardPage.trendSelect).toHaveValue("gainers");
 });
 

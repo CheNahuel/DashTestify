@@ -1,4 +1,4 @@
-import { Coin, CoinHistory } from "../types/coin";
+import { Coin, CoinCapHistoryInterval, CoinHistory } from "../types/coin";
 
 const CRYPTO_DATA = [
   {
@@ -177,21 +177,33 @@ export const getMockCoins = (): Coin[] => {
   return cachedCoins;
 };
 
-const pointsForDays = (days: number) => {
-  if (days < 0.1) return 12; // 5-min intervals for 1H
-  if (days <= 1) return 24; // Hourly for 24H
-  if (days <= 7) return days * 24; // Daily for 7D
-  if (days <= 30) return days * 4; // 6-hour intervals for 30D
-  return days * 2; // 12-hour intervals for 90D
+const INTERVAL_CONFIG: Record<CoinCapHistoryInterval, { totalPoints: number; durationMs: number }> = {
+  m1: { totalPoints: 60, durationMs: 60 * 60 * 1000 },
+  m5: { totalPoints: 72, durationMs: 6 * 60 * 60 * 1000 },
+  m15: { totalPoints: 96, durationMs: 24 * 60 * 60 * 1000 },
+  m30: { totalPoints: 96, durationMs: 2 * 24 * 60 * 60 * 1000 },
+  h1: { totalPoints: 168, durationMs: 7 * 24 * 60 * 60 * 1000 },
+  h2: { totalPoints: 168, durationMs: 14 * 24 * 60 * 60 * 1000 },
+  h6: { totalPoints: 120, durationMs: 30 * 24 * 60 * 60 * 1000 },
+  h12: { totalPoints: 180, durationMs: 90 * 24 * 60 * 60 * 1000 },
+  d1: { totalPoints: 365, durationMs: 365 * 24 * 60 * 60 * 1000 },
 };
 
-const getHistoricalBasePrice = (currentPrice: number, days: number, coinId: string) => {
+const getIntervalWeight = (interval: CoinCapHistoryInterval) =>
+  (Object.keys(INTERVAL_CONFIG) as CoinCapHistoryInterval[]).indexOf(interval) + 1;
+
+const getHistoricalBasePrice = (
+  currentPrice: number,
+  interval: CoinCapHistoryInterval,
+  coinId: string,
+) => {
   // Use coinId as seed for deterministic but varied historical data
   const seed = coinId.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
-  const random = (Math.sin(seed + days) + 1) / 2; // Deterministic random based on coin and days
+  const intervalWeight = getIntervalWeight(interval);
+  const random = (Math.sin(seed + intervalWeight) + 1) / 2;
 
   // Generate realistic starting price based on time period
-  const volatility = days < 0.1 ? 0.005 : days <= 1 ? 0.05 : days <= 7 ? 0.15 : days <= 30 ? 0.25 : 0.35;
+  const volatility = 0.005 + intervalWeight * 0.035;
   const change = (random - 0.5) * 2 * volatility;
   return Math.max(currentPrice * (1 + change), currentPrice * 0.1);
 };
@@ -200,12 +212,13 @@ const generateRealisticPriceMovement = (
   startPrice: number,
   endPrice: number,
   totalPoints: number,
-  days: number,
+  interval: CoinCapHistoryInterval,
   coinId: string,
 ) => {
   const prices = [];
-  const volatility = days < 0.1 ? 0.003 : days <= 1 ? 0.02 : days <= 7 ? 0.05 : days <= 30 ? 0.08 : 0.12;
-  const trendStrength = days < 0.1 ? 0.05 : days <= 1 ? 0.1 : days <= 7 ? 0.3 : days <= 30 ? 0.5 : 0.7;
+  const intervalWeight = getIntervalWeight(interval);
+  const volatility = 0.003 + intervalWeight * 0.012;
+  const trendStrength = 0.05 + intervalWeight * 0.075;
 
   // Use coinId for deterministic noise
   const seed = coinId.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
@@ -228,7 +241,10 @@ const generateRealisticPriceMovement = (
   return prices;
 };
 
-export const getMockCoinHistory = (coinId: string, days: number): CoinHistory => {
+export const getMockCoinHistory = (
+  coinId: string,
+  interval: CoinCapHistoryInterval,
+): CoinHistory => {
   const coins = getMockCoins();
   const coin = coins.find((item) => item.id === coinId);
 
@@ -242,23 +258,23 @@ export const getMockCoinHistory = (coinId: string, days: number): CoinHistory =>
     };
   }
 
-  const totalPoints = pointsForDays(days);
-  const step = (days * 24 * 60 * 60 * 1000) / totalPoints;
+  const { totalPoints, durationMs } = INTERVAL_CONFIG[interval];
+  const step = durationMs / totalPoints;
   const now = Date.now();
 
   // Generate realistic historical data that leads to current price
-  const startPrice = getHistoricalBasePrice(coin.current_price, days, coinId);
+  const startPrice = getHistoricalBasePrice(coin.current_price, interval, coinId);
   const pricePoints = generateRealisticPriceMovement(
     startPrice,
     coin.current_price,
     totalPoints,
-    days,
+    interval,
     coinId,
   );
 
   return {
     prices: pricePoints.map((price, index) => [
-      Math.round(now - days * 24 * 60 * 60 * 1000 + step * index),
+      Math.round(now - durationMs + step * index),
       price,
     ]),
   };

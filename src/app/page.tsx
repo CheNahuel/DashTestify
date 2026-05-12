@@ -1,11 +1,11 @@
 import { CryptoDashboard } from "@/features/crypto/components/CryptoDashboard";
 import { getCoinsFromCoinCap } from "@/features/crypto/server/getCoinsFromCoinCap";
-import { Coin } from "@/features/crypto/types/coin";
+import { Coin, isCoinCapHistoryInterval } from "@/features/crypto/types/coin";
 import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
-const DEFAULT_DAYS = "7";
+const DEFAULT_INTERVAL = "h1";
 const DEFAULT_SORT = "market-cap-desc";
 const DEFAULT_TREND = "all";
 
@@ -16,7 +16,7 @@ export default async function Home({
     marketUnavailable?: string;
     selectedCoin?: string;
     search?: string;
-    days?: string;
+    interval?: string;
     sort?: string;
     favoritesOnly?: string;
     trend?: string;
@@ -27,13 +27,13 @@ export default async function Home({
   const hasDashboardState =
     Boolean(params.selectedCoin) ||
     Boolean(params.search) ||
-    Boolean(params.days) ||
+    Boolean(params.interval) ||
     Boolean(params.sort) ||
     Boolean(params.trend) ||
     params.favoritesOnly === "1";
 
   const isMissingCanonicalDefaults =
-    hasDashboardState && (!params.days || !params.sort || !params.trend);
+    hasDashboardState && (!params.interval || !params.sort || !params.trend);
 
   if (isMissingCanonicalDefaults) {
     const canonicalParams = new URLSearchParams();
@@ -48,7 +48,7 @@ export default async function Home({
 
     canonicalParams.set("sort", params.sort ?? DEFAULT_SORT);
     canonicalParams.set("trend", params.trend ?? DEFAULT_TREND);
-    canonicalParams.set("days", params.days ?? DEFAULT_DAYS);
+    canonicalParams.set("interval", params.interval ?? DEFAULT_INTERVAL);
 
     if (params.favoritesOnly === "1") {
       canonicalParams.set("favoritesOnly", "1");
@@ -71,7 +71,7 @@ export default async function Home({
   const marketUnavailable = params.marketUnavailable === "1";
   const initialSearch = params.search ?? "";
   const initialSelectedCoinId = params.selectedCoin;
-  const initialDays = params.days ? Number(params.days) : undefined;
+  const initialInterval = isCoinCapHistoryInterval(params.interval) ? params.interval : undefined;
   const initialSort = params.sort ?? DEFAULT_SORT;
   const initialFavoritesOnly = params.favoritesOnly === "1";
   const initialTrend = params.trend ?? DEFAULT_TREND;
@@ -82,7 +82,7 @@ export default async function Home({
       marketUnavailable={marketUnavailable}
       initialSearch={initialSearch}
       initialSelectedCoinId={initialSelectedCoinId}
-      initialDays={initialDays}
+      initialInterval={initialInterval}
       initialSort={initialSort}
       initialFavoritesOnly={initialFavoritesOnly}
       initialTrend={initialTrend}

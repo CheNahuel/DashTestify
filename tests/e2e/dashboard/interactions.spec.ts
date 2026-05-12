@@ -89,7 +89,7 @@ test("reset dashboard returns filters to the default home state", async ({
   dashboardPage,
 }) => {
   await dashboardPage.goto(
-    "/?mockData=1&selectedCoin=solana&sort=change-desc&trend=gainers&days=30&search=sol",
+    "/?mockData=1&selectedCoin=solana&sort=change-desc&trend=gainers&interval=h6&search=sol",
   );
   await waitForDashboardData(dashboardPage.page);
 
@@ -101,79 +101,79 @@ test("reset dashboard returns filters to the default home state", async ({
   await expect(dashboardPage.searchInput).toHaveValue("");
   await expect(dashboardPage.sortSelect).toHaveValue("market-cap-desc");
   await expect(dashboardPage.trendSelect).toHaveValue("all");
-  await dashboardPage.expectRangeSelected(7);
+  await dashboardPage.expectRangeSelected("h1");
   await expect(dashboardPage.favoritesFilter).toHaveAttribute("aria-pressed", "false");
   await expectUrlPath(dashboardPage.page, dashboardData.urls.resetResult);
 });
 
 // ─── Chart range buttons ─────────────────────────────────────────────────────
 
-test("range button 1H is selectable and syncs URL", async ({ dashboardData, dashboardPage }) => {
+test("interval button m1 is selectable and syncs URL", async ({ dashboardData, dashboardPage }) => {
   await dashboardPage.goto(dashboardData.urls.bitcoinDefault);
   await waitForDashboardData(dashboardPage.page);
 
-  await dashboardPage.selectRangeDays(0.0417);
+  await dashboardPage.selectRange("m1");
 
-  await dashboardPage.expectRangeSelected(0.0417);
-  await expect(dashboardPage.page).toHaveURL(/days=0\.0417/);
+  await dashboardPage.expectRangeSelected("m1");
+  await expect(dashboardPage.page).toHaveURL(/interval=m1/);
 });
 
-test("1H range shows 'in 1H' label on selected asset change", async ({
+test("m1 interval shows 'in m1' label on selected asset change", async ({
   dashboardData,
   dashboardPage,
 }) => {
   await dashboardPage.goto(dashboardData.urls.bitcoinDefault);
   await waitForDashboardData(dashboardPage.page);
 
-  await dashboardPage.selectRangeDays(0.0417);
+  await dashboardPage.selectRange("m1");
 
-  await expect(dashboardPage.selectedAssetChange).toContainText("in 1H");
+  await expect(dashboardPage.selectedAssetChange).toContainText("in m1");
 });
 
-test("1H range renders the chart", async ({ dashboardData, dashboardPage }) => {
+test("m1 interval renders the chart", async ({ dashboardData, dashboardPage }) => {
   await dashboardPage.goto(dashboardData.urls.bitcoinDefault);
   await waitForDashboardData(dashboardPage.page);
 
-  await dashboardPage.selectRangeDays(0.0417);
+  await dashboardPage.selectRange("m1");
 
   await expect(dashboardPage.coinChart).toBeVisible();
 });
 
-test("range button 24H is selectable and syncs URL", async ({ dashboardData, dashboardPage }) => {
+test("interval button m30 is selectable and syncs URL", async ({ dashboardData, dashboardPage }) => {
   await dashboardPage.goto(dashboardData.urls.bitcoinDefault);
   await waitForDashboardData(dashboardPage.page);
 
-  await dashboardPage.selectRangeDays(1);
+  await dashboardPage.selectRange("m30");
 
-  await dashboardPage.expectRangeSelected(1);
-  await expect(dashboardPage.page).toHaveURL(/days=1/);
+  await dashboardPage.expectRangeSelected("m30");
+  await expect(dashboardPage.page).toHaveURL(/interval=m30/);
 });
 
-test("range button 30D is selectable and syncs URL", async ({ dashboardData, dashboardPage }) => {
+test("interval button h6 is selectable and syncs URL", async ({ dashboardData, dashboardPage }) => {
   await dashboardPage.goto(dashboardData.urls.bitcoinDefault);
   await waitForDashboardData(dashboardPage.page);
 
-  await dashboardPage.selectRangeDays(30);
+  await dashboardPage.selectRange("h6");
 
-  await dashboardPage.expectRangeSelected(30);
-  await expect(dashboardPage.page).toHaveURL(/days=30/);
+  await dashboardPage.expectRangeSelected("h6");
+  await expect(dashboardPage.page).toHaveURL(/interval=h6/);
 });
 
-test("range button 90D is selectable and syncs URL", async ({ dashboardData, dashboardPage }) => {
+test("interval button d1 is selectable and syncs URL", async ({ dashboardData, dashboardPage }) => {
   await dashboardPage.goto(dashboardData.urls.bitcoinDefault);
   await waitForDashboardData(dashboardPage.page);
 
-  await dashboardPage.selectRangeDays(90);
+  await dashboardPage.selectRange("d1");
 
-  await dashboardPage.expectRangeSelected(90);
-  await expect(dashboardPage.page).toHaveURL(/days=90/);
+  await dashboardPage.expectRangeSelected("d1");
+  await expect(dashboardPage.page).toHaveURL(/interval=d1/);
 });
 
-test("range defaults to 7D on new load", async ({ dashboardData, dashboardPage }) => {
+test("range defaults to h1 on new load", async ({ dashboardData, dashboardPage }) => {
   await dashboardPage.goto(dashboardData.urls.bitcoinDefault);
   await waitForDashboardData(dashboardPage.page);
 
-  await dashboardPage.expectRangeSelected(7);
+  await dashboardPage.expectRangeSelected("h1");
 });
 
 // ─── Coin selection ───────────────────────────────────────────────────────────
@@ -436,6 +436,8 @@ test("price alert rejects invalid email", async ({ dashboardData, dashboardPage 
   await dashboardPage.goto(dashboardData.urls.bitcoinDefault);
   await waitForDashboardData(dashboardPage.page);
 
+  await dashboardPage.priceAlertEmail.fill("not-an-email");
+  await dashboardPage.priceAlertTarget.fill("55000");
   // Disable all browser constraint validation on the form so the server action
   // runs with the raw value and returns the server-side error message.
   await dashboardPage.page.evaluate(() => {
@@ -444,9 +446,6 @@ test("price alert rejects invalid email", async ({ dashboardData, dashboardPage 
       ?.closest("form");
     if (form) form.noValidate = true;
   });
-
-  await dashboardPage.priceAlertEmail.fill("not-an-email");
-  await dashboardPage.priceAlertTarget.fill("55000");
   await dashboardPage.priceAlertSubmit.click();
 
   await expect(dashboardPage.priceAlertEmailError).toContainText("valid email");
@@ -459,15 +458,15 @@ test("price alert rejects zero or negative target price", async ({
   await dashboardPage.goto(dashboardData.urls.bitcoinDefault);
   await waitForDashboardData(dashboardPage.page);
 
-  // Remove browser min constraint so the server action runs with value 0
+  await dashboardPage.priceAlertEmail.fill("trader@example.com");
+  await dashboardPage.priceAlertTarget.fill("0");
+  // Disable browser constraint validation so the server action runs with value 0
   // and we can assert on the server-returned error message.
   await dashboardPage.page.evaluate(() => {
     const input = document.querySelector<HTMLInputElement>('[data-testid="price-alert-target"]');
-    if (input) input.removeAttribute("min");
+    const form = input?.closest("form");
+    if (form) form.noValidate = true;
   });
-
-  await dashboardPage.priceAlertEmail.fill("trader@example.com");
-  await dashboardPage.priceAlertTarget.fill("0");
   await dashboardPage.priceAlertSubmit.click();
 
   await expect(dashboardPage.priceAlertTargetError).toContainText("greater than zero");

@@ -10,8 +10,8 @@ export const initializeBrowserStorage = async (page: Page) => {
 };
 
 export const waitForDashboardData = async (page: Page) => {
-  await page.waitForResponse("**/api/coins/markets*");
   await page.getByTestId("coin-card").first().waitFor();
+  await expect(page).toHaveURL(/interval=/);
 };
 
 export const waitForHistoryData = async (page: Page) => {

@@ -69,7 +69,7 @@ test("clicking toggle from live mode adds mockData=1 to URL", async ({ dashboard
 
 test("toggle preserves other URL params when switching modes", async ({ dashboardPage }) => {
   await dashboardPage.goto(
-    "/?mockData=1&selectedCoin=bitcoin&sort=price-desc&trend=gainers&days=30",
+    "/?mockData=1&selectedCoin=bitcoin&sort=price-desc&trend=gainers&interval=h6",
   );
   await waitForDashboardData(dashboardPage.page);
 
@@ -82,7 +82,7 @@ test("toggle preserves other URL params when switching modes", async ({ dashboar
   await expect(dashboardPage.page).not.toHaveURL(/mockData=1/);
   await expect(dashboardPage.page).toHaveURL(/sort=price-desc/);
   await expect(dashboardPage.page).toHaveURL(/trend=gainers/);
-  await expect(dashboardPage.page).toHaveURL(/days=30/);
+  await expect(dashboardPage.page).toHaveURL(/interval=h6/);
 });
 
 test("toggling back and forth stabilises on the last mode", async ({

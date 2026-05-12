@@ -41,11 +41,11 @@
       ]
     },
     "urls": {
-      "home": "/?mockData=1",
-      "bitcoinDefault": "/?mockData=1&selectedCoin=bitcoin&sort=market-cap-desc&trend=all&days=7",
-      "ethereumDefault": "/?mockData=1&selectedCoin=ethereum&sort=market-cap-desc&trend=all&days=7",
-      "solanaFiltered": "/?mockData=1&selectedCoin=solana&sort=market-cap-desc&trend=gainers&days=30&search=sol",
-      "resetResult": "/?mockData=1&selectedCoin=bitcoin&sort=market-cap-desc&trend=all&days=7"
+      "home": "/?mockData=1&selectedCoin=bitcoin&sort=market-cap-desc&trend=all&interval=h1",
+      "bitcoinDefault": "/?mockData=1&selectedCoin=bitcoin&sort=market-cap-desc&trend=all&interval=h1",
+      "ethereumDefault": "/?mockData=1&selectedCoin=ethereum&sort=market-cap-desc&trend=all&interval=h1",
+      "solanaFiltered": "/?mockData=1&selectedCoin=solana&sort=market-cap-desc&trend=gainers&interval=h6&search=sol",
+      "resetResult": "/?mockData=1&selectedCoin=bitcoin&sort=market-cap-desc&trend=all&interval=h1"
     }
   }
 }

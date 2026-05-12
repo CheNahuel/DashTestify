@@ -1,1 +1,1 @@
-export const getRangeButtonTestId = (days: number) => `range-button-${days}`;
+export const getRangeButtonTestId = (interval: string) => `range-button-${interval}`;

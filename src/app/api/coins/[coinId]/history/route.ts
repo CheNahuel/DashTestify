@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCoinHistoryFromCoinCap } from "@/features/crypto/server/getCoinHistoryFromCoinCap";
 import { getMockCoinHistory } from "@/features/crypto/server/mockCryptoData";
+import { isCoinCapHistoryInterval } from "@/features/crypto/types/coin";
 
 type RouteContext = {
   params: Promise<{
@@ -10,13 +11,14 @@ type RouteContext = {
 
 export async function GET(request: NextRequest, context: RouteContext) {
   const { coinId } = await context.params;
-  const days = Number(request.nextUrl.searchParams.get("days") ?? "7");
+  const requestedInterval = request.nextUrl.searchParams.get("interval");
+  const interval = isCoinCapHistoryInterval(requestedInterval) ? requestedInterval : "h1";
   const useMock = request.nextUrl.searchParams.get("mock") === "1";
 
   try {
     const history = useMock
-      ? getMockCoinHistory(coinId, days)
-      : await getCoinHistoryFromCoinCap(coinId, days);
+      ? getMockCoinHistory(coinId, interval)
+      : await getCoinHistoryFromCoinCap(coinId, interval);
 
     return NextResponse.json(history);
   } catch (error: unknown) {
