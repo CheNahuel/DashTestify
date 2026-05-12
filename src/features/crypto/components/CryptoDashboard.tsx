@@ -18,14 +18,14 @@ const PriceAlertForm = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="rounded-3xl border border-white/10 bg-slate-900/70 p-5 max-h-[725px] overflow-y-auto">
+      <div className="rounded-3xl border border-white/10 bg-slate-900/70 p-4 sm:p-5 lg:max-h-[725px] lg:overflow-y-auto">
         <div className="mb-4">
-          <p className="text-sm uppercase tracking-wider whitespace-nowrap text-slate-400">
+          <p className="text-xs sm:text-sm uppercase tracking-wider whitespace-nowrap text-slate-400">
             Price Alert
           </p>
           <div className="mt-2 flex items-center gap-2">
             <div className="h-6 w-6 rounded-full bg-slate-700 animate-pulse" />
-            <div className="h-6 bg-slate-700 rounded animate-pulse w-48" />
+            <div className="h-6 bg-slate-700 rounded animate-pulse w-48 max-w-full" />
           </div>
         </div>
         <div className="animate-pulse">
@@ -378,59 +378,61 @@ export const CryptoDashboard = ({
 
   return (
     <Container>
-      <section className="relative mb-8 rounded-[2rem] border border-white/10 bg-slate-950/70 p-6 shadow-2xl shadow-slate-950/40 backdrop-blur md:p-8">
-        <button
-          type="button"
-          data-testid="data-source-toggle"
-          aria-pressed={useMock}
-          onClick={isLiveAvailable ? toggleDataSource : undefined}
-          disabled={!isLiveAvailable}
-          title={
-            !isLiveAvailable
-              ? "Set COINCAP_API_KEY to enable live data"
-              : useMock
-                ? "Switch to live data"
-                : "Switch to mock data"
-          }
-          className={`absolute top-5 right-5 md:top-7 md:right-7 flex items-center gap-2 rounded-full border px-5 py-3 text-[13px] font-bold uppercase tracking-widest transition ${
-            !isLiveAvailable
-              ? "border-slate-700/40 bg-slate-900/60 text-slate-600 cursor-not-allowed"
-              : useMock
-                ? "border-slate-600/40 bg-slate-800/60 text-slate-400 hover:border-slate-500/60 hover:text-slate-300"
-                : "border-emerald-500/30 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20"
-          }`}
-        >
-          <span className="relative flex h-2 w-2 shrink-0">
-            {!useMock && isLiveAvailable && (
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-            )}
-            <span
-              className={`relative inline-flex h-2 w-2 rounded-full ${
-                !useMock && isLiveAvailable ? "bg-emerald-400" : "bg-slate-600"
-              }`}
-            />
-          </span>
-          {useMock ? "Mock" : "Live"}
-        </button>
+      <section className="relative mb-6 rounded-3xl border border-white/10 bg-slate-950/70 p-4 shadow-2xl shadow-slate-950/40 backdrop-blur sm:mb-8 sm:rounded-[2rem] sm:p-6 md:p-8">
+        <div className="mb-6 flex flex-col-reverse gap-4 md:flex-row md:items-start md:justify-between">
+          <div className="min-w-0 flex-1 md:max-w-3xl xl:max-w-5xl">
+            <p className="mb-3 text-xs uppercase tracking-wider text-cyan-300 sm:text-sm">
+              Crypto Intelligence
+            </p>
+            <h1 className="text-2xl font-semibold tracking-tight text-white sm:text-3xl md:text-4xl xl:text-5xl">
+              Track the crypto market with real-time insights.
+            </h1>
+            <p className="mt-3 text-sm text-slate-300 sm:text-base">
+              <span className="block">
+                Monitor real-time prices, filter top movers, manage your watchlist, and set price
+                alerts.
+              </span>
+              <span className="block">All in one streamlined dashboard.</span>
+            </p>
+          </div>
 
-        <div className="max-w-5xl mb-6">
-          <p className="mb-5 text-sm uppercase tracking-wider whitespace-nowrap text-cyan-300">
-            Crypto Intelligence
-          </p>
-          <h1 className="text-4xl font-semibold tracking-tight text-white md:text-5xl">
-            Track the crypto market with real-time insights.
-          </h1>
-          <p className="mt-4 text-base text-slate-300">
-            <span className="block">
-              Monitor real-time prices, filter top movers, manage your watchlist, and set price
-              alerts.
+          <button
+            type="button"
+            data-testid="data-source-toggle"
+            aria-pressed={useMock}
+            onClick={isLiveAvailable ? toggleDataSource : undefined}
+            disabled={!isLiveAvailable}
+            title={
+              !isLiveAvailable
+                ? "Set COINCAP_API_KEY to enable live data"
+                : useMock
+                  ? "Switch to live data"
+                  : "Switch to mock data"
+            }
+            className={`inline-flex shrink-0 items-center gap-2 self-start rounded-full border px-4 py-2 text-xs font-bold uppercase tracking-widest transition sm:px-5 sm:py-3 sm:text-[13px] ${
+              !isLiveAvailable
+                ? "border-slate-700/40 bg-slate-900/60 text-slate-600 cursor-not-allowed"
+                : useMock
+                  ? "border-slate-600/40 bg-slate-800/60 text-slate-400 hover:border-slate-500/60 hover:text-slate-300"
+                  : "border-emerald-500/30 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20"
+            }`}
+          >
+            <span className="relative flex h-2 w-2 shrink-0">
+              {!useMock && isLiveAvailable && (
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+              )}
+              <span
+                className={`relative inline-flex h-2 w-2 rounded-full ${
+                  !useMock && isLiveAvailable ? "bg-emerald-400" : "bg-slate-600"
+                }`}
+              />
             </span>
-            <span className="block">All in one streamlined dashboard.</span>
-          </p>
+            {useMock ? "Mock" : "Live"}
+          </button>
         </div>
 
-        <div className="mb-6 grid gap-6 xl:grid-cols-[1.35fr_0.95fr] xl:items-start">
-          <div className="grid gap-4 rounded-[1.75rem] border border-white/10 bg-slate-950/45 p-4 md:p-5">
+        <div className="mb-6 grid gap-4 sm:gap-6 xl:grid-cols-[1.35fr_0.95fr] xl:items-start">
+          <div className="grid gap-3 rounded-[1.5rem] border border-white/10 bg-slate-950/45 p-3 sm:gap-4 sm:rounded-[1.75rem] sm:p-4 md:p-5">
             <SearchBar value={search} onChange={setSearch} />
 
             <div className="grid gap-3 sm:grid-cols-2">
@@ -440,7 +442,7 @@ export const CryptoDashboard = ({
                   data-testid="sort-select"
                   value={sort}
                   onChange={(event) => setSort(event.target.value as SortOption)}
-                  className="rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-sm text-white outline-none transition focus:border-cyan-300/60"
+                  className="w-full rounded-2xl border border-white/10 bg-slate-950/70 px-3 py-3 text-sm text-white outline-none transition focus:border-cyan-300/60 sm:px-4"
                 >
                   {SORT_OPTIONS.map((option) => (
                     <option key={option.value} value={option.value}>
@@ -457,7 +459,7 @@ export const CryptoDashboard = ({
                   value={trend}
                   onChange={(event) => setTrend(event.target.value as TrendOption)}
                   disabled={favoritesOnly}
-                  className={`rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-sm outline-none transition ${favoritesOnly ? "cursor-not-allowed text-slate-500 opacity-50" : "text-white focus:border-cyan-300/60"}`}
+                  className={`w-full rounded-2xl border border-white/10 bg-slate-950/70 px-3 py-3 text-sm outline-none transition sm:px-4 ${favoritesOnly ? "cursor-not-allowed text-slate-500 opacity-50" : "text-white focus:border-cyan-300/60"}`}
                 >
                   {TREND_OPTIONS.map((option) => (
                     <option key={option.value} value={option.value}>
@@ -467,12 +469,12 @@ export const CryptoDashboard = ({
                 </select>
               </label>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 w-full">
+            <div className="grid w-full grid-cols-2 gap-2 sm:gap-3 md:grid-cols-4">
               <button
                 type="button"
                 data-testid="reset-dashboard"
                 onClick={resetDashboard}
-                className="rounded-full border border-cyan-300/30 bg-cyan-300/10 px-4 py-2 text-sm font-semibold text-cyan-100 transition hover:border-cyan-300/60 hover:bg-cyan-300/20"
+                className="rounded-full border border-cyan-300/30 bg-cyan-300/10 px-3 py-2 text-xs font-semibold text-cyan-100 transition hover:border-cyan-300/60 hover:bg-cyan-300/20 sm:px-4 sm:text-sm"
               >
                 Reset dashboard
               </button>
@@ -486,7 +488,7 @@ export const CryptoDashboard = ({
                   setFavoritesOnly(next);
                   if (next) setTrend("all");
                 }}
-                className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
+                className={`rounded-full border px-3 py-2 text-xs font-semibold transition sm:px-4 sm:text-sm ${
                   favoritesOnly
                     ? "border-amber-300/50 bg-amber-300/15 text-amber-100"
                     : "border-white/10 bg-slate-900/80 text-slate-300 hover:border-amber-300/30 hover:text-amber-100"
@@ -508,15 +510,17 @@ export const CryptoDashboard = ({
             </div>
           </div>
 
-          <div className="flex h-full flex-col justify-center rounded-[1.75rem] border border-white/10 bg-slate-950/45 p-4 md:p-5">
-            <p className="mb-4 text-sm uppercase tracking-wider text-slate-400">Time Range</p>
-            <div className="flex h-full flex-col gap-3">
-              <div className="grid grid-cols-2 gap-3">
+          <div className="flex h-full flex-col justify-center rounded-[1.5rem] border border-white/10 bg-slate-950/45 p-3 sm:rounded-[1.75rem] sm:p-4 md:p-5">
+            <p className="mb-3 text-xs uppercase tracking-wider text-slate-400 sm:mb-4 sm:text-sm">
+              Time Range
+            </p>
+            <div className="flex h-full flex-col gap-2 sm:gap-3">
+              <div className="grid grid-cols-2 gap-2 sm:gap-3">
                 {DAY_FILTERS.slice(0, 2).map((filter) => (
                   <RangeButton key={filter.value} filter={filter} active={days === filter.value} onClick={setDays} />
                 ))}
               </div>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-3 gap-2 sm:gap-3">
                 {DAY_FILTERS.slice(2).map((filter) => (
                   <RangeButton key={filter.value} filter={filter} active={days === filter.value} onClick={setDays} />
                 ))}
@@ -535,14 +539,14 @@ export const CryptoDashboard = ({
           </div>
         ) : null}
 
-        <div className="grid gap-6 xl:grid-cols-[1.35fr_0.95fr]">
-          <div className="grid gap-6">
-            <div className="rounded-3xl border border-white/10 bg-slate-900/80 p-5">
+        <div className="grid gap-4 sm:gap-6 xl:grid-cols-[1.35fr_0.95fr]">
+          <div className="grid gap-4 sm:gap-6">
+            <div className="rounded-2xl border border-white/10 bg-slate-900/80 p-3 sm:rounded-3xl sm:p-4 md:p-5">
               {isLoading ? (
                 <div className="animate-pulse">
-                  <div className="mb-6 flex flex-col gap-4 border-b border-white/10 pb-5 md:flex-row md:items-end md:justify-between">
+                  <div className="mb-4 flex flex-col gap-3 border-b border-white/10 pb-4 sm:mb-6 sm:gap-4 sm:pb-5 md:flex-row md:items-end md:justify-between">
                     <div>
-                      <p className="text-sm uppercase tracking-wider whitespace-nowrap text-slate-400">
+                      <p className="text-xs uppercase tracking-wider whitespace-nowrap text-slate-400 sm:text-sm">
                         Selected Asset
                       </p>
                       <div className="mt-2 flex flex-wrap items-center gap-3">
@@ -552,10 +556,10 @@ export const CryptoDashboard = ({
                         </div>
                         <div className="h-8 bg-slate-700 rounded w-24" />
                       </div>
-                      <div className="mt-2 h-6 bg-slate-700 rounded w-48" />
+                      <div className="mt-2 h-6 bg-slate-700 rounded w-48 max-w-full" />
                     </div>
                   </div>
-                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                  <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4">
                     <div className="h-20 bg-slate-700 rounded" />
                     <div className="h-20 bg-slate-700 rounded" />
                     <div className="h-20 bg-slate-700 rounded" />
@@ -564,13 +568,13 @@ export const CryptoDashboard = ({
                 </div>
               ) : selectedCoin ? (
                 <>
-                  <div className="mb-6 flex flex-col gap-4 border-b border-white/10 pb-5 md:flex-row md:items-end md:justify-between">
-                    <div>
-                      <p className="text-sm uppercase tracking-wider whitespace-nowrap text-slate-400">
+                  <div className="mb-4 flex flex-col gap-3 border-b border-white/10 pb-4 sm:mb-6 sm:gap-4 sm:pb-5 md:flex-row md:items-end md:justify-between">
+                    <div className="min-w-0">
+                      <p className="text-xs uppercase tracking-wider whitespace-nowrap text-slate-400 sm:text-sm">
                         Selected Asset
                       </p>
-                      <div className="mt-2 flex flex-wrap items-center gap-3">
-                        <div className="flex items-center gap-3">
+                      <div className="mt-2 flex flex-wrap items-center gap-2 sm:gap-3">
+                        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
                           <Image
                             src={
                               selectedCoin.image ||
@@ -579,11 +583,11 @@ export const CryptoDashboard = ({
                             alt={selectedCoin.name}
                             width={40}
                             height={40}
-                            className="h-10 w-10 rounded-full"
+                            className="h-8 w-8 shrink-0 rounded-full sm:h-10 sm:w-10"
                           />
                           <h2
                             data-testid="selected-asset-name"
-                            className="text-3xl font-semibold text-white"
+                            className="truncate text-xl font-semibold text-white sm:text-2xl md:text-3xl"
                           >
                             {selectedCoin.name}
                           </h2>
@@ -604,11 +608,14 @@ export const CryptoDashboard = ({
                             : "Save to Watchlist"}
                         </button>
                       </div>
-                      <p data-testid="selected-asset-price" className="mt-2 text-slate-300">
-                        {currencyFormatter.format(selectedCoin.current_price)}
+                      <p
+                        data-testid="selected-asset-price"
+                        className="mt-2 flex flex-wrap items-baseline gap-x-3 gap-y-1 text-slate-300"
+                      >
+                        <span>{currencyFormatter.format(selectedCoin.current_price)}</span>
                         <span
                           data-testid="selected-asset-change"
-                          className={`ml-3 text-sm font-semibold ${
+                          className={`text-sm font-semibold ${
                             selectedRangeChange >= 0 ? "text-emerald-300" : "text-rose-300"
                           }`}
                         >
@@ -620,13 +627,13 @@ export const CryptoDashboard = ({
                   </div>
 
                   {historyError ? (
-                    <div className="flex h-[260px] items-center justify-center rounded-3xl border border-rose-500/30 bg-rose-500/10 text-sm text-rose-100">
+                    <div className="flex h-[200px] items-center justify-center rounded-2xl border border-rose-500/30 bg-rose-500/10 px-4 text-center text-sm text-rose-100 sm:h-[240px] sm:rounded-3xl md:h-[260px]">
                       {historyError instanceof Error
                         ? historyError.message
                         : "We couldn&apos;t load historical data for this coin."}
                     </div>
                   ) : isHistoryLoading ? (
-                    <div className="flex h-[260px] items-center justify-center rounded-3xl border border-white/10 bg-slate-950/40 text-sm text-slate-400">
+                    <div className="flex h-[200px] items-center justify-center rounded-2xl border border-white/10 bg-slate-950/40 text-sm text-slate-400 sm:h-[240px] sm:rounded-3xl md:h-[260px]">
                       Loading chart data...
                     </div>
                   ) : (
@@ -635,7 +642,10 @@ export const CryptoDashboard = ({
                     </div>
                   )}
 
-                  <div data-testid="stat-cards" className="mt-6 grid gap-4 md:grid-cols-4">
+                  <div
+                    data-testid="stat-cards"
+                    className="mt-4 grid grid-cols-2 gap-3 sm:mt-6 sm:gap-4 md:grid-cols-4"
+                  >
                     <StatCard
                       label="Market Cap"
                       value={`$${compactFormatter.format(selectedCoin.market_cap)}`}
@@ -657,7 +667,7 @@ export const CryptoDashboard = ({
               ) : (
                 <div
                   data-testid="no-match-message"
-                  className="flex h-full min-h-[420px] items-center justify-center rounded-3xl border border-dashed border-white/10 bg-slate-950/30 text-slate-400"
+                  className="flex h-full min-h-[280px] items-center justify-center rounded-2xl border border-dashed border-white/10 bg-slate-950/30 px-4 text-center text-sm text-slate-400 sm:min-h-[360px] sm:rounded-3xl sm:text-base md:min-h-[420px]"
                 >
                   No coins match your current search and filters yet.
                 </div>
@@ -665,7 +675,7 @@ export const CryptoDashboard = ({
             </div>
 
             {selectedCoin && !isLoading ? (
-              <div className="grid gap-6 lg:grid-cols-[1fr_1fr]">
+              <div className="grid gap-4 sm:gap-6 lg:grid-cols-[1fr_1fr]">
                 <PriceAlertForm
                   coinId={selectedCoin.id}
                   coinName={selectedCoin.name}
@@ -684,15 +694,15 @@ export const CryptoDashboard = ({
             ) : null}
           </div>
 
-          <aside className="rounded-3xl border border-white/10 bg-slate-900/60 p-5 max-h-[1400px] overflow-y-auto">
-            <div className="mb-4 flex items-center justify-between">
-              <div>
-                <p className="text-sm uppercase tracking-wider whitespace-nowrap text-slate-400">
+          <aside className="rounded-2xl border border-white/10 bg-slate-900/60 p-3 sm:rounded-3xl sm:p-4 md:p-5 xl:max-h-[1400px] xl:overflow-y-auto">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-xs uppercase tracking-wider whitespace-nowrap text-slate-400 sm:text-sm">
                   Market Snapshot
                 </p>
-                <h2 className="mt-2 text-2xl font-semibold text-white">Top Coins</h2>
+                <h2 className="mt-2 text-xl font-semibold text-white sm:text-2xl">Top Coins</h2>
               </div>
-              <p className="text-sm text-slate-400">
+              <p className="shrink-0 text-xs text-slate-400 sm:text-sm">
                 {isFetching || isHistoryFetching ? "Updating..." : `${filteredCoins.length} shown`}
               </p>
             </div>
@@ -712,7 +722,7 @@ export const CryptoDashboard = ({
                   />
                 ))
               ) : (
-                <div className="rounded-2xl border border-dashed border-white/10 bg-slate-950/40 p-4 text-sm text-slate-400">
+                <div className="rounded-2xl border border-dashed border-white/10 bg-slate-950/40 p-3 text-sm text-slate-400 sm:p-4">
                   No assets match the active filters. Try clearing the watchlist filter or switching
                   the trend selector.
                 </div>
@@ -736,13 +746,13 @@ const StatusPill = ({
 }) => {
   return (
     <div
-      className="rounded-full border border-white/10 bg-slate-900/80 px-4 py-2"
+      className="rounded-full border border-white/10 bg-slate-900/80 px-3 py-2 sm:px-4"
       data-testid={testId}
     >
-      <p className="text-[10px] uppercase tracking-wider whitespace-nowrap text-slate-500 text-center">
+      <p className="text-center text-[10px] uppercase tracking-wider whitespace-nowrap text-slate-500">
         {label}
       </p>
-      <p className="mt-1 text-sm font-semibold text-slate-100 text-center">{value}</p>
+      <p className="mt-1 text-center text-sm font-semibold text-slate-100">{value}</p>
     </div>
   );
 };
@@ -761,7 +771,7 @@ const RangeButton = ({
     data-testid={`range-button-${filter.value}`}
     aria-pressed={active}
     onClick={() => onClick(filter.value)}
-    className={`w-full rounded-full py-4 text-base font-semibold transition ${
+    className={`w-full rounded-full py-3 text-sm font-semibold transition sm:py-4 sm:text-base ${
       active ? "bg-cyan-300 text-slate-950" : "bg-slate-800 text-slate-300 hover:bg-slate-700"
     }`}
   >
@@ -771,11 +781,13 @@ const RangeButton = ({
 
 const StatCard = ({ label, value }: { label: string; value: string }) => {
   return (
-    <div className="rounded-3xl border border-white/10 bg-slate-950/40 p-4">
-      <p className="text-xs uppercase tracking-wider whitespace-nowrap text-slate-400 text-center">
+    <div className="rounded-2xl border border-white/10 bg-slate-950/40 p-3 sm:rounded-3xl sm:p-4">
+      <p className="text-center text-[10px] uppercase tracking-wider text-slate-400 sm:text-xs">
         {label}
       </p>
-      <p className="mt-1 text-lg font-semibold text-slate-300 text-center">{value}</p>
+      <p className="mt-1 break-words text-center text-sm font-semibold text-slate-300 sm:text-base md:text-lg">
+        {value}
+      </p>
     </div>
   );
 };

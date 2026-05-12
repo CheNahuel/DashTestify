@@ -9,6 +9,16 @@ const currencyFormatter = new Intl.NumberFormat("en-US", {
   maximumFractionDigits: 2,
 });
 
+const compactCurrency = (value: number) => {
+  if (!Number.isFinite(value)) return "";
+
+  if (Math.abs(value) >= 1_000_000_000) return `$${(value / 1_000_000_000).toFixed(2)}B`;
+  if (Math.abs(value) >= 1_000_000) return `$${(value / 1_000_000).toFixed(2)}M`;
+  if (Math.abs(value) >= 1_000) return `$${(value / 1_000).toFixed(2)}K`;
+
+  return currencyFormatter.format(value);
+};
+
 const formatXAxis = (value: number) =>
   new Date(value).toLocaleDateString("en-US", {
     month: "short",
@@ -41,7 +51,7 @@ export const CoinChart = ({ data }: { data: CoinHistory | undefined }) => {
     return (
       <div
         data-testid="coin-chart-empty"
-        className="flex h-[260px] items-center justify-center rounded-3xl border border-white/10 bg-slate-950/40 text-sm text-slate-400"
+        className="flex h-[200px] items-center justify-center rounded-2xl border border-white/10 bg-slate-950/40 px-4 text-center text-sm text-slate-400 sm:h-[240px] sm:rounded-3xl md:h-[260px]"
       >
         No historical data available for this selection.
       </div>
@@ -49,11 +59,14 @@ export const CoinChart = ({ data }: { data: CoinHistory | undefined }) => {
   }
 
   return (
-    <div data-testid="coin-chart">
-      <ResponsiveContainer width="100%" height={360}>
-        <LineChart data={formatted} margin={{ top: 8, right: 8, left: 0, bottom: 8 }}>
+    <div data-testid="coin-chart" className="h-[220px] w-full sm:h-[280px] md:h-[360px]">
+      <ResponsiveContainer width="100%" height="100%" initialDimension={{ width: 1, height: 1 }}>
+        <LineChart data={formatted} margin={{ top: 8, right: 8, left: 12, bottom: 8 }}>
           <XAxis
             dataKey="time"
+            type="number"
+            scale="time"
+            domain={["dataMin", "dataMax"]}
             tickFormatter={formatXAxis}
             minTickGap={32}
             stroke="#94a3b8"
@@ -62,8 +75,8 @@ export const CoinChart = ({ data }: { data: CoinHistory | undefined }) => {
           />
           <YAxis
             domain={["dataMin", "dataMax"]}
-            tickFormatter={(value) => `$${Number(value).toFixed(0)}`}
-            width={64}
+            tickFormatter={(value) => compactCurrency(Number(value))}
+            width={72}
             stroke="#94a3b8"
             tickLine={false}
             axisLine={false}
@@ -78,7 +91,7 @@ export const CoinChart = ({ data }: { data: CoinHistory | undefined }) => {
               color: "#e2e8f0",
             }}
           />
-          <Line type="monotone" dataKey="price" dot={false} stroke="#38bdf8" strokeWidth={3} />
+          <Line type="monotone" dataKey="price" dot={false} stroke="#38bdf8" strokeWidth={2.5} />
         </LineChart>
       </ResponsiveContainer>
     </div>

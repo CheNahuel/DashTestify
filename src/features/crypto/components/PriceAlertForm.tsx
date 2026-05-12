@@ -42,19 +42,19 @@ const AlertTable = ({
 }) => {
   return (
     <div className="mt-6" data-testid="alert-table">
-      <h4 className="mb-3 text-sm uppercase tracking-wider whitespace-nowrap text-slate-400">
+      <h4 className="mb-3 text-xs uppercase tracking-wider whitespace-nowrap text-slate-400 sm:text-sm">
         Active Alerts ({alerts.length})
       </h4>
-      <div className="overflow-x-auto rounded-2xl border border-white/10 bg-slate-950/40">
-        <table className="w-full min-w-[200px] text-sm">
+      <div className="-mx-1 overflow-x-auto rounded-2xl border border-white/10 bg-slate-950/40 sm:mx-0">
+        <table className="w-full min-w-[320px] text-xs sm:text-sm">
           <thead className="border-b border-white/10 bg-slate-900/60">
             <tr>
-              <th className="px-3 py-2 text-left font-semibold text-slate-400 text-sm">Coin</th>
-              <th className="px-3 py-2 text-left font-semibold text-slate-400 text-sm">
-                Target Price
+              <th className="px-2 py-2 text-left font-semibold text-slate-400 sm:px-3">Coin</th>
+              <th className="px-2 py-2 text-left font-semibold text-slate-400 sm:px-3">Target</th>
+              <th className="hidden px-2 py-2 text-left font-semibold text-slate-400 sm:table-cell sm:px-3">
+                Email
               </th>
-              <th className="px-3 py-2 text-left font-semibold text-slate-400 text-sm">Email</th>
-              <th className="px-3 py-2 text-center font-semibold text-slate-400 text-sm">
+              <th className="px-2 py-2 text-center font-semibold text-slate-400 sm:px-3">
                 Actions
               </th>
             </tr>
@@ -62,14 +62,17 @@ const AlertTable = ({
           <tbody>
             {alerts.length === 0 ? (
               <tr>
-                <td colSpan={4} className="px-3 py-8 text-center text-slate-400 text-sm">
+                <td
+                  colSpan={4}
+                  className="px-2 py-8 text-center text-xs text-slate-400 sm:px-3 sm:text-sm"
+                >
                   No price alerts set yet. Create your first alert above.
                 </td>
               </tr>
             ) : (
               alerts.map((alert) => (
                 <tr key={alert.id} className="border-b border-white/5 last:border-b-0">
-                  <td className="px-3 py-2 text-slate-200 text-sm whitespace-pre-wrap">
+                  <td className="px-2 py-2 text-slate-200 sm:px-3">
                     <div className="flex items-center gap-2">
                       <Image
                         src={
@@ -79,18 +82,21 @@ const AlertTable = ({
                         alt={alert.coinName}
                         width={20}
                         height={20}
-                        className="h-5 w-5 rounded-full"
+                        className="h-5 w-5 shrink-0 rounded-full"
                       />
-                      {alert.coinName}
+                      <span className="truncate">{alert.coinName}</span>
+                    </div>
+                    <div className="mt-1 truncate text-[11px] text-slate-500 sm:hidden">
+                      {alert.email}
                     </div>
                   </td>
-                  <td className="px-3 py-2 text-slate-200 text-sm whitespace-pre-wrap">
+                  <td className="px-2 py-2 whitespace-nowrap text-slate-200 sm:px-3">
                     ${alert.targetPrice.toFixed(2)}
                   </td>
-                  <td className="px-3 py-2 text-slate-200 text-sm whitespace-pre-wrap">
+                  <td className="hidden px-2 py-2 text-slate-200 break-all sm:table-cell sm:px-3">
                     {alert.email}
                   </td>
-                  <td className="px-3 py-2 text-center">
+                  <td className="px-2 py-2 text-center sm:px-3">
                     <button
                       type="button"
                       data-testid={`delete-alert-${alert.id}`}
@@ -213,9 +219,9 @@ export const PriceAlertForm = ({
   };
 
   return (
-    <div className="rounded-3xl border border-white/10 bg-slate-900/70 p-5 max-h-[725px] overflow-y-auto">
+    <div className="rounded-2xl border border-white/10 bg-slate-900/70 p-4 sm:rounded-3xl sm:p-5 lg:max-h-[725px] lg:overflow-y-auto">
       <div className="mb-4">
-        <p className="text-sm uppercase tracking-wider whitespace-nowrap text-slate-400">
+        <p className="text-xs uppercase tracking-wider whitespace-nowrap text-slate-400 sm:text-sm">
           Price Alert
         </p>
         <div className="mt-2 flex items-center gap-2">
@@ -227,13 +233,15 @@ export const PriceAlertForm = ({
             alt={coinName}
             width={24}
             height={24}
-            className="h-6 w-6 rounded-full"
+            className="h-6 w-6 shrink-0 rounded-full"
           />
-          <h3 className="text-xl font-semibold text-white">Create Price Alert for {coinName}</h3>
+          <h3 className="break-words text-base font-semibold text-white sm:text-lg md:text-xl">
+            Create Price Alert for {coinName}
+          </h3>
         </div>
       </div>
 
-      <form ref={formRef} action={formAction} className="grid gap-4">
+      <form ref={formRef} action={formAction} className="grid gap-3 sm:gap-4">
         <input type="hidden" name="coinId" value={coinId} />
 
         <label className="grid gap-2 text-sm text-slate-200">
@@ -243,7 +251,7 @@ export const PriceAlertForm = ({
             name="email"
             data-testid="price-alert-email"
             placeholder="trader@example.com"
-            className="rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-sm text-white outline-none ring-0 transition placeholder:text-slate-500 focus:border-cyan-300/60"
+            className="w-full rounded-2xl border border-white/10 bg-slate-950/70 px-3 py-3 text-sm text-white outline-none ring-0 transition placeholder:text-slate-500 focus:border-cyan-300/60 sm:px-4"
             required
           />
           {errors.email ? (
@@ -262,7 +270,7 @@ export const PriceAlertForm = ({
             defaultValue={Math.max(currentPrice * 1.05, 0.01).toFixed(2)}
             min="0.01"
             step="0.01"
-            className="rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-sm text-white outline-none ring-0 transition placeholder:text-slate-500 focus:border-cyan-300/60"
+            className="w-full rounded-2xl border border-white/10 bg-slate-950/70 px-3 py-3 text-sm text-white outline-none ring-0 transition placeholder:text-slate-500 focus:border-cyan-300/60 sm:px-4"
             required
           />
           {errors.targetPrice ? (
@@ -272,8 +280,8 @@ export const PriceAlertForm = ({
           ) : null}
         </label>
 
-        <div className="flex items-center justify-between gap-3">
-          <p className="text-xs uppercase tracking-wider whitespace-nowrap text-slate-500">
+        <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-3">
+          <p className="text-[11px] uppercase tracking-wider whitespace-nowrap text-slate-500 sm:text-xs">
             Current: ${currentPrice.toFixed(2)}
           </p>
           <SubmitButton />
