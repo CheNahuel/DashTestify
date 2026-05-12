@@ -13,7 +13,7 @@ test("market error banner contains rate-limit hint", async ({ dashboardPage }) =
   await expect(dashboardPage.marketErrorBanner).toContainText("CoinCap");
 });
 
-test("shows market error banner and still renders coin list", async ({ dashboardData, dashboardPage }) => {
+test("shows market error banner and still renders coin list", async ({ dashboardPage }) => {
   // The marketUnavailable flag shows the banner but the mocked coins are
   // still returned by the client-side route, so the list should still render.
   await dashboardPage.goto(

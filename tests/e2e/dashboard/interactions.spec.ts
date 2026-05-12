@@ -118,7 +118,7 @@ test("interval button m1 is selectable and syncs URL", async ({ dashboardData, d
   await expect(dashboardPage.page).toHaveURL(/interval=m1/);
 });
 
-test("m1 interval shows 'in m1' label on selected asset change", async ({
+test("m1 interval shows 'in M1' label on selected asset change", async ({
   dashboardData,
   dashboardPage,
 }) => {
@@ -127,7 +127,7 @@ test("m1 interval shows 'in m1' label on selected asset change", async ({
 
   await dashboardPage.selectRange("m1");
 
-  await expect(dashboardPage.selectedAssetChange).toContainText("in m1");
+  await expect(dashboardPage.selectedAssetChange).toContainText("in M1");
 });
 
 test("m1 interval renders the chart", async ({ dashboardData, dashboardPage }) => {
@@ -173,6 +173,10 @@ test("range defaults to h1 on new load", async ({ dashboardData, dashboardPage }
   await dashboardPage.goto(dashboardData.urls.bitcoinDefault);
   await waitForDashboardData(dashboardPage.page);
 
+  await expect(dashboardPage.page.getByTestId("range-button-h1")).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
   await dashboardPage.expectRangeSelected("h1");
 });
 

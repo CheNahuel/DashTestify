@@ -41,6 +41,7 @@ test("search updates visible coins pill count", async ({ dashboardData, dashboar
 
   await dashboardPage.searchFor("sol");
 
+  await expect(dashboardPage.visibleCoinsPill).toContainText("1");
   await dashboardPage.expectVisibleCoinsCount(1);
 });
 
@@ -78,6 +79,7 @@ test("clearing search restores all coins", async ({ dashboardData, dashboardPage
   await dashboardPage.expectVisibleCoinsCount(1);
 
   await dashboardPage.searchFor("");
+  await expect(dashboardPage.visibleCoinsPill).toContainText("3");
   await dashboardPage.expectVisibleCoinsCount(3);
 });
 

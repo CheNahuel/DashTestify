@@ -51,6 +51,7 @@ test("visible coins pill shows total count", async ({ dashboardData, dashboardPa
   await dashboardPage.goto(dashboardData.urls.home);
   await waitForDashboardData(dashboardPage.page);
 
+  await expect(dashboardPage.visibleCoinsPill).toContainText("3");
   await dashboardPage.expectVisibleCoinsCount(3);
 });
 
