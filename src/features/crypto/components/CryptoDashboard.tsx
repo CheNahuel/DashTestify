@@ -24,7 +24,7 @@ const PriceAlertForm = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="rounded-3xl border border-white/10 bg-slate-900/70 p-4 sm:p-5 lg:max-h-[725px] lg:overflow-y-auto">
+      <div className="rounded-3xl border border-white/10 bg-slate-900/70 p-4 sm:p-5 lg:max-h-[725px] lg:overflow-y-auto min-w-0">
         <div className="mb-4">
           <p className="text-xs sm:text-sm uppercase tracking-wider whitespace-nowrap text-slate-400">
             Price Alert
@@ -435,8 +435,8 @@ export const CryptoDashboard = ({
           </button>
         </div>
 
-        <div className="mb-6 grid gap-4 sm:gap-6 xl:grid-cols-[1.35fr_0.95fr] xl:items-start">
-          <div className="grid gap-3 rounded-[1.5rem] border border-white/10 bg-slate-950/45 p-3 sm:gap-4 sm:rounded-[1.75rem] sm:p-4 md:p-5">
+        <div className="mb-6 grid gap-4 sm:gap-6 xl:grid-cols-[1.35fr_0.95fr] xl:items-start min-w-0">
+          <div className="grid gap-3 rounded-[1.5rem] border border-white/10 bg-slate-950/45 p-3 sm:gap-4 sm:rounded-[1.75rem] sm:p-4 md:p-5 min-w-0">
             <SearchBar value={search} onChange={setSearch} />
 
             <div className="grid gap-3 sm:grid-cols-2">
@@ -514,7 +514,7 @@ export const CryptoDashboard = ({
             </div>
           </div>
 
-          <div className="flex h-full flex-col justify-center rounded-[1.5rem] border border-white/10 bg-slate-950/45 p-3 sm:rounded-[1.75rem] sm:p-4 md:p-5">
+          <div className="flex h-full flex-col justify-center rounded-[1.5rem] border border-white/10 bg-slate-950/45 p-3 sm:rounded-[1.75rem] sm:p-4 md:p-5 min-w-0">
             <p className="mb-3 text-xs uppercase tracking-wider text-slate-400 sm:mb-4 sm:text-sm">
               Time Range
             </p>
@@ -545,16 +545,16 @@ export const CryptoDashboard = ({
 
         <div className="grid gap-4 sm:gap-6 xl:grid-cols-[1.35fr_0.95fr] min-w-0">
           <div className="grid gap-4 sm:gap-6 min-w-0">
-            <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-3 sm:rounded-3xl sm:p-4 md:p-5 xl:max-h-[1400px] xl:overflow-y-auto">
+            <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-3 sm:rounded-3xl sm:p-4 md:p-5 xl:max-h-[1400px] xl:overflow-y-auto min-w-0">
               {isLoading ? (
                 <div className="animate-pulse">
-                  <div className="mb-4 flex flex-col gap-3 border-b border-white/10 pb-4 sm:mb-6 sm:gap-4 sm:pb-5 md:flex-row md:items-end md:justify-between">
+                  <div className="mb-4 flex flex-col gap-3 border-b border-white/10 pb-4 sm:mb-6 sm:gap-4 sm:pb-5 md:flex-row md:items-end md:justify-between min-w-0">
                     <div>
                       <p className="text-xs uppercase tracking-wider whitespace-nowrap text-slate-400 sm:text-sm">
                         Selected Asset
                       </p>
-                      <div className="mt-2 flex flex-wrap items-center gap-3">
-                        <div className="flex items-center gap-3">
+                      <div className="mt-2 flex flex-wrap items-center gap-3 min-w-0">
+                        <div className="flex items-center gap-3 min-w-0">
                           <div className="h-10 w-10 rounded-full bg-slate-700" />
                           <div className="h-8 bg-slate-700 rounded w-32" />
                         </div>
@@ -572,7 +572,7 @@ export const CryptoDashboard = ({
                 </div>
               ) : selectedCoin ? (
                 <>
-                  <div className="mb-4 flex flex-col gap-3 border-b border-white/10 pb-4 sm:mb-6 sm:gap-4 sm:pb-5 md:flex-row md:items-end md:justify-between">
+                  <div className="mb-4 flex flex-col gap-3 border-b border-white/10 pb-4 sm:mb-6 sm:gap-4 sm:pb-5 md:flex-row md:items-end md:justify-between min-w-0">
                     <div className="min-w-0">
                       <p className="text-xs uppercase tracking-wider whitespace-nowrap text-slate-400 sm:text-sm">
                         Selected Asset
@@ -591,7 +591,7 @@ export const CryptoDashboard = ({
                           />
                           <h2
                             data-testid="selected-asset-name"
-                            className="truncate text-xl font-semibold text-white sm:text-2xl md:text-3xl"
+                            className="truncate text-xl font-semibold text-white sm:text-2xl md:text-3xl min-w-0"
                           >
                             {selectedCoin.name}
                           </h2>
@@ -641,14 +641,14 @@ export const CryptoDashboard = ({
                       Loading chart data...
                     </div>
                   ) : (
-                    <div data-testid="selected-coin-chart">
+                    <div data-testid="selected-coin-chart" className="w-full min-w-0 overflow-hidden">
                       <CoinChart data={history} />
                     </div>
                   )}
 
                   <div
                     data-testid="stat-cards"
-                    className="mt-4 grid grid-cols-2 gap-3 sm:mt-6 sm:gap-4 md:grid-cols-4"
+                    className="mt-4 grid grid-cols-2 gap-3 sm:mt-6 sm:gap-4 md:grid-cols-4 min-w-0"
                   >
                     <StatCard
                       label="Market Cap"
@@ -698,7 +698,7 @@ export const CryptoDashboard = ({
             ) : null}
           </div>
 
-          <aside className="rounded-2xl border border-white/10 bg-slate-900/60 p-3 sm:rounded-3xl sm:p-4 md:p-5 xl:max-h-[1400px] xl:overflow-y-auto">
+          <aside className="rounded-2xl border border-white/10 bg-slate-900/60 p-3 sm:rounded-3xl sm:p-4 md:p-5 xl:max-h-[1400px] xl:overflow-y-auto min-w-0">
             <div className="mb-4 flex items-center justify-between gap-3">
               <div className="min-w-0">
                 <p className="text-xs uppercase tracking-wider whitespace-nowrap text-slate-400 sm:text-sm">
