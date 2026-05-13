@@ -11,9 +11,6 @@ permissions:
   pages: write
   id-token: write
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -21,21 +18,34 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
 
-      - run: npm ci
+      - name: Install dependencies
+        run: npm ci
 
-      - run: npm run lint
+      - name: Lint
+        run: npm run lint --max-warnings=0
 
-      - run: npx playwright install --with-deps chromium
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}
 
-      - run: npm run build
+      - name: Install Playwright
+        run: npx playwright install --with-deps
 
-      - run: npx playwright test
+      - name: Build app
+        run: npm run build
+
+      - name: Run tests
+        run: npx playwright test
 
       - name: Upload Playwright report
         if: always()
@@ -46,7 +56,7 @@ jobs:
           retention-days: 30
 
   deploy-report:
-    if: always()
+    if: needs.test.result == 'success' || needs.test.result == 'failure'
     needs: test
     runs-on: ubuntu-latest
 
