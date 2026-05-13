@@ -11,7 +11,7 @@ export const initializeBrowserStorage = async (page: Page) => {
 
 export const waitForDashboardData = async (page: Page) => {
   await page.getByTestId("coin-card").first().waitFor();
-  await expect(page).toHaveURL(/interval=/);
+  await expect(page).toHaveURL(/timeframe=/);
 };
 
 export const waitForHistoryData = async (page: Page) => {

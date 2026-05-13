@@ -17,7 +17,7 @@ test("shows market error banner and still renders coin list", async ({ dashboard
   // The marketUnavailable flag shows the banner but the mocked coins are
   // still returned by the client-side route, so the list should still render.
   await dashboardPage.goto(
-    "/?mockData=1&selectedCoin=bitcoin&sort=market-cap-desc&trend=all&interval=h1&marketUnavailable=1",
+    "/?mockData=1&selectedCoin=bitcoin&sort=market-cap-desc&trend=all&timeframe=7D&marketUnavailable=1",
   );
   await waitForDashboardData(dashboardPage.page);
 

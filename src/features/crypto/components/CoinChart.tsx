@@ -65,7 +65,7 @@ export const CoinChart = ({ data }: { data: CoinHistory | undefined }) => {
   return (
     <div data-testid="coin-chart" className="h-[220px] w-full sm:h-[280px] md:h-[360px]">
       <ResponsiveContainer width="100%" height="100%" initialDimension={{ width: 1, height: 1 }}>
-        <LineChart data={formatted} margin={{ top: 8, right: 8, left: 12, bottom: 8 }}>
+        <LineChart data={formatted} margin={{ top: 8, right: 8, left: 0, bottom: 8 }}>
           <XAxis
             dataKey="time"
             type="number"
@@ -80,7 +80,7 @@ export const CoinChart = ({ data }: { data: CoinHistory | undefined }) => {
           <YAxis
             domain={["dataMin", "dataMax"]}
             tickFormatter={(value) => formatSmallCurrency(Number(value))}
-            width={72}
+            width={50}
             stroke="#94a3b8"
             tickLine={false}
             axisLine={false}
@@ -95,7 +95,7 @@ export const CoinChart = ({ data }: { data: CoinHistory | undefined }) => {
               color: "#e2e8f0",
             }}
           />
-          <Line type="monotone" dataKey="price" dot={false} stroke="#38bdf8" strokeWidth={2.5} />
+          <Line type="monotone" dataKey="price" dot={false} stroke="#facc15" strokeWidth={2.0} />
         </LineChart>
       </ResponsiveContainer>
     </div>

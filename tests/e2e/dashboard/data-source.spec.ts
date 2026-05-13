@@ -23,7 +23,7 @@ test("toggle shows 'Mock data' when mockData=1 is in URL", async ({
 
 test("mock mode preserves dashboard params on load", async ({ dashboardPage }) => {
   await dashboardPage.goto(
-    "/?mockData=1&selectedCoin=bitcoin&sort=price-desc&trend=gainers&interval=h6",
+    "/?mockData=1&selectedCoin=bitcoin&sort=price-desc&trend=gainers&timeframe=30D",
   );
   await waitForDashboardData(dashboardPage.page);
 
@@ -32,5 +32,5 @@ test("mock mode preserves dashboard params on load", async ({ dashboardPage }) =
   await expect(dashboardPage.page).toHaveURL(/mockData=1/);
   await expect(dashboardPage.page).toHaveURL(/sort=price-desc/);
   await expect(dashboardPage.page).toHaveURL(/trend=gainers/);
-  await expect(dashboardPage.page).toHaveURL(/interval=h6/);
+  await expect(dashboardPage.page).toHaveURL(/timeframe=30D/);
 });

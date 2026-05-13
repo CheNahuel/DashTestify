@@ -1,15 +1,15 @@
 import { useQuery } from "@tanstack/react-query";
 import { getCoinHistory } from "../api/getCoinHistory";
-import { CoinCapHistoryInterval } from "../types/coin";
+import { CoinHistoryRequest } from "../types/coin";
 
 export const useCoinHistory = (
   coinId: string | null,
-  interval: CoinCapHistoryInterval,
+  request: CoinHistoryRequest,
   useMock = false,
 ) => {
   return useQuery({
-    queryKey: ["coin-history", coinId, interval, useMock],
-    queryFn: () => getCoinHistory(coinId!, interval, useMock),
+    queryKey: ["coin-history", coinId, request.interval, request.start, request.end, useMock],
+    queryFn: () => getCoinHistory(coinId!, request, useMock),
     enabled: Boolean(coinId),
     refetchOnMount: "always",
     refetchOnWindowFocus: false,

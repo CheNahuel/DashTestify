@@ -26,7 +26,7 @@ export const test = base.extend<AppFixtures>({
       await route.fulfill({ json: testData.dashboard.coins });
     });
 
-    await page.route(/.*\/api\/coins\/.*\/history\?interval=.*/, async (route) => {
+    await page.route(/.*\/api\/coins\/.*\/history\?interval=.*&start=.*&end=.*/, async (route) => {
       await route.fulfill({ json: testData.dashboard.history });
     });
 

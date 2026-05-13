@@ -94,8 +94,8 @@ export class DashboardPage {
     await this.page.getByTestId(`favorite-toggle-${coinId}`).click();
   }
 
-  async selectRange(interval: string) {
-    await this.page.getByTestId(getRangeButtonTestId(interval)).click();
+  async selectRange(timeframe: string) {
+    await this.page.getByTestId(getRangeButtonTestId(timeframe)).click();
   }
 
   async clickCoinCard(coinId: string) {
@@ -106,8 +106,8 @@ export class DashboardPage {
     await expect(this.selectedAssetName).toHaveText(name);
   }
 
-  async expectRangeSelected(interval: string) {
-    await expect(this.page.getByTestId(getRangeButtonTestId(interval))).toHaveAttribute(
+  async expectRangeSelected(timeframe: string) {
+    await expect(this.page.getByTestId(getRangeButtonTestId(timeframe))).toHaveAttribute(
       "aria-pressed",
       "true",
     );

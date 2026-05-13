@@ -35,17 +35,25 @@
     "history": {
       "prices": [
         [1713700000000, 44000],
-        [1713786400000, 46000],
-        [1713872800000, 48000],
-        [1713959200000, 50000]
+        [1713718000000, 45250],
+        [1713736000000, 44700],
+        [1713754000000, 46800],
+        [1713772000000, 46150],
+        [1713790000000, 48600],
+        [1713808000000, 47200],
+        [1713826000000, 49350],
+        [1713844000000, 48100],
+        [1713862000000, 51000],
+        [1713880000000, 49200],
+        [1713898000000, 50000]
       ]
     },
     "urls": {
-      "home": "/?mockData=1&selectedCoin=bitcoin&sort=market-cap-desc&trend=all&interval=h1",
-      "bitcoinDefault": "/?mockData=1&selectedCoin=bitcoin&sort=market-cap-desc&trend=all&interval=h1",
-      "ethereumDefault": "/?mockData=1&selectedCoin=ethereum&sort=market-cap-desc&trend=all&interval=h1",
-      "solanaFiltered": "/?mockData=1&selectedCoin=solana&sort=market-cap-desc&trend=gainers&interval=h6&search=sol",
-      "resetResult": "/?mockData=1&selectedCoin=bitcoin&sort=market-cap-desc&trend=all&interval=h1"
+      "home": "/?mockData=1&selectedCoin=bitcoin&sort=market-cap-desc&trend=all&timeframe=7D",
+      "bitcoinDefault": "/?mockData=1&selectedCoin=bitcoin&sort=market-cap-desc&trend=all&timeframe=7D",
+      "ethereumDefault": "/?mockData=1&selectedCoin=ethereum&sort=market-cap-desc&trend=all&timeframe=7D",
+      "solanaFiltered": "/?mockData=1&selectedCoin=solana&sort=market-cap-desc&trend=gainers&timeframe=30D&search=sol",
+      "resetResult": "/?mockData=1&selectedCoin=bitcoin&sort=market-cap-desc&trend=all&timeframe=7D"
     }
   }
 }

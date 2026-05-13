@@ -1,4 +1,4 @@
-import { Coin, CoinCapHistoryInterval, CoinHistory } from "../types/coin";
+import { Coin, CoinCapHistoryInterval, CoinHistory, CoinHistoryRequest } from "../types/coin";
 
 const CRYPTO_DATA = [
   {
@@ -177,35 +177,38 @@ export const getMockCoins = (): Coin[] => {
   return cachedCoins;
 };
 
-const INTERVAL_CONFIG: Record<CoinCapHistoryInterval, { totalPoints: number; durationMs: number }> = {
-  m1: { totalPoints: 60, durationMs: 60 * 60 * 1000 },
-  m5: { totalPoints: 72, durationMs: 6 * 60 * 60 * 1000 },
-  m15: { totalPoints: 96, durationMs: 24 * 60 * 60 * 1000 },
-  m30: { totalPoints: 96, durationMs: 2 * 24 * 60 * 60 * 1000 },
-  h1: { totalPoints: 168, durationMs: 7 * 24 * 60 * 60 * 1000 },
-  h2: { totalPoints: 168, durationMs: 14 * 24 * 60 * 60 * 1000 },
-  h6: { totalPoints: 120, durationMs: 30 * 24 * 60 * 60 * 1000 },
-  h12: { totalPoints: 180, durationMs: 90 * 24 * 60 * 60 * 1000 },
-  d1: { totalPoints: 365, durationMs: 365 * 24 * 60 * 60 * 1000 },
+const INTERVAL_MINUTES: Record<CoinCapHistoryInterval, number> = {
+  m1: 1,
+  m5: 5,
+  m15: 15,
+  m30: 30,
+  h1: 60,
+  h2: 120,
+  h6: 360,
+  h12: 720,
+  d1: 1440,
 };
 
 const getIntervalWeight = (interval: CoinCapHistoryInterval) =>
-  (Object.keys(INTERVAL_CONFIG) as CoinCapHistoryInterval[]).indexOf(interval) + 1;
+  (Object.keys(INTERVAL_MINUTES) as CoinCapHistoryInterval[]).indexOf(interval) + 1;
 
 const getHistoricalBasePrice = (
   currentPrice: number,
   interval: CoinCapHistoryInterval,
   coinId: string,
 ) => {
-  // Use coinId as seed for deterministic but varied historical data
   const seed = coinId.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
   const intervalWeight = getIntervalWeight(interval);
   const random = (Math.sin(seed + intervalWeight) + 1) / 2;
 
-  // Generate realistic starting price based on time period
   const volatility = 0.005 + intervalWeight * 0.035;
   const change = (random - 0.5) * 2 * volatility;
   return Math.max(currentPrice * (1 + change), currentPrice * 0.1);
+};
+
+const deterministicNoise = (seed: number) => {
+  const value = Math.sin(seed * 12.9898) * 43758.5453;
+  return value - Math.floor(value);
 };
 
 const generateRealisticPriceMovement = (
@@ -215,35 +218,48 @@ const generateRealisticPriceMovement = (
   interval: CoinCapHistoryInterval,
   coinId: string,
 ) => {
-  const prices = [];
+  const prices: number[] = [startPrice];
   const intervalWeight = getIntervalWeight(interval);
-  const volatility = 0.003 + intervalWeight * 0.012;
-  const trendStrength = 0.05 + intervalWeight * 0.075;
-
-  // Use coinId for deterministic noise
   const seed = coinId.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  const baseVolatility = 0.003 + intervalWeight * 0.0018;
+  let price = startPrice;
+  let drift = (Math.log(endPrice / startPrice) || 0) / Math.max(totalPoints, 1);
+  let momentum = 0;
 
-  for (let i = 0; i <= totalPoints; i++) {
+  for (let i = 1; i <= totalPoints; i++) {
     const progress = i / totalPoints;
+    const regimeShift =
+      Math.sin(seed * 0.11 + progress * Math.PI * 6) * baseVolatility * 0.7 +
+      Math.cos(seed * 0.07 + progress * Math.PI * 13) * baseVolatility * 0.45;
+    const volatilityCluster =
+      baseVolatility *
+      (0.75 + Math.abs(Math.sin(seed * 0.13 + progress * Math.PI * 9)) * 1.8);
+    const jaggedMove =
+      (deterministicNoise(seed + i * 17) - 0.5) * volatilityCluster +
+      (deterministicNoise(seed + i * 31) - 0.5) * volatilityCluster * 0.55;
+    const shockDirection = deterministicNoise(seed + i * 43) > 0.5 ? 1 : -1;
+    const shock =
+      i % Math.max(9, Math.floor(totalPoints / 7)) === 0
+        ? shockDirection * volatilityCluster * (1.8 + deterministicNoise(seed + i * 59) * 2.5)
+        : 0;
+    const anchorPull = Math.log(endPrice / Math.max(price, 0.0001)) / (totalPoints - i + 1);
 
-    // Base trend from start to end price
-    const trendPrice = startPrice + (endPrice - startPrice) * Math.pow(progress, trendStrength);
-
-    // Add deterministic noise based on coin and position
-    const noiseSeed = seed + i * 0.1;
-    const noise = (Math.sin(noiseSeed) + Math.cos(noiseSeed * 1.3)) * 0.5;
-    const randomWalk = noise * volatility * trendPrice;
-
-    const price = Math.max(trendPrice + randomWalk, 0.0001);
+    momentum = momentum * 0.55 + jaggedMove + shock;
+    drift = drift * 0.92 + anchorPull * 0.08;
+    price = Math.max(
+      price * Math.exp(drift + regimeShift + momentum),
+      Math.max(endPrice, startPrice) * 0.03,
+    );
     prices.push(price);
   }
 
+  prices[prices.length - 1] = endPrice;
   return prices;
 };
 
 export const getMockCoinHistory = (
   coinId: string,
-  interval: CoinCapHistoryInterval,
+  request: CoinHistoryRequest,
 ): CoinHistory => {
   const coins = getMockCoins();
   const coin = coins.find((item) => item.id === coinId);
@@ -258,23 +274,24 @@ export const getMockCoinHistory = (
     };
   }
 
-  const { totalPoints, durationMs } = INTERVAL_CONFIG[interval];
+  const durationMs = Math.max(request.end - request.start, 60 * 1000);
+  const intervalMs = INTERVAL_MINUTES[request.interval] * 60 * 1000;
+  const totalPoints = Math.max(2, Math.min(365, Math.ceil(durationMs / intervalMs)));
   const step = durationMs / totalPoints;
-  const now = Date.now();
 
   // Generate realistic historical data that leads to current price
-  const startPrice = getHistoricalBasePrice(coin.current_price, interval, coinId);
+  const startPrice = getHistoricalBasePrice(coin.current_price, request.interval, coinId);
   const pricePoints = generateRealisticPriceMovement(
     startPrice,
     coin.current_price,
     totalPoints,
-    interval,
+    request.interval,
     coinId,
   );
 
   return {
     prices: pricePoints.map((price, index) => [
-      Math.round(now - durationMs + step * index),
+      Math.round(request.start + step * index),
       price,
     ]),
   };

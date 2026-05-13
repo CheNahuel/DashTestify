@@ -1,11 +1,10 @@
 import { CryptoDashboard } from "@/features/crypto/components/CryptoDashboard";
 import { getCoinsFromCoinCap } from "@/features/crypto/server/getCoinsFromCoinCap";
-import { Coin, isCoinCapHistoryInterval } from "@/features/crypto/types/coin";
+import { Coin, DEFAULT_TIMEFRAME, isTimeframe } from "@/features/crypto/types/coin";
 import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
-const DEFAULT_INTERVAL = "h1";
 const DEFAULT_SORT = "market-cap-desc";
 const DEFAULT_TREND = "all";
 
@@ -16,7 +15,7 @@ export default async function Home({
     marketUnavailable?: string;
     selectedCoin?: string;
     search?: string;
-    interval?: string;
+    timeframe?: string;
     sort?: string;
     favoritesOnly?: string;
     trend?: string;
@@ -27,13 +26,13 @@ export default async function Home({
   const hasDashboardState =
     Boolean(params.selectedCoin) ||
     Boolean(params.search) ||
-    Boolean(params.interval) ||
+    Boolean(params.timeframe) ||
     Boolean(params.sort) ||
     Boolean(params.trend) ||
     params.favoritesOnly === "1";
 
   const isMissingCanonicalDefaults =
-    hasDashboardState && (!params.interval || !params.sort || !params.trend);
+    hasDashboardState && (!params.timeframe || !params.sort || !params.trend);
 
   if (isMissingCanonicalDefaults) {
     const canonicalParams = new URLSearchParams();
@@ -48,7 +47,7 @@ export default async function Home({
 
     canonicalParams.set("sort", params.sort ?? DEFAULT_SORT);
     canonicalParams.set("trend", params.trend ?? DEFAULT_TREND);
-    canonicalParams.set("interval", params.interval ?? DEFAULT_INTERVAL);
+    canonicalParams.set("timeframe", params.timeframe ?? DEFAULT_TIMEFRAME);
 
     if (params.favoritesOnly === "1") {
       canonicalParams.set("favoritesOnly", "1");
@@ -71,7 +70,7 @@ export default async function Home({
   const marketUnavailable = params.marketUnavailable === "1";
   const initialSearch = params.search ?? "";
   const initialSelectedCoinId = params.selectedCoin;
-  const initialInterval = isCoinCapHistoryInterval(params.interval) ? params.interval : undefined;
+  const initialTimeframe = isTimeframe(params.timeframe) ? params.timeframe : undefined;
   const initialSort = params.sort ?? DEFAULT_SORT;
   const initialFavoritesOnly = params.favoritesOnly === "1";
   const initialTrend = params.trend ?? DEFAULT_TREND;
@@ -82,7 +81,7 @@ export default async function Home({
       marketUnavailable={marketUnavailable}
       initialSearch={initialSearch}
       initialSelectedCoinId={initialSelectedCoinId}
-      initialInterval={initialInterval}
+      initialTimeframe={initialTimeframe}
       initialSort={initialSort}
       initialFavoritesOnly={initialFavoritesOnly}
       initialTrend={initialTrend}

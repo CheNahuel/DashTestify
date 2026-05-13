@@ -1,1 +1,1 @@
-export const getRangeButtonTestId = (interval: string) => `range-button-${interval}`;
+export const getRangeButtonTestId = (timeframe: string) => `range-button-${timeframe}`;

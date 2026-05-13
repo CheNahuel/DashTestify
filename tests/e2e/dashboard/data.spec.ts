@@ -9,11 +9,23 @@ test("selected coin shows price and percentage change", async ({ dashboardData, 
   await expect(dashboardPage.selectedAssetChange).toContainText("%");
 });
 
-test("chart renders with historical data", async ({ dashboardData, dashboardPage }) => {
+test("chart renders a jagged market path from historical data", async ({
+  dashboardData,
+  dashboardPage,
+}) => {
   await dashboardPage.goto(dashboardData.urls.bitcoinDefault);
   await waitForDashboardData(dashboardPage.page);
 
+  const prices = dashboardData.history.prices.map(([, price]) => price);
+  const directionChanges = prices.slice(2).filter((price, index) => {
+    const previousDelta = prices[index + 1] - prices[index];
+    const nextDelta = price - prices[index + 1];
+
+    return Math.sign(previousDelta) !== Math.sign(nextDelta);
+  });
+
   await expect(dashboardPage.coinChart).toBeVisible();
+  expect(directionChanges.length).toBeGreaterThanOrEqual(4);
 });
 
 test("stat cards show market cap and volume", async ({ dashboardData, dashboardPage }) => {
@@ -59,13 +71,13 @@ test("positive change is green, negative change omits the plus sign", async ({
   dashboardData,
   dashboardPage,
 }) => {
-  // Bitcoin: current_price=50000, mock history goes from 44000→50000 → positive range change
+  // Bitcoin: current_price=50000, mock history starts below current price → positive range change
   await dashboardPage.goto(dashboardData.urls.bitcoinDefault);
   await waitForDashboardData(dashboardPage.page);
 
   await expect(dashboardPage.selectedAssetChange).toContainText("+");
 
-  // Ethereum: current_price=3500, mock history starts at 44000 → large negative range change
+  // Ethereum: current_price=3500, mock history starts far above current price → negative range change
   await dashboardPage.goto(dashboardData.urls.ethereumDefault);
   await waitForDashboardData(dashboardPage.page);
 

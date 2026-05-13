@@ -1,11 +1,16 @@
-import { CoinCapHistoryInterval, CoinHistory } from "../types/coin";
+import { CoinHistory, CoinHistoryRequest } from "../types/coin";
 
 export const getCoinHistory = async (
   coinId: string,
-  interval: CoinCapHistoryInterval,
+  request: CoinHistoryRequest,
   useMock = false,
 ): Promise<CoinHistory> => {
-  const base = `/api/coins/${coinId}/history?interval=${interval}`;
+  const params = new URLSearchParams({
+    interval: request.interval,
+    start: String(request.start),
+    end: String(request.end),
+  });
+  const base = `/api/coins/${coinId}/history?${params.toString()}`;
   const url = useMock ? `${base}&mock=1` : base;
   const response = await fetch(url, {
     method: "GET",

@@ -1,6 +1,6 @@
 import { apiClient } from "@/lib/api-client";
 import { getMockCoinHistory } from "./mockCryptoData";
-import { CoinCapHistoryInterval, CoinHistory } from "../types/coin";
+import { CoinHistory, CoinHistoryRequest } from "../types/coin";
 
 const HISTORY_TTL_MS = 5 * 60_000;
 
@@ -17,18 +17,18 @@ type CoinCapHistoryPoint = {
   time: number;
 };
 
-const buildHistoryCacheKey = (coinId: string, interval: CoinCapHistoryInterval) =>
-  `${coinId}:${interval}`;
+const buildHistoryCacheKey = (coinId: string, request: CoinHistoryRequest) =>
+  `${coinId}:${request.interval}:${request.start}:${request.end}`;
 
 export const getCoinHistoryFromCoinCap = async (
   coinId: string,
-  interval: CoinCapHistoryInterval,
+  request: CoinHistoryRequest,
 ): Promise<CoinHistory> => {
   if (!process.env.COINCAP_API_KEY) {
-    return getMockCoinHistory(coinId, interval);
+    return getMockCoinHistory(coinId, request);
   }
 
-  const cacheKey = buildHistoryCacheKey(coinId, interval);
+  const cacheKey = buildHistoryCacheKey(coinId, request);
   const cached = historyCache.get(cacheKey);
   const now = Date.now();
 
@@ -41,7 +41,9 @@ export const getCoinHistoryFromCoinCap = async (
       `/assets/${coinId}/history`,
       {
         params: {
-          interval,
+          interval: request.interval,
+          start: request.start,
+          end: request.end,
         },
       },
     );
@@ -60,7 +62,7 @@ export const getCoinHistoryFromCoinCap = async (
     if (cached) {
       return cached.data;
     }
-    const fallbackHistory = getMockCoinHistory(coinId, interval);
+    const fallbackHistory = getMockCoinHistory(coinId, request);
     historyCache.set(cacheKey, {
       data: fallbackHistory,
       fetchedAt: now,

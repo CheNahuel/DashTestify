@@ -89,7 +89,7 @@ test("reset dashboard returns filters to the default home state", async ({
   dashboardPage,
 }) => {
   await dashboardPage.goto(
-    "/?mockData=1&selectedCoin=solana&sort=change-desc&trend=gainers&interval=h6&search=sol",
+    "/?mockData=1&selectedCoin=solana&sort=change-desc&trend=gainers&timeframe=30D&search=sol",
   );
   await waitForDashboardData(dashboardPage.page);
 
@@ -101,83 +101,83 @@ test("reset dashboard returns filters to the default home state", async ({
   await expect(dashboardPage.searchInput).toHaveValue("");
   await expect(dashboardPage.sortSelect).toHaveValue("market-cap-desc");
   await expect(dashboardPage.trendSelect).toHaveValue("all");
-  await dashboardPage.expectRangeSelected("h1");
+  await dashboardPage.expectRangeSelected("7D");
   await expect(dashboardPage.favoritesFilter).toHaveAttribute("aria-pressed", "false");
   await expectUrlPath(dashboardPage.page, dashboardData.urls.resetResult);
 });
 
 // ─── Chart range buttons ─────────────────────────────────────────────────────
 
-test("interval button m1 is selectable and syncs URL", async ({ dashboardData, dashboardPage }) => {
+test("timeframe button 1H is selectable and syncs URL", async ({ dashboardData, dashboardPage }) => {
   await dashboardPage.goto(dashboardData.urls.bitcoinDefault);
   await waitForDashboardData(dashboardPage.page);
 
-  await dashboardPage.selectRange("m1");
+  await dashboardPage.selectRange("1H");
 
-  await dashboardPage.expectRangeSelected("m1");
-  await expect(dashboardPage.page).toHaveURL(/interval=m1/);
+  await dashboardPage.expectRangeSelected("1H");
+  await expect(dashboardPage.page).toHaveURL(/timeframe=1H/);
 });
 
-test("m1 interval shows 'in M1' label on selected asset change", async ({
+test("1H timeframe shows 'in 1H' label on selected asset change", async ({
   dashboardData,
   dashboardPage,
 }) => {
   await dashboardPage.goto(dashboardData.urls.bitcoinDefault);
   await waitForDashboardData(dashboardPage.page);
 
-  await dashboardPage.selectRange("m1");
+  await dashboardPage.selectRange("1H");
 
-  await expect(dashboardPage.selectedAssetChange).toContainText("in M1");
+  await expect(dashboardPage.selectedAssetChange).toContainText("in 1H");
 });
 
-test("m1 interval renders the chart", async ({ dashboardData, dashboardPage }) => {
+test("1H timeframe renders the chart", async ({ dashboardData, dashboardPage }) => {
   await dashboardPage.goto(dashboardData.urls.bitcoinDefault);
   await waitForDashboardData(dashboardPage.page);
 
-  await dashboardPage.selectRange("m1");
+  await dashboardPage.selectRange("1H");
 
   await expect(dashboardPage.coinChart).toBeVisible();
 });
 
-test("interval button m30 is selectable and syncs URL", async ({ dashboardData, dashboardPage }) => {
+test("timeframe button 24H is selectable and syncs URL", async ({ dashboardData, dashboardPage }) => {
   await dashboardPage.goto(dashboardData.urls.bitcoinDefault);
   await waitForDashboardData(dashboardPage.page);
 
-  await dashboardPage.selectRange("m30");
+  await dashboardPage.selectRange("24H");
 
-  await dashboardPage.expectRangeSelected("m30");
-  await expect(dashboardPage.page).toHaveURL(/interval=m30/);
+  await dashboardPage.expectRangeSelected("24H");
+  await expect(dashboardPage.page).toHaveURL(/timeframe=24H/);
 });
 
-test("interval button h6 is selectable and syncs URL", async ({ dashboardData, dashboardPage }) => {
+test("timeframe button 30D is selectable and syncs URL", async ({ dashboardData, dashboardPage }) => {
   await dashboardPage.goto(dashboardData.urls.bitcoinDefault);
   await waitForDashboardData(dashboardPage.page);
 
-  await dashboardPage.selectRange("h6");
+  await dashboardPage.selectRange("30D");
 
-  await dashboardPage.expectRangeSelected("h6");
-  await expect(dashboardPage.page).toHaveURL(/interval=h6/);
+  await dashboardPage.expectRangeSelected("30D");
+  await expect(dashboardPage.page).toHaveURL(/timeframe=30D/);
 });
 
-test("interval button d1 is selectable and syncs URL", async ({ dashboardData, dashboardPage }) => {
+test("timeframe button 1Y is selectable and syncs URL", async ({ dashboardData, dashboardPage }) => {
   await dashboardPage.goto(dashboardData.urls.bitcoinDefault);
   await waitForDashboardData(dashboardPage.page);
 
-  await dashboardPage.selectRange("d1");
+  await dashboardPage.selectRange("1Y");
 
-  await dashboardPage.expectRangeSelected("d1");
-  await expect(dashboardPage.page).toHaveURL(/interval=d1/);
+  await dashboardPage.expectRangeSelected("1Y");
+  await expect(dashboardPage.page).toHaveURL(/timeframe=1Y/);
 });
 
-test("range defaults to h1 on new load", async ({ dashboardData, dashboardPage }) => {
+test("range defaults to 7D on new load", async ({ dashboardData, dashboardPage }) => {
   await dashboardPage.goto(dashboardData.urls.bitcoinDefault);
   await waitForDashboardData(dashboardPage.page);
 
-  await expect(dashboardPage.page.getByTestId("range-button-h1")).toHaveAttribute(
+  await expect(dashboardPage.page.getByTestId("range-button-7D")).toHaveAttribute(
     "aria-pressed",
     "true",
   );
-  await dashboardPage.expectRangeSelected("h1");
+  await dashboardPage.expectRangeSelected("7D");
 });
 
 // ─── Coin selection ───────────────────────────────────────────────────────────

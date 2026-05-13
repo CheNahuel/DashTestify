@@ -11,7 +11,13 @@ import { CoinJournal, type CoinJournalEntry } from "./CoinJournal";
 import { SearchBar } from "./SearchBar";
 import { useCoinHistory } from "../hooks/useCoinHistory";
 import { useCoins } from "../hooks/useCoins";
-import { Coin, CoinCapHistoryInterval } from "../types/coin";
+import {
+  Coin,
+  DEFAULT_TIMEFRAME,
+  getHistoryRequestForTimeframe,
+  Timeframe,
+  TIMEFRAMES,
+} from "../types/coin";
 
 const PriceAlertForm = dynamic(
   () => import("./PriceAlertForm").then((mod) => ({ default: mod.PriceAlertForm })),
@@ -39,17 +45,10 @@ const PriceAlertForm = dynamic(
   },
 );
 
-const INTERVAL_FILTERS = [
-  { label: "H1", value: "h1" },
-  { label: "H2", value: "h2" },
-  { label: "H6", value: "h6" },
-  { label: "H12", value: "h12" },
-  { label: "D1", value: "d1" },
-  { label: "M1", value: "m1" },
-  { label: "M5", value: "m5" },
-  { label: "M15", value: "m15" },
-  { label: "M30", value: "m30" },
-] as const;
+const TIMEFRAME_FILTERS = TIMEFRAMES.map((timeframe) => ({
+  label: timeframe,
+  value: timeframe,
+}));
 
 const SORT_OPTIONS = [
   { label: "Market Cap", value: "market-cap-desc" },
@@ -67,7 +66,6 @@ const TREND_OPTIONS = [
 
 const DEFAULT_SORT = "market-cap-desc";
 const DEFAULT_TREND = "all";
-const DEFAULT_INTERVAL: CoinCapHistoryInterval = "h1";
 const WATCHLIST_STORAGE_KEY = "dashtestify.watchlist";
 const JOURNAL_STORAGE_KEY = "dashtestify.journal";
 
@@ -131,7 +129,7 @@ export const CryptoDashboard = ({
   marketUnavailable = false,
   initialSearch = "",
   initialSelectedCoinId,
-  initialInterval = DEFAULT_INTERVAL,
+  initialTimeframe = DEFAULT_TIMEFRAME,
   initialSort = DEFAULT_SORT,
   initialFavoritesOnly = false,
   initialTrend = DEFAULT_TREND,
@@ -141,7 +139,7 @@ export const CryptoDashboard = ({
   marketUnavailable?: boolean;
   initialSearch?: string;
   initialSelectedCoinId?: string;
-  initialInterval?: CoinCapHistoryInterval;
+  initialTimeframe?: Timeframe;
   initialSort?: string;
   initialFavoritesOnly?: boolean;
   initialTrend?: string;
@@ -158,7 +156,7 @@ export const CryptoDashboard = ({
   const [selectedCoinId, setSelectedCoinId] = useState(
     initialSelectedCoinId ?? initialCoins[0]?.id ?? "",
   );
-  const [interval, setInterval] = useState<CoinCapHistoryInterval>(initialInterval);
+  const [timeframe, setTimeframe] = useState<Timeframe>(initialTimeframe);
   const [sort, setSort] = useState<SortOption>(parseSortOption(initialSort));
   const [trend, setTrend] = useState<TrendOption>(parseTrendOption(initialTrend));
   const [favoritesOnly, setFavoritesOnly] = useState(initialFavoritesOnly);
@@ -248,7 +246,7 @@ export const CryptoDashboard = ({
       params.delete("selectedCoin");
     }
 
-    params.set("interval", interval);
+    params.set("timeframe", timeframe);
     params.set("sort", sort);
 
     if (favoritesOnly) {
@@ -269,7 +267,6 @@ export const CryptoDashboard = ({
     }
   }, [
     favoritesOnly,
-    interval,
     pathname,
     router,
     search,
@@ -277,15 +274,18 @@ export const CryptoDashboard = ({
     selectedCoin,
     selectedCoinId,
     sort,
+    timeframe,
     trend,
   ]);
+
+  const historyRequest = useMemo(() => getHistoryRequestForTimeframe(timeframe), [timeframe]);
 
   const {
     data: history,
     isLoading: isHistoryLoading,
     isFetching: isHistoryFetching,
     error: historyError,
-  } = useCoinHistory(selectedCoin?.id ?? null, interval, useMock);
+  } = useCoinHistory(selectedCoin?.id ?? null, historyRequest, useMock);
 
   const historyPrices = history?.prices.map(([, price]) => price) ?? [];
   const selectedRangeHigh =
@@ -299,8 +299,8 @@ export const CryptoDashboard = ({
       ? ((selectedCoin?.current_price - historyPrices[0]) / historyPrices[0]) * 100
       : selectedCoin?.price_change_percentage_24h;
 
-  const selectedIntervalLabel =
-    INTERVAL_FILTERS.find((filter) => filter.value === interval)?.label ?? interval;
+  const selectedTimeframeLabel =
+    TIMEFRAME_FILTERS.find((filter) => filter.value === timeframe)?.label ?? timeframe;
 
   const selectedCoinNotes =
     selectedCoin && hasHydratedStorage ? (journalByCoin[selectedCoin.id] ?? []) : [];
@@ -326,7 +326,7 @@ export const CryptoDashboard = ({
     }
 
     setSearch("");
-    setInterval(DEFAULT_INTERVAL);
+    setTimeframe(DEFAULT_TIMEFRAME);
     setSort(DEFAULT_SORT);
     setTrend(DEFAULT_TREND);
     setFavoritesOnly(false);
@@ -516,36 +516,16 @@ export const CryptoDashboard = ({
 
           <div className="flex h-full flex-col justify-center rounded-[1.5rem] border border-white/10 bg-slate-950/45 p-3 sm:rounded-[1.75rem] sm:p-4 md:p-5">
             <p className="mb-3 text-xs uppercase tracking-wider text-slate-400 sm:mb-4 sm:text-sm">
-              History Interval
+              Time Range
             </p>
             <div className="flex h-full flex-col gap-2 sm:gap-3">
-              <div className="grid grid-cols-3 gap-2 sm:gap-3">
-                {INTERVAL_FILTERS.slice(0, 3).map((filter) => (
+              <div className="grid grid-cols-2 grid-rows-3 gap-2 sm:gap-3 h-full">
+                {TIMEFRAME_FILTERS.map((filter) => (
                   <RangeButton
                     key={filter.value}
                     filter={filter}
-                    active={interval === filter.value}
-                    onClick={setInterval}
-                  />
-                ))}
-              </div>
-              <div className="grid grid-cols-3 gap-2 sm:gap-3">
-                {INTERVAL_FILTERS.slice(3, 6).map((filter) => (
-                  <RangeButton
-                    key={filter.value}
-                    filter={filter}
-                    active={interval === filter.value}
-                    onClick={setInterval}
-                  />
-                ))}
-              </div>
-              <div className="grid grid-cols-3 gap-2 sm:gap-3">
-                {INTERVAL_FILTERS.slice(6).map((filter) => (
-                  <RangeButton
-                    key={filter.value}
-                    filter={filter}
-                    active={interval === filter.value}
-                    onClick={setInterval}
+                    active={timeframe === filter.value}
+                    onClick={setTimeframe}
                   />
                 ))}
               </div>
@@ -563,9 +543,9 @@ export const CryptoDashboard = ({
           </div>
         ) : null}
 
-        <div className="grid gap-4 sm:gap-6 xl:grid-cols-[1.35fr_0.95fr]">
-          <div className="grid gap-4 sm:gap-6">
-            <div className="rounded-2xl border border-white/10 bg-slate-900/80 p-3 sm:rounded-3xl sm:p-4 md:p-5">
+        <div className="grid gap-4 sm:gap-6 xl:grid-cols-[1.35fr_0.95fr] min-w-0">
+          <div className="grid gap-4 sm:gap-6 min-w-0">
+            <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-3 sm:rounded-3xl sm:p-4 md:p-5 xl:max-h-[1400px] xl:overflow-y-auto">
               {isLoading ? (
                 <div className="animate-pulse">
                   <div className="mb-4 flex flex-col gap-3 border-b border-white/10 pb-4 sm:mb-6 sm:gap-4 sm:pb-5 md:flex-row md:items-end md:justify-between">
@@ -644,7 +624,7 @@ export const CryptoDashboard = ({
                           }`}
                         >
                           {selectedRangeChange >= 0 ? "+" : ""}
-                          {selectedRangeChange.toFixed(2)}% in {selectedIntervalLabel}
+                          {selectedRangeChange.toFixed(2)}% in {selectedTimeframeLabel}
                         </span>
                       </p>
                     </div>
@@ -741,7 +721,7 @@ export const CryptoDashboard = ({
                     isFavorite={favoriteIds.includes(coin.id)}
                     onSelect={(nextCoin) => setSelectedCoinId(nextCoin.id)}
                     onToggleFavorite={toggleFavorite}
-                    interval={interval}
+                    historyRequest={historyRequest}
                     useMock={useMock}
                   />
                 ))
@@ -786,9 +766,9 @@ const RangeButton = ({
   active,
   onClick,
 }: {
-  filter: { label: string; value: CoinCapHistoryInterval };
+  filter: { label: string; value: Timeframe };
   active: boolean;
-  onClick: (value: CoinCapHistoryInterval) => void;
+  onClick: (value: Timeframe) => void;
 }) => (
   <button
     type="button"

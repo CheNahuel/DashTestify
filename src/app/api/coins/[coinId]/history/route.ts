@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCoinHistoryFromCoinCap } from "@/features/crypto/server/getCoinHistoryFromCoinCap";
 import { getMockCoinHistory } from "@/features/crypto/server/mockCryptoData";
-import { isCoinCapHistoryInterval } from "@/features/crypto/types/coin";
+import {
+  getHistoryRequestForTimeframe,
+  isCoinCapHistoryInterval,
+} from "@/features/crypto/types/coin";
 
 type RouteContext = {
   params: Promise<{
@@ -12,13 +15,27 @@ type RouteContext = {
 export async function GET(request: NextRequest, context: RouteContext) {
   const { coinId } = await context.params;
   const requestedInterval = request.nextUrl.searchParams.get("interval");
-  const interval = isCoinCapHistoryInterval(requestedInterval) ? requestedInterval : "h1";
+  const fallbackRequest = getHistoryRequestForTimeframe("7D");
+  const interval = isCoinCapHistoryInterval(requestedInterval)
+    ? requestedInterval
+    : fallbackRequest.interval;
+  const requestedStart = Number(request.nextUrl.searchParams.get("start"));
+  const requestedEnd = Number(request.nextUrl.searchParams.get("end"));
+  const hasValidRange =
+    Number.isFinite(requestedStart) &&
+    Number.isFinite(requestedEnd) &&
+    requestedEnd > requestedStart;
+  const historyRequest = {
+    interval,
+    start: hasValidRange ? requestedStart : fallbackRequest.start,
+    end: hasValidRange ? requestedEnd : fallbackRequest.end,
+  };
   const useMock = request.nextUrl.searchParams.get("mock") === "1";
 
   try {
     const history = useMock
-      ? getMockCoinHistory(coinId, interval)
-      : await getCoinHistoryFromCoinCap(coinId, interval);
+      ? getMockCoinHistory(coinId, historyRequest)
+      : await getCoinHistoryFromCoinCap(coinId, historyRequest);
 
     return NextResponse.json(history);
   } catch (error: unknown) {
