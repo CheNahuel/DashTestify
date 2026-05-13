@@ -4,6 +4,7 @@ import { getRangeButtonTestId } from "@tests//utils/dateUtils";
 export class DashboardPage {
   readonly page: Page;
   readonly searchInput: Locator;
+  readonly searchClear: Locator;
   readonly sortSelect: Locator;
   readonly trendSelect: Locator;
   readonly favoritesFilter: Locator;
@@ -39,6 +40,7 @@ export class DashboardPage {
   constructor(page: Page) {
     this.page = page;
     this.searchInput = page.getByTestId("search-input");
+    this.searchClear = page.getByTestId("search-clear");
     this.sortSelect = page.getByTestId("sort-select");
     this.trendSelect = page.getByTestId("trend-select");
     this.favoritesFilter = page.getByTestId("favorites-filter");

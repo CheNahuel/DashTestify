@@ -16,7 +16,7 @@ A modern cryptocurrency dashboard built with Next.js, showcasing real-time data 
 
 - Real-time crypto data from CoinCap API v3
 - Mock data mode for offline use and deployments without an API key
-- Interactive historical charts (24H, 7D, 30D, 90D)
+- Interactive historical charts (H1, H2, H6, H12, D1, M1, M5, M15, M30)
 - Smart search and filtering (by name or symbol)
 - Sort by market cap, price, or 24H change
 - Trade journal with per-coin notes

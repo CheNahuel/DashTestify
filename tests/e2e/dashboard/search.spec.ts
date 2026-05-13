@@ -83,6 +83,24 @@ test("clearing search restores all coins", async ({ dashboardData, dashboardPage
   await dashboardPage.expectVisibleCoinsCount(3);
 });
 
+test("clear search button resets the query", async ({ dashboardData, dashboardPage }) => {
+  await dashboardPage.goto(dashboardData.urls.home);
+  await waitForDashboardData(dashboardPage.page);
+
+  await expect(dashboardPage.searchClear).toBeHidden();
+
+  await dashboardPage.searchFor("sol");
+  await expect(dashboardPage.searchClear).toBeVisible();
+  await expect(dashboardPage.page).toHaveURL(/search=sol/);
+
+  await dashboardPage.searchClear.click();
+
+  await expect(dashboardPage.searchInput).toHaveValue("");
+  await expect(dashboardPage.searchClear).toBeHidden();
+  await dashboardPage.expectVisibleCoinsCount(3);
+  await expect(dashboardPage.page).not.toHaveURL(/search=sol/);
+});
+
 test("search combined with trend reduces results correctly", async ({
   dashboardData,
   dashboardPage,
