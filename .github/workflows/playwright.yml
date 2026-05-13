@@ -13,8 +13,12 @@ permissions:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
-    timeout-minutes: 60
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+
+    strategy:
+      matrix:
+        shard: [1/3, 2/3, 3/3]
 
     steps:
       - uses: actions/checkout@v4
@@ -44,11 +48,41 @@ jobs:
       - name: Build app
         run: npm run build
 
-      - name: Run tests
-        run: npx playwright test
+      - name: Run Playwright tests (shard)
+        run: npx playwright test --shard=${{ matrix.shard }}
+        env:
+          CI: true
 
-      - name: Upload Playwright report
+      - name: Upload blob report
         if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: blob-report-${{ matrix.shard }}
+          path: blob-report
+          retention-days: 30
+
+  merge-reports:
+    if: always()
+    needs: test
+    runs-on: ubuntu-24.04
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Download all blob reports
+        uses: actions/download-artifact@v4
+        with:
+          pattern: blob-report-*
+          path: all-blob-reports
+
+      - name: Merge Playwright reports
+        run: npx playwright merge-reports --reporter html ./all-blob-reports
+
+      - name: Upload final HTML report
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report
@@ -56,9 +90,9 @@ jobs:
           retention-days: 30
 
   deploy-report:
-    if: needs.test.result == 'success' || needs.test.result == 'failure'
-    needs: test
-    runs-on: ubuntu-latest
+    if: needs.merge-reports.result == 'success'
+    needs: merge-reports
+    runs-on: ubuntu-24.04
 
     steps:
       - uses: actions/download-artifact@v4
