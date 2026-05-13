@@ -679,7 +679,7 @@ export const CryptoDashboard = ({
             </div>
 
             {selectedCoin && !isLoading ? (
-              <div className="grid gap-4 sm:gap-6 lg:grid-cols-[1fr_1fr]">
+              <div className="grid gap-4 sm:gap-6 lg:grid-cols-[1fr_1fr] min-w-0">
                 <PriceAlertForm
                   coinId={selectedCoin.id}
                   coinName={selectedCoin.name}
