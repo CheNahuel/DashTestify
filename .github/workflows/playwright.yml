@@ -38,6 +38,9 @@ jobs:
 
       - name: Build app
         run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_KEY }}
 
       - name: Run Playwright tests
         run: npx playwright test
