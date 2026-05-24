@@ -12,10 +12,39 @@ import {
   CartesianGrid,
 } from "recharts";
 
+type TestRun = {
+  id: string | number;
+  branch: string | null;
+  commit_sha: string | null;
+  created_at: string;
+  passed: number | null;
+  failed: number | null;
+  total_tests: number | null;
+};
+
+type TestResult = {
+  test_name: string;
+  status: string;
+};
+
+type FailingTest = {
+  test_name: string;
+  failures: number;
+};
+
+type FlakyTestGroup = {
+  test_name: string;
+  statuses: Set<string>;
+};
+
+type FlakyTest = {
+  test_name: string;
+};
+
 export default function AnalyticsPage() {
-  const [runs, setRuns] = useState<any[]>([]);
-  const [failingTests, setFailingTests] = useState<any[]>([]);
-  const [flakyTests, setFlakyTests] = useState<any[]>([]);
+  const [runs, setRuns] = useState<TestRun[]>([]);
+  const [failingTests, setFailingTests] = useState<FailingTest[]>([]);
+  const [flakyTests, setFlakyTests] = useState<FlakyTest[]>([]);
 
   useEffect(() => {
     async function loadRuns() {
@@ -29,7 +58,7 @@ export default function AnalyticsPage() {
         return;
       }
 
-      setRuns(data || []);
+      setRuns((data || []) as TestRun[]);
     }
     async function loadFailingTests() {
       const { data, error } = await supabase
@@ -42,8 +71,10 @@ export default function AnalyticsPage() {
         return;
       }
 
+      const testResults = (data || []) as TestResult[];
+
       const grouped = Object.values(
-        (data || []).reduce((acc: any, test: any) => {
+        testResults.reduce<Record<string, FailingTest>>((acc, test) => {
           if (!acc[test.test_name]) {
             acc[test.test_name] = {
               test_name: test.test_name,
@@ -57,7 +88,7 @@ export default function AnalyticsPage() {
         }, {}),
       );
 
-      grouped.sort((a: any, b: any) => b.failures - a.failures);
+      grouped.sort((a, b) => b.failures - a.failures);
 
       setFailingTests(grouped.slice(0, 5));
     }
@@ -70,9 +101,10 @@ export default function AnalyticsPage() {
         return;
       }
 
-      const grouped: any = {};
+      const testResults = (data || []) as TestResult[];
+      const grouped: Record<string, FlakyTestGroup> = {};
 
-      for (const test of data || []) {
+      for (const test of testResults) {
         if (!grouped[test.test_name]) {
           grouped[test.test_name] = {
             test_name: test.test_name,
@@ -84,10 +116,10 @@ export default function AnalyticsPage() {
       }
 
       const flaky = Object.values(grouped)
-        .filter((test: any) => {
+        .filter((test) => {
           return test.statuses.has("passed") && test.statuses.has("failed");
         })
-        .map((test: any) => ({
+        .map((test) => ({
           test_name: test.test_name,
         }));
 
