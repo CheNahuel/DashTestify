@@ -41,10 +41,19 @@ type FlakyTest = {
   test_name: string;
 };
 
+type AiAnalysis = {
+  id: string;
+  test_name: string;
+  ai_summary: string;
+  suggested_fix: string;
+  severity: string;
+};
+
 export default function AnalyticsPage() {
   const [runs, setRuns] = useState<TestRun[]>([]);
   const [failingTests, setFailingTests] = useState<FailingTest[]>([]);
   const [flakyTests, setFlakyTests] = useState<FlakyTest[]>([]);
+  const [aiAnalysis, setAiAnalysis] = useState<AiAnalysis[]>([]);
 
   useEffect(() => {
     async function loadRuns() {
@@ -125,9 +134,22 @@ export default function AnalyticsPage() {
 
       setFlakyTests(flaky);
     }
+    async function loadAiAnalysis() {
+      const { data, error } = await supabase.from("ai_analysis").select("*").order("created_at", {
+        ascending: false,
+      });
+
+      if (error) {
+        console.error(error);
+        return;
+      }
+
+      setAiAnalysis((data || []) as AiAnalysis[]);
+    }
     loadRuns();
     loadFailingTests();
     loadFlakyTests();
+    loadAiAnalysis();
   }, []);
 
   const totalRuns = runs.length;
@@ -227,6 +249,48 @@ export default function AnalyticsPage() {
               <p>{test.test_name}</p>
 
               <p className="font-bold text-yellow-500">Flaky</p>
+            </div>
+          ))}
+        </div>
+      </div>
+      {/* AI ANALYSIS */}
+      <div className="border rounded-2xl p-6 mb-8">
+        <h2 className="text-2xl font-bold mb-6">AI Failure Analysis</h2>
+
+        <div className="space-y-4">
+          {aiAnalysis.length === 0 && <p>No AI analysis available yet.</p>}
+
+          {aiAnalysis.map((analysis) => (
+            <div key={analysis.id} className="border rounded-xl p-4">
+              <div className="flex justify-between items-start mb-3">
+                <p className="font-semibold text-lg">{analysis.test_name}</p>
+
+                <span
+                  className={`px-3 py-1 rounded-full text-sm font-bold ${
+                    analysis.severity === "high"
+                      ? "bg-red-500/20 text-red-500"
+                      : analysis.severity === "medium"
+                        ? "bg-yellow-500/20 text-yellow-500"
+                        : "bg-green-500/20 text-green-500"
+                  }`}
+                >
+                  {analysis.severity}
+                </span>
+              </div>
+
+              <div className="space-y-3">
+                <div>
+                  <p className="text-sm opacity-70 mb-1">AI Summary</p>
+
+                  <p>{analysis.ai_summary}</p>
+                </div>
+
+                <div>
+                  <p className="text-sm opacity-70 mb-1">Suggested Fix</p>
+
+                  <p>{analysis.suggested_fix}</p>
+                </div>
+              </div>
             </div>
           ))}
         </div>
