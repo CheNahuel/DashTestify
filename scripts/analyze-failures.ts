@@ -65,13 +65,24 @@ ${failure.test_name}
 Error:
 ${failure.error_message}
 
-Return ONLY valid JSON in this format:
+Return ONLY valid JSON:
 
 {
   "summary": "...",
   "severity": "low|medium|high",
-  "suggested_fix": "..."
+  "classification": "test_issue|app_issue|infra_issue|flaky_test|unknown",
+  "confidence": 0,
+  "target_file": "...",
+  "suggested_fix": "...",
+  "generated_patch": "..."
 }
+
+Rules:
+- If this is likely a broken selector or test issue => classification=test_issue
+- If the application behavior changed => app_issue
+- confidence must be 0-100
+- target_file should be the most likely Playwright file to modify
+- generated_patch should contain ONLY the code replacement
 `,
           },
         ],
@@ -106,10 +117,13 @@ Return ONLY valid JSON in this format:
         run_id: failure.run_id,
         test_name: failure.test_name,
         error_message: failure.error_message,
-
         ai_summary: parsed.summary,
         suggested_fix: parsed.suggested_fix,
         severity: parsed.severity,
+        classification: parsed.classification,
+        confidence: parsed.confidence,
+        target_file: parsed.target_file,
+        generated_patch: parsed.generated_patch,
       });
 
     if (insertError) {

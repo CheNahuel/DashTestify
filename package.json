@@ -24,7 +24,8 @@
     "openai": "^6.39.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
-    "recharts": "^3.8.1"
+    "recharts": "^3.8.1",
+    "simple-git": "^3.36.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.59.1",
