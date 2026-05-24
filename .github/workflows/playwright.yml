@@ -67,7 +67,7 @@ jobs:
           retention-days: 30
 
   deploy-report:
-    if: needs.test.result == 'success' || needs.test.result == 'failure'
+    if: always()
     needs: test
     runs-on: ubuntu-24.04
 
