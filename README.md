@@ -41,7 +41,7 @@ This project uses the [CoinCap REST API v3](https://rest.coincap.io) to fetch li
 
 #### Configuring the key locally
 
-Create a `.env.local` file at the project root (it is git-ignored):
+Create a `.env` file at the project root (it is git-ignored):
 
 ```bash
 COINCAP_API_KEY=your_api_key_here

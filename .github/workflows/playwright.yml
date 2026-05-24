@@ -48,6 +48,15 @@ jobs:
         run: npx playwright test
         env:
           CI: true
+      
+      - name: Upload test results to Supabase
+        if: always()
+        run: npm run upload:test-results
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          GITHUB_SHA: ${{ github.sha }}
+          GITHUB_REF_NAME: ${{ github.ref_name }}
 
       - name: Upload HTML report
         if: always()
