@@ -85,3 +85,4 @@ jobs:
           path: playwright-report
 
       - uses: actions/deploy-pages@v4
+        continue-on-error: true
