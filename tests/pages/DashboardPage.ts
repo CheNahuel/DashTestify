@@ -39,7 +39,7 @@ export class DashboardPage {
 
   constructor(page: Page) {
     this.page = page;
-    this.searchInput = page.getByTestId("search-input");
+    this.searchInput = page.getByTestId("search-input-FAILING");
     this.searchClear = page.getByTestId("search-clear");
     this.sortSelect = page.getByTestId("sort-select");
     this.trendSelect = page.getByTestId("trend-select");
