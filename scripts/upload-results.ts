@@ -42,7 +42,8 @@ async function main() {
           suite: suite.title,
           status: test.results?.[0]?.status,
           duration_ms: test.results?.[0]?.duration,
-          retry: test.results?.[0]?.retry ?? 0
+          retry: test.results?.[0]?.retry ?? 0,
+          error_message: test.results?.[0]?.error?.message || null
         });
       }
     }
