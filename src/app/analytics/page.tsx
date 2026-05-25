@@ -84,7 +84,7 @@ export default function AnalyticsPage() {
   const [selectedProvider, setSelectedProvider] = useState<AiProvider>("openai");
   const [actionStatus, setActionStatus] = useState<string | null>(null);
   const [busyAction, setBusyAction] = useState<string | null>(null);
-  const [refreshTick, setRefreshTick] = useState(0);
+  const [refreshTick] = useState(0);
 
   useEffect(() => {
     async function loadRuns() {

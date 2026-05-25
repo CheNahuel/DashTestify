@@ -11,6 +11,10 @@ function stripMarkdownFences(raw: string) {
     .trim();
 }
 
+function stripAnsiEscapeCodes(raw: string) {
+  return raw.replace(/\u001b\[[0-9;]*m/g, "");
+}
+
 function isUnifiedDiff(patch: string) {
   return patch.includes("diff --git ") || patch.startsWith("--- ") || patch.includes("\n@@ ");
 }
@@ -62,6 +66,7 @@ type ParsedHunk = {
   newStart: number | null;
   oldLines: string[];
   newLines: string[];
+  ops: Array<{ type: "context" | "remove" | "add"; text: string }>;
 };
 
 function parseUnifiedDiffHunks(patch: string) {
@@ -83,24 +88,31 @@ function parseUnifiedDiffHunks(patch: string) {
 
     const oldLines: string[] = [];
     const newLines: string[] = [];
+    const ops: Array<{ type: "context" | "remove" | "add"; text: string }> = [];
 
     while (index < lines.length && !lines[index].startsWith("@@") && !lines[index].startsWith("diff --git ")) {
       const line = lines[index];
 
       if (line.startsWith("-")) {
-        oldLines.push(line.slice(1));
+        const text = line.slice(1);
+        oldLines.push(text);
+        ops.push({ type: "remove", text });
       } else if (line.startsWith("+")) {
-        newLines.push(line.slice(1));
+        const text = line.slice(1);
+        newLines.push(text);
+        ops.push({ type: "add", text });
       } else if (line.startsWith(" ")) {
         const contextLine = line.slice(1);
         oldLines.push(contextLine);
         newLines.push(contextLine);
+        ops.push({ type: "context", text: contextLine });
       } else if (line.startsWith("\\ No newline at end of file")) {
         // Handled implicitly by the line splitting helpers.
       } else if (line.trim().length === 0) {
         // Preserve blank lines inside the hunk.
         oldLines.push("");
         newLines.push("");
+        ops.push({ type: "context", text: "" });
       } else {
         throw new Error(`Unsupported patch line: ${line}`);
       }
@@ -113,6 +125,7 @@ function parseUnifiedDiffHunks(patch: string) {
       newStart: hunkHeaderMatch ? Number(hunkHeaderMatch[3]) : null,
       oldLines,
       newLines,
+      ops,
     });
   }
 
@@ -148,6 +161,26 @@ function sanitizeUnifiedDiffHeaders(patch: string) {
     .join("\n");
 }
 
+function normalizeLineForMatch(line: string) {
+  return line.replace(/\s+/g, " ").trim();
+}
+
+function findLineIndexRelaxed(haystack: string[], needle: string) {
+  const exactIndex = haystack.findIndex((line) => line === needle);
+
+  if (exactIndex >= 0) {
+    return exactIndex;
+  }
+
+  const normalizedNeedle = normalizeLineForMatch(needle);
+
+  if (!normalizedNeedle) {
+    return -1;
+  }
+
+  return haystack.findIndex((line) => normalizeLineForMatch(line) === normalizedNeedle);
+}
+
 function findSequence(haystack: string[], needle: string[], preferredIndex: number) {
   if (needle.length === 0) {
     return Math.max(0, Math.min(preferredIndex, haystack.length));
@@ -177,18 +210,39 @@ function findSequence(haystack: string[], needle: string[], preferredIndex: numb
 
 function applyUnifiedDiffToContent(originalContent: string, patch: string) {
   const { hasTrailingNewline, lines: originalLines } = splitContentLines(originalContent);
-  let updatedLines = [...originalLines];
+  const updatedLines = [...originalLines];
   const hunks = parseUnifiedDiffHunks(patch);
 
   for (const hunk of hunks) {
     const preferredIndex = Math.max(0, (hunk.oldStart ?? 1) - 1);
     const matchIndex = findSequence(updatedLines, hunk.oldLines, preferredIndex);
 
-    if (matchIndex < 0) {
-      throw new Error("Could not locate the target lines for the generated patch.");
+    if (matchIndex >= 0) {
+      updatedLines.splice(matchIndex, hunk.oldLines.length, ...hunk.newLines);
+      continue;
     }
 
-    updatedLines.splice(matchIndex, hunk.oldLines.length, ...hunk.newLines);
+    const removeLines = hunk.ops.filter((op) => op.type === "remove").map((op) => op.text);
+    const addLines = hunk.ops.filter((op) => op.type === "add").map((op) => op.text);
+
+    if (removeLines.length > 0) {
+      let relaxedMatchIndex = -1;
+
+      for (const removeLine of removeLines) {
+        relaxedMatchIndex = findLineIndexRelaxed(updatedLines, removeLine);
+
+        if (relaxedMatchIndex >= 0) {
+          break;
+        }
+      }
+
+      if (relaxedMatchIndex >= 0) {
+        updatedLines.splice(relaxedMatchIndex, 1, ...addLines);
+        continue;
+      }
+    }
+
+    throw new Error("Could not locate the target lines for the generated patch.");
   }
 
   return renderContentLines(updatedLines, hasTrailingNewline);
@@ -239,7 +293,7 @@ export async function applyGeneratedPatch(
   generatedPatch: string,
   options: { targetFileHint?: string } = {},
 ) {
-  const patch = stripMarkdownFences(generatedPatch);
+  const patch = stripAnsiEscapeCodes(stripMarkdownFences(generatedPatch));
 
   if (!isUnifiedDiff(patch)) {
     throw new Error("generated_patch must be a unified diff that git apply can understand.");
@@ -259,7 +313,7 @@ export async function applyGeneratedPatch(
   await fs.promises.writeFile(patchFile, patchToApply, "utf8");
 
   try {
-    await git.raw(["apply", "--unidiff-zero", "--whitespace=nowarn", patchFile]);
+    await git.raw(["apply", "--3way", "--whitespace=nowarn", patchFile]);
     return;
   } catch (error) {
     const absoluteTargetFile = resolvedTargetFile;

@@ -29,7 +29,7 @@ test("builds a prompt that includes the failure context and patch rules", async 
 });
 
 test("normalizes malformed analysis payloads into safe defaults", async () => {
-  const analysis = normalizeFailureAnalysis({
+  const malformedPayload: Record<string, unknown> = {
     summary: 123,
     severity: "urgent",
     classification: "banana",
@@ -37,7 +37,9 @@ test("normalizes malformed analysis payloads into safe defaults", async () => {
     target_file: 99,
     suggested_fix: "",
     generated_patch: null,
-  } as any);
+  };
+
+  const analysis = normalizeFailureAnalysis(malformedPayload);
 
   expect(analysis.summary).toBe("No summary returned by the provider.");
   expect(analysis.severity).toBe("medium");
@@ -191,6 +193,69 @@ test("applyGeneratedPatch resolves shortened paths and survives corrupt hunk hea
   const updated = fs.readFileSync(filePath, "utf8");
 
   expect(updated).toBe('await expect(dashboardPage.searchInput).toHaveValue("");\n');
+});
+
+test("applyGeneratedPatch strips ansi escapes before applying the patch", async () => {
+  const repoRoot = fs.mkdtempSync(path.join(os.tmpdir(), "ai-patch-repo-ansi-"));
+  const filePath = path.join(repoRoot, "sample.ts");
+
+  fs.writeFileSync(filePath, 'await expect(dashboardPage.searchInput).toHaveValue("FAILURE");\n', "utf8");
+  execFileSync("git", ["init"], { cwd: repoRoot });
+
+  const patch = [
+    "diff --git a/sample.ts b/sample.ts",
+    "--- a/sample.ts",
+    "+++ b/sample.ts",
+    "@@ -1 +1 @@",
+    "\u001b[31m-await expect(dashboardPage.searchInput).toHaveValue(\"FAILURE\");\u001b[0m",
+    "\u001b[32m+await expect(dashboardPage.searchInput).toHaveValue(\"\");\u001b[0m",
+    "",
+  ].join("\n");
+
+  await applyGeneratedPatch(repoRoot, patch);
+
+  const updated = fs.readFileSync(filePath, "utf8");
+
+  expect(updated).toBe('await expect(dashboardPage.searchInput).toHaveValue("");\n');
+});
+
+test("applyGeneratedPatch falls back when hunk context does not match exactly", async () => {
+  const repoRoot = fs.mkdtempSync(path.join(os.tmpdir(), "ai-patch-repo-relaxed-"));
+  const filePath = path.join(repoRoot, "sample.ts");
+
+  fs.writeFileSync(
+    filePath,
+    [
+      'await dashboardPage.resetButton.click();',
+      'await expect(dashboardPage.searchInput).toHaveValue("FAILURE");',
+      'await expect(dashboardPage.sortSelect).toHaveValue("market-cap-desc");',
+      "",
+    ].join("\n"),
+    "utf8",
+  );
+  execFileSync("git", ["init"], { cwd: repoRoot });
+
+  const patch = [
+    "diff --git a/sample.ts b/sample.ts",
+    "--- a/sample.ts",
+    "+++ b/sample.ts",
+    "@@ -1,3 +1,4 @@",
+    "-await dashboardPage.someOtherStep();",
+    ' await dashboardPage.resetButton.click();',
+    '+await page.getByTestId("search-input").fill("FAILURE");',
+    '-await expect(dashboardPage.searchInput).toHaveValue("FAILURE");',
+    '+await expect(dashboardPage.searchInput).toHaveValue("");',
+    ' await expect(dashboardPage.sortSelect).toHaveValue("market-cap-desc");',
+    "",
+  ].join("\n");
+
+  await applyGeneratedPatch(repoRoot, patch);
+
+  const updated = fs.readFileSync(filePath, "utf8");
+
+  expect(updated).toContain('await page.getByTestId("search-input").fill("FAILURE");');
+  expect(updated).toContain('await expect(dashboardPage.searchInput).toHaveValue("");');
+  expect(updated).toContain('await expect(dashboardPage.sortSelect).toHaveValue("market-cap-desc");');
 });
 
 test("checkoutBranchFromBase creates the fix branch from the source commit", async () => {
