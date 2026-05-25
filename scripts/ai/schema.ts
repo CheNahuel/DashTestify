@@ -53,12 +53,25 @@ export const FAILURE_ANALYSIS_JSON_SCHEMA = {
 } as const;
 
 export function buildFailureAnalysisPrompt(failure: FailureAnalysisInput) {
+  const sourceContext = failure.sourceFilePath
+    ? [
+        "",
+        `Current source file: ${failure.sourceFilePath}`,
+        failure.sourceFileTruncated ? "Source note: content was truncated; keep the patch within the visible content." : "",
+        "Current source content:",
+        "```",
+        failure.sourceFileContent || "",
+        "```",
+      ].filter(Boolean)
+    : [];
+
   return [
     "Analyze this Playwright test failure and return only JSON that matches the provided schema.",
     "",
     `Test name: ${failure.testName}`,
     `Run ID: ${failure.runId ?? "unknown"}`,
     `Suite: ${failure.suite ?? "unknown"}`,
+    ...sourceContext,
     "",
     "Error:",
     failure.errorMessage,
@@ -71,6 +84,9 @@ export function buildFailureAnalysisPrompt(failure: FailureAnalysisInput) {
     "- confidence must be an integer from 0 to 100.",
     "- target_file should be a repository-relative path, preferably inside tests/ for test fixes.",
     "- generated_patch must be a unified diff for exactly one file and should apply cleanly with git apply.",
+    "- If current source content is provided, base generated_patch only on those exact lines.",
+    "- Do not invent selectors, page-object fields, or helper names that are not present in the current source content.",
+    "- Use the Current source file path as target_file unless the error clearly belongs to a different file.",
     "- Do not wrap the JSON in markdown fences.",
   ].join("\n");
 }
@@ -144,4 +160,3 @@ export function parseFailureAnalysisResponse(rawContent: string): FailureAnalysi
     return normalizeFailureAnalysis({ summary: cleaned, suggested_fix: cleaned }, cleaned);
   }
 }
-

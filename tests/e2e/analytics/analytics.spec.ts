@@ -156,7 +156,9 @@ test("analytics page shows runs, failures, and can generate AI analysis with a s
     if (body.action === "apply") {
       await route.fulfill({
         json: {
-          branchName: `ai-fix/${body.analysisId}`,
+          branchName: "feature/source",
+          applyMode: "local",
+          committed: false,
           filePath: "tests/e2e/dashboard/search.spec.ts",
         },
       });
@@ -226,7 +228,9 @@ test("analytics page can apply an AI fix from an existing analysis card", async 
     if (body.action === "apply") {
       await route.fulfill({
         json: {
-          branchName: `ai-fix/${body.analysisId}`,
+          branchName: "feature/source",
+          applyMode: "local",
+          committed: false,
           filePath: "tests/e2e/dashboard/search.spec.ts",
         },
       });
@@ -242,7 +246,7 @@ test("analytics page can apply an AI fix from an existing analysis card", async 
 
   await page.getByTestId("ai-apply-42").click();
 
-  await expect(page.getByTestId("ai-status-message")).toContainText("ai-fix/42");
+  await expect(page.getByTestId("ai-status-message")).toContainText("locally on feature/source");
   await expect(page.getByTestId("ai-status-message")).toContainText(
     "tests/e2e/dashboard/search.spec.ts",
   );

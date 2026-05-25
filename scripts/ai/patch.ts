@@ -314,7 +314,11 @@ export async function applyGeneratedPatch(
 
   try {
     await git.raw(["apply", "--3way", "--whitespace=nowarn", patchFile]);
-    return;
+    return {
+      filePath: resolvedTargetFile
+        ? path.relative(repoRoot, resolvedTargetFile).replace(/\\/g, "/")
+        : normalizePatchPath(targetFile),
+    };
   } catch (error) {
     const absoluteTargetFile = resolvedTargetFile;
 
@@ -326,6 +330,10 @@ export async function applyGeneratedPatch(
     const updatedContent = applyUnifiedDiffToContent(originalContent, patchToApply);
 
     await fs.promises.writeFile(absoluteTargetFile, updatedContent, "utf8");
+
+    return {
+      filePath: path.relative(repoRoot, absoluteTargetFile).replace(/\\/g, "/"),
+    };
   } finally {
     await fs.promises.unlink(patchFile).catch(() => undefined);
   }

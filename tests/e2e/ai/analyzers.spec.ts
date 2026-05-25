@@ -13,8 +13,10 @@ import {
   createOpenAiFailureAnalyzer,
   normalizeFailureAnalysis,
   parseFailureAnalysisResponse,
+  readSourceFileContext,
 } from "../../../scripts/ai";
 import { POST as postAnalyticsAi } from "../../../src/app/api/analytics/ai/route";
+import { getSupabaseClient } from "../../../src/lib/supabase";
 
 test("builds a prompt that includes the failure context and patch rules", async () => {
   const prompt = buildFailureAnalysisPrompt({
@@ -22,11 +24,30 @@ test("builds a prompt that includes the failure context and patch rules", async 
     errorMessage: "Locator not found",
     suite: "dashboard/search.spec.ts",
     runId: 42,
+    sourceFilePath: "tests/e2e/dashboard/search.spec.ts",
+    sourceFileContent: "await expect(dashboardPage.searchInput).toHaveValue(\"\");\n",
   });
 
   expect(prompt).toContain("dashboard search keeps failing");
   expect(prompt).toContain("Locator not found");
+  expect(prompt).toContain("Current source file: tests/e2e/dashboard/search.spec.ts");
+  expect(prompt).toContain("dashboardPage.searchInput");
+  expect(prompt).toContain("base generated_patch only on those exact lines");
   expect(prompt).toContain("generated_patch must be a unified diff");
+});
+
+test("readSourceFileContext resolves shortened suite paths", async () => {
+  const repoRoot = fs.mkdtempSync(path.join(os.tmpdir(), "ai-source-context-repo-"));
+  const filePath = path.join(repoRoot, "tests/e2e/dashboard/interactions.spec.ts");
+
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
+  fs.writeFileSync(filePath, "test('reset dashboard returns filters to default', async () => {});\n", "utf8");
+
+  const context = await readSourceFileContext(repoRoot, "e2e/dashboard/interactions.spec.ts");
+
+  expect(context?.path).toBe("tests/e2e/dashboard/interactions.spec.ts");
+  expect(context?.content).toContain("reset dashboard");
+  expect(context?.truncated).toBe(false);
 });
 
 test("normalizes malformed analysis payloads into safe defaults", async () => {
@@ -345,5 +366,20 @@ test("analytics ai route returns a clean error when supabase env is missing", as
   } finally {
     process.env.SUPABASE_URL = originalSupabaseUrl;
     process.env.SUPABASE_KEY = originalSupabaseKey;
+  }
+});
+
+test("supabase client is created lazily during tests without NEXT_PUBLIC env", () => {
+  const originalUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const originalKey = process.env.NEXT_PUBLIC_SUPABASE_KEY;
+
+  try {
+    delete process.env.NEXT_PUBLIC_SUPABASE_URL;
+    delete process.env.NEXT_PUBLIC_SUPABASE_KEY;
+
+    expect(() => getSupabaseClient()).not.toThrow();
+  } finally {
+    process.env.NEXT_PUBLIC_SUPABASE_URL = originalUrl;
+    process.env.NEXT_PUBLIC_SUPABASE_KEY = originalKey;
   }
 });
