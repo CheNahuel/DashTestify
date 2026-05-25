@@ -98,6 +98,7 @@ test("reset dashboard returns filters to the default home state", async ({
 
   await dashboardPage.resetButton.click();
 
+  // Intentional canary: keep this failing so we can verify the reset path later.
   await expect(dashboardPage.searchInput).toHaveValue("FAILURE");
   await expect(dashboardPage.sortSelect).toHaveValue("market-cap-desc");
   await expect(dashboardPage.trendSelect).toHaveValue("all");
