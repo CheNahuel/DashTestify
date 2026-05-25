@@ -14,6 +14,7 @@ import {
   normalizeFailureAnalysis,
   parseFailureAnalysisResponse,
 } from "../../../scripts/ai";
+import { POST as postAnalyticsAi } from "../../../src/app/api/analytics/ai/route";
 
 test("builds a prompt that includes the failure context and patch rules", async () => {
   const prompt = buildFailureAnalysisPrompt({
@@ -313,4 +314,36 @@ test("checkoutBranchFromBase can create the fix branch from a source branch ref"
 
   expect(branchName).toBe("ai-fix/branch-ref");
   expect(updated).toBe('export const status = "base";\n');
+});
+
+test("analytics ai route returns a clean error when supabase env is missing", async () => {
+  const originalSupabaseUrl = process.env.SUPABASE_URL;
+  const originalSupabaseKey = process.env.SUPABASE_KEY;
+
+  try {
+    delete process.env.SUPABASE_URL;
+    delete process.env.SUPABASE_KEY;
+
+    const response = await postAnalyticsAi(
+      new Request("http://localhost/api/analytics/ai", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          action: "apply",
+          analysisId: "analysis-1",
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(500);
+
+    const payload = (await response.json()) as { error?: string };
+
+    expect(payload.error).toContain("SUPABASE_URL and SUPABASE_KEY are required");
+  } finally {
+    process.env.SUPABASE_URL = originalSupabaseUrl;
+    process.env.SUPABASE_KEY = originalSupabaseKey;
+  }
 });
