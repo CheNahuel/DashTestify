@@ -2,6 +2,14 @@ import { expect, test, type Page } from "@playwright/test";
 
 type SupabaseRow = Record<string, unknown>;
 
+type TestResultFixture = {
+  run_id: string;
+  suite: string;
+  test_name: string | null;
+  status: string;
+  error_message: string | null;
+};
+
 function createSupabaseFixtures(options?: {
   analyses?: SupabaseRow[];
 }) {
@@ -26,7 +34,7 @@ function createSupabaseFixtures(options?: {
     },
   ];
 
-  const allResults = [
+  const allResults: TestResultFixture[] = [
     {
       run_id: "run-2",
       suite: "dashboard/search.spec.ts",
@@ -241,8 +249,8 @@ test("analytics page can apply an AI fix from an existing analysis card", async 
 });
 
 test("analytics page tolerates failing tests with a missing test name", async ({ page }) => {
-  const fixtures = createSupabaseFixtures() as any;
-  fixtures.allResults = [
+  const fixtures = createSupabaseFixtures();
+  const missingNameResults: TestResultFixture[] = [
     {
       run_id: "run-1",
       suite: "dashboard/search.spec.ts",
@@ -250,7 +258,9 @@ test("analytics page tolerates failing tests with a missing test name", async ({
       status: "failed",
       error_message: "Missing test name should not crash the page.",
     },
-  ] as any;
+  ];
+
+  fixtures.allResults = missingNameResults;
 
   await mockAnalyticsData(page, fixtures);
 
