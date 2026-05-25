@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { supabase } from "@/lib/supabase";
+import { getSupabaseClient } from "@/lib/supabase";
 import {
   CartesianGrid,
   Line,
@@ -87,6 +87,8 @@ export default function AnalyticsPage() {
   const [refreshTick] = useState(0);
 
   useEffect(() => {
+    const supabase = getSupabaseClient();
+
     async function loadRuns() {
       const { data, error } = await supabase
         .from("test_runs")
@@ -231,6 +233,8 @@ export default function AnalyticsPage() {
         provider?: string;
         skipped?: string[];
         branchName?: string;
+        applyMode?: "local" | "branch";
+        committed?: boolean;
         filePath?: string;
       };
 
@@ -296,9 +300,12 @@ export default function AnalyticsPage() {
         analysisId,
       });
 
-      setActionStatus(
-        `Applied AI fix on ${result?.branchName || "ai-fix branch"} for ${result?.filePath || "the selected file"}.`,
-      );
+      const location =
+        result?.applyMode === "local"
+          ? `locally on ${result?.branchName || "the current branch"}`
+          : `on ${result?.branchName || "an ai-fix branch"}`;
+
+      setActionStatus(`Applied AI fix ${location} for ${result?.filePath || "the selected file"}.`);
     } catch (error) {
       setActionStatus(error instanceof Error ? error.message : "Applying the AI fix failed.");
     }
@@ -533,7 +540,9 @@ export default function AnalyticsPage() {
           <div className="rounded-3xl border border-white/10 bg-slate-950/70 p-6 shadow-2xl shadow-cyan-950/10">
             <div className="mb-6">
               <h2 className="text-2xl font-semibold">AI failure analysis</h2>
-              <p className="text-sm text-slate-400">Results appear here after analysis and can be turned into a branch fix.</p>
+              <p className="text-sm text-slate-400">
+                Results appear here after analysis and can be applied locally from the current source branch.
+              </p>
             </div>
 
             <div className="space-y-4">

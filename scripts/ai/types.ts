@@ -21,6 +21,9 @@ export type FailureAnalysisInput = {
   errorMessage: string;
   suite?: string | null;
   runId?: string | number;
+  sourceFilePath?: string | null;
+  sourceFileContent?: string | null;
+  sourceFileTruncated?: boolean;
 };
 
 export type FailureAnalysis = {
@@ -42,4 +45,3 @@ export type FailureAnalysisApiPayload = Partial<FailureAnalysis> & {
   suggested_fix?: unknown;
   generated_patch?: unknown;
 };
-

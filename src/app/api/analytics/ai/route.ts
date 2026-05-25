@@ -1,8 +1,11 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 import path from "path";
+import simpleGit from "simple-git";
 
-import { applyGeneratedPatch, checkoutBranchFromBase, createAiProvider, parseAiProviderName } from "@/lib/ai";
+import { createAiProvider, parseAiProviderName } from "../../../../../scripts/ai/factory";
+import { applyGeneratedPatch } from "../../../../../scripts/ai/patch";
+import { readSourceFileContext } from "../../../../../scripts/ai/source-context";
 
 export const runtime = "nodejs";
 
@@ -21,6 +24,8 @@ type AnalyzeRequestBody = {
   analysisId?: string | number;
 };
 
+const repoRoot = process.cwd();
+
 function getSupabaseClient() {
   const supabaseUrl = process.env.SUPABASE_URL;
   const supabaseKey = process.env.SUPABASE_KEY;
@@ -33,28 +38,18 @@ function getSupabaseClient() {
 }
 
 function getRepoRelativePath(targetFile: string) {
-  return path.isAbsolute(targetFile) ? path.relative(process.cwd(), targetFile) : targetFile.replace(/^\.\/+/, "");
+  return path.isAbsolute(targetFile) ? path.relative(repoRoot, targetFile) : targetFile.replace(/^\.\/+/, "");
 }
 
-async function getSourceBranchContext(runId: string | number) {
-  const supabase = getSupabaseClient();
-  const { data: run, error } = await supabase
-    .from("test_runs")
-    .select("branch, commit_sha")
-    .eq("id", runId)
-    .maybeSingle();
+async function getCurrentBranchName() {
+  const git = simpleGit(repoRoot);
+  const branchSummary = await git.branchLocal().catch(() => null);
 
-  if (error) {
-    throw error;
-  }
+  return branchSummary?.current || "current branch";
+}
 
-  const baseRef = run?.commit_sha || run?.branch || "HEAD";
-
-  return {
-    branch: run?.branch ?? null,
-    commit_sha: run?.commit_sha ?? null,
-    baseRef,
-  };
+function isHostedApplyEnvironment() {
+  return process.env.VERCEL === "1";
 }
 
 export async function POST(request: Request) {
@@ -91,11 +86,15 @@ export async function POST(request: Request) {
           continue;
         }
 
+        const sourceContext = await readSourceFileContext(repoRoot, failure.suite);
         const analysis = await analyzer.analyzeFailure({
           testName: failure.testName,
           errorMessage: failure.errorMessage,
           suite: failure.suite,
           runId: failure.runId,
+          sourceFilePath: sourceContext?.path,
+          sourceFileContent: sourceContext?.content,
+          sourceFileTruncated: sourceContext?.truncated,
         });
 
         const { data: inserted, error } = await supabase
@@ -149,26 +148,26 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: "Analysis is missing patch information." }, { status: 400 });
       }
 
-      const branchName = `ai-fix/${analysis.id}`;
-      const sourceContext = await getSourceBranchContext(analysis.run_id);
-      const git = await checkoutBranchFromBase(process.cwd(), branchName, sourceContext.baseRef);
+      if (isHostedApplyEnvironment()) {
+        return NextResponse.json(
+          { error: "Hosted AI apply needs a Git provider workflow before it can create branches or merge requests." },
+          { status: 501 },
+        );
+      }
 
-      await applyGeneratedPatch(process.cwd(), analysis.generated_patch, {
+      const branchName = await getCurrentBranchName();
+      const appliedPatch = await applyGeneratedPatch(repoRoot, analysis.generated_patch, {
         targetFileHint: analysis.target_file,
       });
 
-      const filePath = getRepoRelativePath(analysis.target_file);
-
-      await git.add(filePath);
-      await git.commit(`AI-generated fix for ${analysis.test_name}`);
+      const filePath = appliedPatch?.filePath || getRepoRelativePath(analysis.target_file);
 
       return NextResponse.json({
         branchName,
+        applyMode: "local",
+        committed: false,
         analysisId: analysis.id,
         filePath,
-        sourceBranch: sourceContext.branch,
-        sourceCommitSha: sourceContext.commit_sha,
-        sourceBaseRef: sourceContext.baseRef,
       });
     }
 

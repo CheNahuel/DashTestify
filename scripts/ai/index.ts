@@ -4,4 +4,5 @@ export * from "./openai-provider";
 export * from "./repo";
 export * from "./patch";
 export * from "./schema";
+export * from "./source-context";
 export * from "./types";

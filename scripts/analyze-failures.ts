@@ -2,7 +2,7 @@ import "dotenv/config";
 
 import { createClient } from "@supabase/supabase-js";
 
-import { createAiProvider, parseAiProviderName } from "./ai";
+import { createAiProvider, parseAiProviderName, readSourceFileContext } from "./ai";
 
 type FailureRow = {
   run_id: string | number;
@@ -56,11 +56,15 @@ async function main() {
       continue;
     }
 
+    const sourceContext = await readSourceFileContext(process.cwd(), failure.suite);
     const analysis = await analyzer.analyzeFailure({
       testName: failure.test_name,
       errorMessage: failure.error_message || "",
       suite: failure.suite,
       runId: failure.run_id,
+      sourceFilePath: sourceContext?.path,
+      sourceFileContent: sourceContext?.content,
+      sourceFileTruncated: sourceContext?.truncated,
     });
 
     const { error: insertError } = await supabase.from("ai_analysis").insert({
