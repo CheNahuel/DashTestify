@@ -187,18 +187,19 @@ test("clicking a coin card selects it as the active asset", async ({
   dashboardData,
   dashboardPage,
 }) => {
-  await dashboardPage.goto(dashboardData.urls.bitcoinDefault);
+  await dashboardPage.goto(dashboardData.urls.home);
   await waitForDashboardData(dashboardPage.page);
 
   // Click the Ethereum card
   await dashboardPage.coinCard("ethereum").getByRole("button").first().click();
 
   await dashboardPage.expectSelectedAsset("Ethereum");
+  await dashboardPage.expectMainDashboardVisible();
   await expect(dashboardPage.page).toHaveURL(/selectedCoin=ethereum/);
 });
 
 test("selected coin card is visually highlighted", async ({ dashboardData, dashboardPage }) => {
-  await dashboardPage.goto(dashboardData.urls.bitcoinDefault);
+  await dashboardPage.goto(dashboardData.urls.home);
   await waitForDashboardData(dashboardPage.page);
 
   const bitcoinCard = dashboardPage.coinCard("bitcoin");
@@ -330,11 +331,13 @@ test("watchlist-only filter and search together — no overlap shows empty", asy
   await dashboardPage.toggleFavorite("bitcoin");
   await dashboardPage.favoritesFilter.click();
 
-  // Search for something that doesn't match Bitcoin
+  // Search only powers autocomplete, so it should not hide the watched coin list.
   await dashboardPage.searchFor("sol");
 
-  await expect(dashboardPage.noMatchMessage).toBeVisible();
-  await dashboardPage.expectVisibleCoinsCount(0);
+  await expect(dashboardPage.searchDropdown).toBeVisible();
+  await expect(dashboardPage.searchDropdown).toContainText("No matching coins found");
+  await expect(dashboardPage.coinsList).toContainText("Bitcoin");
+  await dashboardPage.expectVisibleCoinsCount(1);
 });
 
 // ─── Journal ─────────────────────────────────────────────────────────────────
@@ -386,12 +389,16 @@ test("journal notes are isolated per coin", async ({ dashboardData, dashboardPag
   await expect(dashboardPage.journalNoteCount).toHaveText("1 note");
 
   // Switch to Ethereum — journal should be empty
+  await dashboardPage.searchInput.click();
+  await waitForDashboardData(dashboardPage.page);
   await dashboardPage.coinCard("ethereum").getByRole("button").first().click();
   await dashboardPage.expectSelectedAsset("Ethereum");
   await expect(dashboardPage.journalNoteCount).toHaveText("0 notes");
   await expect(dashboardPage.journalEmpty).toBeVisible();
 
   // Switch back to Bitcoin — note should still be there
+  await dashboardPage.searchInput.click();
+  await waitForDashboardData(dashboardPage.page);
   await dashboardPage.coinCard("bitcoin").getByRole("button").first().click();
   await dashboardPage.expectSelectedAsset("Bitcoin");
   await expect(dashboardPage.journalNoteCount).toHaveText("1 note");
@@ -528,6 +535,8 @@ test("price alert form header updates when switching coins", async ({
   await expect(dashboardPage.page.getByText("Create Price Alert for Bitcoin")).toBeVisible();
 
   // Switch to Ethereum
+  await dashboardPage.searchInput.click();
+  await waitForDashboardData(dashboardPage.page);
   await dashboardPage.coinCard("ethereum").getByRole("button").first().click();
   await dashboardPage.expectSelectedAsset("Ethereum");
 
