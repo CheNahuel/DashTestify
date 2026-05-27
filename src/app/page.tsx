@@ -1,6 +1,5 @@
-import { CryptoDashboard } from "@/features/crypto/components/CryptoDashboard";
-import { getCoinsFromCoinCap } from "@/features/crypto/server/getCoinsFromCoinCap";
-import { Coin, DEFAULT_TIMEFRAME, isTimeframe } from "@/features/crypto/types/coin";
+import { Dashboard } from "@/app/components/Dashboard";
+import { DEFAULT_TIMEFRAME, isTimeframe } from "@/features/crypto/types/coin";
 import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
@@ -65,26 +64,19 @@ export default async function Home({
   }
 
   const isLiveAvailable = Boolean(process.env.COINCAP_API_KEY);
-  const shouldUseMockClientData = params.mockData === "1" || !isLiveAvailable;
-  const initialCoins: Coin[] = shouldUseMockClientData ? [] : await getCoinsFromCoinCap();
-  const marketUnavailable = params.marketUnavailable === "1";
-  const initialSearch = params.search ?? "";
-  const initialSelectedCoinId = params.selectedCoin;
-  const initialTimeframe = isTimeframe(params.timeframe) ? params.timeframe : undefined;
-  const initialSort = params.sort ?? DEFAULT_SORT;
-  const initialFavoritesOnly = params.favoritesOnly === "1";
-  const initialTrend = params.trend ?? DEFAULT_TREND;
+  const useMock = params.mockData === "1" || !isLiveAvailable;
 
   return (
-    <CryptoDashboard
-      initialCoins={initialCoins}
-      marketUnavailable={marketUnavailable}
-      initialSearch={initialSearch}
-      initialSelectedCoinId={initialSelectedCoinId}
-      initialTimeframe={initialTimeframe}
-      initialSort={initialSort}
-      initialFavoritesOnly={initialFavoritesOnly}
-      initialTrend={initialTrend}
+    <Dashboard
+      initialCoins={[]}
+      marketUnavailable={params.marketUnavailable === "1"}
+      initialSearch={params.search ?? ""}
+      initialSelectedCoinId={params.selectedCoin}
+      initialTimeframe={isTimeframe(params.timeframe) ? params.timeframe : undefined}
+      initialSort={params.sort ?? DEFAULT_SORT}
+      initialFavoritesOnly={params.favoritesOnly === "1"}
+      initialTrend={params.trend ?? DEFAULT_TREND}
+      useMock={useMock}
       isLiveAvailable={isLiveAvailable}
     />
   );

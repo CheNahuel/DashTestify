@@ -55,7 +55,7 @@ export const CoinChart = ({ data }: { data: CoinHistory | undefined }) => {
     return (
       <div
         data-testid="coin-chart-empty"
-        className="flex h-[200px] items-center justify-center rounded-2xl border border-white/10 bg-slate-950/40 px-4 text-center text-sm text-slate-400 sm:h-[240px] sm:rounded-3xl md:h-[260px]"
+        className="flex h-[280px] items-center justify-center rounded-2xl border border-white/10 bg-slate-950/40 px-4 text-center text-sm text-slate-400 sm:h-[360px] md:h-[420px] lg:h-[500px] sm:rounded-3xl"
       >
         No historical data available for this selection.
       </div>
@@ -63,7 +63,7 @@ export const CoinChart = ({ data }: { data: CoinHistory | undefined }) => {
   }
 
   return (
-    <div data-testid="coin-chart" className="h-[220px] w-full sm:h-[280px] md:h-[360px]">
+    <div data-testid="coin-chart" className="h-[280px] w-full overflow-hidden sm:h-[360px] md:h-[420px] lg:h-[500px]">
       <ResponsiveContainer width="100%" height="100%" initialDimension={{ width: 1, height: 1 }}>
         <LineChart data={formatted} margin={{ top: 8, right: 8, left: 0, bottom: 8 }}>
           <XAxis

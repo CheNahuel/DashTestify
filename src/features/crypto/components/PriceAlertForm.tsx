@@ -26,7 +26,7 @@ const SubmitButton = () => {
       type="submit"
       data-testid="price-alert-submit"
       disabled={pending}
-      className="rounded-full bg-cyan-300 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-cyan-200 disabled:cursor-not-allowed disabled:opacity-60"
+      className="min-h-11 rounded-full bg-cyan-300 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-200 disabled:cursor-not-allowed disabled:opacity-60"
     >
       {pending ? "Saving..." : "Create Alert"}
     </button>
@@ -219,7 +219,7 @@ export const PriceAlertForm = ({
   };
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-slate-900/70 p-4 sm:rounded-3xl sm:p-5 lg:max-h-[725px] lg:overflow-y-auto">
+    <div className="min-w-0 rounded-2xl border border-white/10 bg-slate-900/70 p-4 sm:rounded-3xl sm:p-5 lg:max-h-[725px] lg:overflow-y-auto">
       <div className="mb-4">
         <p className="text-xs uppercase tracking-wider whitespace-nowrap text-slate-400 sm:text-sm">
           Price Alert
@@ -244,14 +244,14 @@ export const PriceAlertForm = ({
       <form ref={formRef} action={formAction} className="grid gap-3 sm:gap-4">
         <input type="hidden" name="coinId" value={coinId} />
 
-        <label className="grid gap-2 text-sm text-slate-200">
+        <label className="grid gap-2 text-base text-slate-200">
           Enter your email to receive alerts
           <input
             type="email"
             name="email"
             data-testid="price-alert-email"
             placeholder="trader@example.com"
-            className="w-full rounded-2xl border border-white/10 bg-slate-950/70 px-3 py-3 text-sm text-white outline-none ring-0 transition placeholder:text-slate-500 focus:border-cyan-300/60 sm:px-4"
+            className="w-full rounded-2xl border border-white/10 bg-slate-950/70 px-3 py-3 text-base text-white outline-none ring-0 transition placeholder:text-slate-500 focus:border-cyan-300/60 sm:px-4 sm:text-sm"
             required
           />
           {errors.email ? (
@@ -261,7 +261,7 @@ export const PriceAlertForm = ({
           ) : null}
         </label>
 
-        <label className="grid gap-2 text-sm text-slate-200">
+        <label className="grid gap-2 text-base text-slate-200">
           Notify me when price reaches
           <input
             type="number"
@@ -270,7 +270,7 @@ export const PriceAlertForm = ({
             defaultValue={Math.max(currentPrice * 1.05, 0.01).toFixed(2)}
             min="0.01"
             step="0.01"
-            className="w-full rounded-2xl border border-white/10 bg-slate-950/70 px-3 py-3 text-sm text-white outline-none ring-0 transition placeholder:text-slate-500 focus:border-cyan-300/60 sm:px-4"
+            className="w-full rounded-2xl border border-white/10 bg-slate-950/70 px-3 py-3 text-base text-white outline-none ring-0 transition placeholder:text-slate-500 focus:border-cyan-300/60 sm:px-4 sm:text-sm"
             required
           />
           {errors.targetPrice ? (

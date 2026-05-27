@@ -4,7 +4,6 @@ import { getRangeButtonTestId } from "@tests//utils/dateUtils";
 export class DashboardPage {
   readonly page: Page;
   readonly searchInput: Locator;
-  readonly searchClear: Locator;
   readonly sortSelect: Locator;
   readonly trendSelect: Locator;
   readonly favoritesFilter: Locator;
@@ -14,7 +13,10 @@ export class DashboardPage {
   readonly selectedAssetPrice: Locator;
   readonly selectedAssetChange: Locator;
   readonly selectedAssetFavorite: Locator;
+  readonly mainDashboard: Locator;
+  readonly topCoinsPanel: Locator;
   readonly coinsList: Locator;
+  readonly searchDropdown: Locator;
   readonly coinChart: Locator;
   readonly coinChartEmpty: Locator;
   readonly statCards: Locator;
@@ -40,7 +42,6 @@ export class DashboardPage {
   constructor(page: Page) {
     this.page = page;
     this.searchInput = page.getByTestId("search-input");
-    this.searchClear = page.getByTestId("search-clear");
     this.sortSelect = page.getByTestId("sort-select");
     this.trendSelect = page.getByTestId("trend-select");
     this.favoritesFilter = page.getByTestId("favorites-filter");
@@ -50,7 +51,10 @@ export class DashboardPage {
     this.selectedAssetPrice = page.getByTestId("selected-asset-price");
     this.selectedAssetChange = page.getByTestId("selected-asset-change");
     this.selectedAssetFavorite = page.getByTestId("selected-asset-favorite");
+    this.mainDashboard = page.getByTestId("main-dashboard");
+    this.topCoinsPanel = page.getByTestId("top-coins-panel");
     this.coinsList = page.getByTestId("coins-list");
+    this.searchDropdown = page.getByTestId("search-dropdown");
     this.coinChart = page.getByTestId("coin-chart");
     this.coinChartEmpty = page.getByTestId("coin-chart-empty");
     this.statCards = page.getByTestId("stat-cards");
@@ -90,6 +94,10 @@ export class DashboardPage {
     await this.searchInput.fill(value);
   }
 
+  async selectSearchResult(coinId: string) {
+    await this.page.getByTestId(`search-dropdown-item-${coinId}`).click();
+  }
+
   async toggleFavorite(coinId: string) {
     await this.page.getByTestId(`favorite-toggle-${coinId}`).click();
   }
@@ -104,6 +112,18 @@ export class DashboardPage {
 
   async expectSelectedAsset(name: string) {
     await expect(this.selectedAssetName).toHaveText(name);
+  }
+
+  async expectMainDashboardVisible() {
+    await expect(this.mainDashboard).toBeVisible();
+  }
+
+  async expectMainDashboardHidden() {
+    await expect(this.mainDashboard).toHaveCount(0);
+  }
+
+  async expectTopCoinsVisible() {
+    await expect(this.topCoinsPanel).toBeVisible();
   }
 
   async expectRangeSelected(timeframe: string) {

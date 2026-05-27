@@ -59,7 +59,7 @@ export const CoinJournal = ({
   };
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-slate-900/70 p-4 sm:rounded-3xl sm:p-5 lg:max-h-[725px] lg:overflow-y-auto">
+    <div className="min-w-0 rounded-2xl border border-white/10 bg-slate-900/70 p-4 sm:rounded-3xl sm:p-5 lg:max-h-[725px] lg:overflow-y-auto">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2 sm:gap-3">
         <div className="min-w-0">
           <p className="text-xs uppercase tracking-wider whitespace-nowrap text-slate-400 sm:text-sm">
@@ -90,7 +90,7 @@ export const CoinJournal = ({
       </div>
 
       <form onSubmit={handleSubmit} className="grid gap-3">
-        <label className="grid gap-2 text-sm text-slate-200">
+        <label className="grid gap-2 text-base text-slate-200">
           Add a note
           <textarea
             name="journalNote"
@@ -104,7 +104,7 @@ export const CoinJournal = ({
             }}
             rows={4}
             placeholder="Example: Watching support hold above the 30D range low before adding size."
-            className="w-full resize-y rounded-2xl border border-white/10 bg-slate-950/70 px-3 py-3 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-cyan-300/60 sm:px-4"
+            className="w-full resize-y rounded-2xl border border-white/10 bg-slate-950/70 px-3 py-3 text-base text-white outline-none transition placeholder:text-slate-500 focus:border-cyan-300/60 sm:px-4 sm:text-sm"
           />
         </label>
 
@@ -119,7 +119,7 @@ export const CoinJournal = ({
           <button
             type="submit"
             data-testid="journal-submit"
-            className="ml-auto rounded-full border border-cyan-300/40 bg-cyan-300/10 px-4 py-2 text-sm font-semibold text-cyan-100 transition hover:border-cyan-300/70 hover:bg-cyan-300/20"
+            className="ml-auto min-h-11 rounded-full border border-cyan-300/40 bg-cyan-300/10 px-4 py-3 text-sm font-semibold text-cyan-100 transition hover:border-cyan-300/70 hover:bg-cyan-300/20"
           >
             Save Note
           </button>

@@ -1,122 +1,79 @@
 import { expect, test, waitForDashboardData } from "@tests/fixtures/testSetup";
 
-test("search by name filters coins and selects match", async ({ dashboardData, dashboardPage }) => {
+test("autocomplete filters coins by name while typing", async ({ dashboardData, dashboardPage }) => {
   await dashboardPage.goto(dashboardData.urls.home);
   await waitForDashboardData(dashboardPage.page);
 
-  await dashboardPage.searchFor("sol");
+  await dashboardPage.searchFor("bit");
 
-  await dashboardPage.expectSelectedAsset("Solana");
-  await expect(dashboardPage.coinsList).toContainText("Solana");
-  await expect(dashboardPage.coinsList).not.toContainText("Bitcoin");
-  await expect(dashboardPage.page).toHaveURL(/search=sol/);
+  await expect(dashboardPage.searchDropdown).toBeVisible();
+  await expect(dashboardPage.searchDropdown).toContainText("Bitcoin");
+  await expect(dashboardPage.searchDropdown).not.toContainText("Ethereum");
+  await expect(dashboardPage.searchDropdown).not.toContainText("Solana");
 });
 
-test("search by symbol finds the coin", async ({ dashboardData, dashboardPage }) => {
-  await dashboardPage.goto(dashboardData.urls.home);
-  await waitForDashboardData(dashboardPage.page);
-
-  await dashboardPage.searchFor("BTC");
-
-  await expect(dashboardPage.coinsList).toContainText("Bitcoin");
-  await expect(dashboardPage.coinsList).not.toContainText("Ethereum");
-  await expect(dashboardPage.coinsList).not.toContainText("Solana");
-});
-
-test("search is case-insensitive", async ({ dashboardData, dashboardPage }) => {
-  await dashboardPage.goto(dashboardData.urls.home);
-  await waitForDashboardData(dashboardPage.page);
-
-  await dashboardPage.searchFor("ETHEREUM");
-
-  await expect(dashboardPage.coinsList).toContainText("Ethereum");
-  await expect(dashboardPage.coinsList).not.toContainText("Bitcoin");
-});
-
-test("search updates visible coins pill count", async ({ dashboardData, dashboardPage }) => {
-  await dashboardPage.goto(dashboardData.urls.home);
-  await waitForDashboardData(dashboardPage.page);
-
-  await dashboardPage.expectVisibleCoinsCount(3);
-
-  await dashboardPage.searchFor("sol");
-
-  await expect(dashboardPage.visibleCoinsPill).toContainText("1");
-  await dashboardPage.expectVisibleCoinsCount(1);
-});
-
-test("query params preselect coin, search, range, and trend", async ({
-  dashboardData,
-  dashboardPage,
-}) => {
-  await dashboardPage.goto(dashboardData.urls.solanaFiltered);
-  await waitForDashboardData(dashboardPage.page);
-
-  await expect(dashboardPage.searchInput).toHaveValue("sol");
-  await dashboardPage.expectSelectedAsset("Solana");
-  await dashboardPage.expectRangeSelected("30D");
-  await expect(dashboardPage.trendSelect).toHaveValue("gainers");
-});
-
-test("displays no match message when search returns nothing", async ({
+test("autocomplete filters coins by symbol while typing", async ({
   dashboardData,
   dashboardPage,
 }) => {
   await dashboardPage.goto(dashboardData.urls.home);
   await waitForDashboardData(dashboardPage.page);
 
-  await dashboardPage.searchFor("ghost-coin-12345");
+  await dashboardPage.searchFor("eth");
 
-  await expect(dashboardPage.noMatchMessage).toBeVisible();
-  await dashboardPage.expectVisibleCoinsCount(0);
+  await expect(dashboardPage.searchDropdown).toBeVisible();
+  await expect(dashboardPage.searchDropdown).toContainText("Ethereum");
+  await expect(dashboardPage.searchDropdown).toContainText("ETH");
 });
 
-test("clearing search restores all coins", async ({ dashboardData, dashboardPage }) => {
+test("search dropdown closes when clicking outside", async ({ dashboardData, dashboardPage }) => {
   await dashboardPage.goto(dashboardData.urls.home);
   await waitForDashboardData(dashboardPage.page);
-
-  await dashboardPage.searchFor("bitcoin");
-  await dashboardPage.expectVisibleCoinsCount(1);
-
-  await dashboardPage.searchFor("");
-  await expect(dashboardPage.visibleCoinsPill).toContainText("3");
-  await dashboardPage.expectVisibleCoinsCount(3);
-});
-
-test("clear search button resets the query", async ({ dashboardData, dashboardPage }) => {
-  await dashboardPage.goto(dashboardData.urls.home);
-  await waitForDashboardData(dashboardPage.page);
-
-  await expect(dashboardPage.searchClear).toBeHidden();
 
   await dashboardPage.searchFor("sol");
-  await expect(dashboardPage.searchClear).toBeVisible();
-  await expect(dashboardPage.page).toHaveURL(/search=sol/);
+  await expect(dashboardPage.searchDropdown).toBeVisible();
 
-  await dashboardPage.searchClear.click();
+  await dashboardPage.page.mouse.click(10, 10);
 
+  await expect(dashboardPage.searchDropdown).toBeHidden();
+});
+
+test("selecting a coin from autocomplete shows the main dashboard and hides top coins", async ({
+  dashboardData,
+  dashboardPage,
+}) => {
+  await dashboardPage.goto(dashboardData.urls.home);
+  await waitForDashboardData(dashboardPage.page);
+
+  await dashboardPage.searchFor("sol");
+  await dashboardPage.selectSearchResult("solana");
+
+  await dashboardPage.expectMainDashboardVisible();
+  await expect(dashboardPage.searchInput).toHaveValue("Solana (SOL)");
+  await expect(dashboardPage.topCoinsPanel).toHaveCount(0);
+  await dashboardPage.expectSelectedAsset("Solana");
+  await expect(dashboardPage.page).toHaveURL(/selectedCoin=solana/);
+});
+
+test("clicking the selected coin input starts a fresh search", async ({
+  dashboardData,
+  dashboardPage,
+}) => {
+  await dashboardPage.goto(dashboardData.urls.home);
+  await waitForDashboardData(dashboardPage.page);
+
+  await dashboardPage.searchFor("bit");
+  await dashboardPage.selectSearchResult("bitcoin");
+  await dashboardPage.expectMainDashboardVisible();
+
+  await dashboardPage.searchInput.click();
+
+  await dashboardPage.expectTopCoinsVisible();
+  await dashboardPage.expectMainDashboardHidden();
   await expect(dashboardPage.searchInput).toHaveValue("");
-  await expect(dashboardPage.searchClear).toBeHidden();
-  await dashboardPage.expectVisibleCoinsCount(3);
-  await expect(dashboardPage.page).not.toHaveURL(/search=sol/);
-});
-
-test("search combined with trend reduces results correctly", async ({
-  dashboardData,
-  dashboardPage,
-}) => {
-  await dashboardPage.goto(dashboardData.urls.home);
-  await waitForDashboardData(dashboardPage.page);
-
-  // "sol" matches only Solana; Solana is a gainer — should show 1
-  await dashboardPage.searchFor("sol");
-  await dashboardPage.selectTrend("gainers");
-
-  await dashboardPage.expectVisibleCoinsCount(1);
-  await expect(dashboardPage.coinsList).toContainText("Solana");
-
-  // Switch to losers — Solana is not a loser, so 0 results
-  await dashboardPage.selectTrend("losers");
-  await expect(dashboardPage.noMatchMessage).toBeVisible();
-  await dashboardPage.expectVisibleCoinsCount(0);
+  await expect(dashboardPage.searchDropdown).toBeVisible();
+  await expect(dashboardPage.searchDropdown).toContainText("Bitcoin");
+  await expect(dashboardPage.searchDropdown).toContainText("Ethereum");
+  await expect(dashboardPage.searchDropdown).toContainText("Solana");
+  await expect(dashboardPage.page).not.toHaveURL(/selectedCoin=/);
 });
