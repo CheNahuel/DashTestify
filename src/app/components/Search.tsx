@@ -83,7 +83,6 @@ export const Search = ({
         type="text"
         placeholder="Search by coin name or symbol"
         aria-label="Search crypto"
-        aria-expanded={showDropdown}
         data-testid="search-input"
         value={displayValue}
         readOnly={Boolean(selectedCoin)}
