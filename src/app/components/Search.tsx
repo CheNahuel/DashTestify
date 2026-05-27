@@ -45,18 +45,16 @@ export const Search = ({
   }, [searchQuery, selectedCoin]);
 
   useEffect(() => {
-    const handlePointerDown = (event: MouseEvent | PointerEvent) => {
+    const handlePointerDown = (event: Event) => {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         onShowDropdownChange(false);
       }
     };
 
-    document.addEventListener("mousedown", handlePointerDown);
-    document.addEventListener("touchstart", handlePointerDown);
+    document.addEventListener("pointerdown", handlePointerDown);
 
     return () => {
-      document.removeEventListener("mousedown", handlePointerDown);
-      document.removeEventListener("touchstart", handlePointerDown);
+      document.removeEventListener("pointerdown", handlePointerDown);
     };
   }, [onShowDropdownChange]);
 
@@ -83,7 +81,6 @@ export const Search = ({
         type="text"
         placeholder="Search by coin name or symbol"
         aria-label="Search crypto"
-        aria-expanded={showDropdown}
         data-testid="search-input"
         value={displayValue}
         readOnly={Boolean(selectedCoin)}

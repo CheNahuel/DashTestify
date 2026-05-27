@@ -7,7 +7,6 @@ import Image from "next/image";
 import { Container } from "@/components/Container";
 import { CoinChart } from "@/features/crypto/components/CoinChart";
 import { CoinJournal, type CoinJournalEntry } from "@/features/crypto/components/CoinJournal";
-import { PriceAlertForm } from "@/features/crypto/components/PriceAlertForm";
 import { useCoinHistory } from "@/features/crypto/hooks/useCoinHistory";
 import { useCoins } from "@/features/crypto/hooks/useCoins";
 import {
@@ -155,7 +154,9 @@ export const Dashboard = ({
   const searchParams = useSearchParams();
 
   const { data: coins = initialCoins, isFetching, error } = useCoins(initialCoins, useMock);
-  const [selectedCoin, setSelectedCoin] = useState<Coin | null>(null);
+  const [selectedCoinId, setSelectedCoinId] = useState<string | null>(
+    initialSelectedCoinId ?? null,
+  );
   const [searchQuery, setSearchQuery] = useState(initialSearch);
   const [showDropdown, setShowDropdown] = useState(false);
   const [timeframe, setTimeframe] = useState<Timeframe>(initialTimeframe);
@@ -165,9 +166,6 @@ export const Dashboard = ({
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
   const [journalByCoin, setJournalByCoin] = useState<JournalByCoin>({});
   const [hasHydratedStorage, setHasHydratedStorage] = useState(false);
-  const [hasResolvedInitialSelection, setHasResolvedInitialSelection] = useState(
-    !initialSelectedCoinId,
-  );
 
   useEffect(() => {
     const storedFavoriteIds = safeParseJson<string[]>(
@@ -198,29 +196,6 @@ export const Dashboard = ({
     }
   }, [journalByCoin, hasHydratedStorage]);
 
-  useEffect(() => {
-    if (!coins.length) {
-      return;
-    }
-
-    if (initialSelectedCoinId) {
-      const match = coins.find((coin) => coin.id === initialSelectedCoinId) ?? null;
-      setSelectedCoin(match);
-    }
-
-    setHasResolvedInitialSelection(true);
-  }, [coins, initialSelectedCoinId]);
-
-  useEffect(() => {
-    if (selectedCoin && coins.length > 0) {
-      const nextSelectedCoin = coins.find((coin) => coin.id === selectedCoin.id) ?? selectedCoin;
-
-      if (nextSelectedCoin !== selectedCoin) {
-        setSelectedCoin(nextSelectedCoin);
-      }
-    }
-  }, [coins, selectedCoin]);
-
   const visibleCoins = useMemo(() => {
     const nextCoins = coins.filter((coin) => {
       const matchesFavorites = !favoritesOnly || favoriteIds.includes(coin.id);
@@ -249,6 +224,11 @@ export const Dashboard = ({
     );
   }, [searchQuery, visibleCoins]);
 
+  const selectedCoin = useMemo(
+    () => coins.find((coin) => coin.id === selectedCoinId) ?? null,
+    [coins, selectedCoinId],
+  );
+
   const historyRequest = useMemo(() => getHistoryRequestForTimeframe(timeframe), [timeframe]);
 
   const selectedCoinNotes =
@@ -256,13 +236,8 @@ export const Dashboard = ({
   const watchlistCount = hasHydratedStorage ? favoriteIds.length : 0;
   const selectedTimeframeLabel =
     TIMEFRAME_FILTERS.find((filter) => filter.value === timeframe)?.label ?? timeframe;
-  const isLoadingInitialSelection = Boolean(initialSelectedCoinId) && !hasResolvedInitialSelection;
 
   useEffect(() => {
-    if (!hasResolvedInitialSelection) {
-      return;
-    }
-
     const params = new URLSearchParams(searchParams?.toString() ?? "");
     const normalizedSearch = searchQuery.trim();
 
@@ -272,8 +247,8 @@ export const Dashboard = ({
       params.delete("search");
     }
 
-    if (selectedCoin) {
-      params.set("selectedCoin", selectedCoin.id);
+    if (selectedCoinId) {
+      params.set("selectedCoin", selectedCoinId);
     } else {
       params.delete("selectedCoin");
     }
@@ -299,25 +274,24 @@ export const Dashboard = ({
     }
   }, [
     favoritesOnly,
-    hasResolvedInitialSelection,
     pathname,
     router,
     searchQuery,
     searchParams,
-    selectedCoin,
     sort,
     timeframe,
     trend,
+    selectedCoinId,
   ]);
 
   const handleSelectCoin = (coin: Coin) => {
-    setSelectedCoin(coin);
+    setSelectedCoinId(coin.id);
     setSearchQuery("");
     setShowDropdown(false);
   };
 
   const handleClearSelection = () => {
-    setSelectedCoin(null);
+    setSelectedCoinId(null);
     setSearchQuery("");
     setShowDropdown(false);
   };
@@ -343,7 +317,7 @@ export const Dashboard = ({
 
     setSearchQuery("");
     setShowDropdown(false);
-    setSelectedCoin(null);
+    setSelectedCoinId(null);
     setTimeframe(DEFAULT_TIMEFRAME);
     setSort(DEFAULT_SORT);
     setTrend(DEFAULT_TREND);
@@ -569,11 +543,7 @@ export const Dashboard = ({
           </div>
         ) : null}
 
-        {isLoadingInitialSelection ? (
-          <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-4 text-sm text-slate-400">
-            Loading selected asset...
-          </div>
-        ) : selectedCoin ? (
+        {selectedCoin ? (
           <MainDashboard
             coin={selectedCoin}
             historyRequest={historyRequest}
@@ -622,7 +592,7 @@ const MainDashboard = ({
   onAddJournalEntry: (coinId: string, note: string) => void;
   onDeleteJournalEntry: (coinId: string, entryId: string) => void;
 }) => {
-  const { data: history, isLoading: isHistoryLoading, isFetching: isHistoryFetching, error } =
+  const { data: history, isLoading: isHistoryLoading, error } =
     useCoinHistory(coin.id, historyRequest, useMock);
 
   const historyPrices = history?.prices.map(([, price]) => price) ?? [];
