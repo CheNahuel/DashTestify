@@ -84,11 +84,11 @@ export const CoinCard = ({
           data-testid={`favorite-toggle-${coin.id}`}
           aria-pressed={isFavorite}
           aria-label={`${isFavorite ? "Remove" : "Add"} ${coin.name} ${isFavorite ? "from" : "to"} watchlist`}
-          onClick={() => {
+          onClick={(event) => {
+            event.stopPropagation();
             onToggleFavorite(coin);
-            onSelect(coin);
           }}
-          className={`shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider whitespace-nowrap transition sm:px-3 sm:text-xs ${
+          className={`min-h-11 shrink-0 rounded-full border px-3 py-2 text-[11px] font-semibold uppercase tracking-wider whitespace-nowrap transition sm:px-3 sm:text-xs ${
             isFavorite
               ? "border-amber-300/50 bg-amber-300/15 text-amber-100"
               : "border-white/10 bg-slate-950/70 text-slate-400 hover:border-amber-300/40 hover:text-amber-100"
