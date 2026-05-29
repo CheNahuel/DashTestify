@@ -79,6 +79,7 @@ export async function POST(request: Request) {
           .select("id")
           .eq("run_id", failure.runId)
           .eq("test_name", failure.testName)
+          .eq("error_message", failure.errorMessage)
           .maybeSingle();
 
         if (existing) {

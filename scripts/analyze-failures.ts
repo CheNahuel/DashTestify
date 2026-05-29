@@ -49,6 +49,7 @@ async function main() {
       .select("id")
       .eq("run_id", failure.run_id)
       .eq("test_name", failure.test_name)
+      .eq("error_message", failure.error_message)
       .maybeSingle();
 
     if (existing) {
