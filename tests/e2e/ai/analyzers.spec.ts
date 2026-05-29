@@ -32,6 +32,7 @@ test("builds a prompt that includes the failure context and patch rules", async 
   expect(prompt).toContain("Locator not found");
   expect(prompt).toContain("Current source file: tests/e2e/dashboard/search.spec.ts");
   expect(prompt).toContain("dashboardPage.searchInput");
+  expect(prompt).toContain("Return exactly one primary actionable fix");
   expect(prompt).toContain("base generated_patch only on those exact lines");
   expect(prompt).toContain("generated_patch must be a unified diff");
 });
