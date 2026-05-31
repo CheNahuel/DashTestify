@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import {
+  abortQaAnalyticsRun,
   readQaAnalyticsRunState,
   startQaAnalyticsRun,
   type QaAnalyticsRunMode,
@@ -61,6 +62,26 @@ export async function POST(request: Request) {
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Unable to start the test run." },
+      { status: 500 },
+    );
+  }
+}
+
+export async function DELETE() {
+  try {
+    const result = await abortQaAnalyticsRun();
+
+    return NextResponse.json(
+      { aborted: result.aborted },
+      {
+        headers: {
+          "Cache-Control": "no-store, max-age=0",
+        },
+      },
+    );
+  } catch (error) {
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Unable to stop the test run." },
       { status: 500 },
     );
   }

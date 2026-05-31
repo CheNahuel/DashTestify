@@ -1,3 +1,7 @@
+import fs from "fs/promises";
+import os from "os";
+import path from "path";
+
 import { expect, test, type Page } from "@playwright/test";
 
 import { buildLocalQaAnalyticsSnapshot } from "@/lib/qa-analytics/local-results";
@@ -18,6 +22,12 @@ type QaAnalyticsFixtures = {
   aiAnalyses: SupabaseRow[];
   trends: SupabaseRow[];
 };
+
+const runStatePath = path.join(os.tmpdir(), "dash-testify-qa-analytics", "run-tests-state.json");
+
+test.beforeEach(async () => {
+  await fs.rm(runStatePath, { force: true });
+});
 
 function createQaAnalyticsFixtures(options?: {
   analyses?: SupabaseRow[];
@@ -217,6 +227,7 @@ async function mockLocalSnapshot(page: Page, fixtures: QaAnalyticsFixtures) {
         latestRun,
         latestRunSummary: {
           ...totals,
+          duration_ms: 126000,
           report_path: "/playwright-report/index.html",
         },
         latestFailures,
@@ -318,24 +329,32 @@ test("local qa analytics requires a run, shows the branch and only reveals AI an
   await page.goto("/qa-analytics");
 
   await expect(page.getByRole("heading", { name: "Latest local run", exact: true })).toBeVisible();
-  await expect(page.getByText(/Last run results:/)).toBeVisible();
-  await expect(page.getByText(/passed/)).toBeVisible();
+  await expect(
+    page.getByText("The latest run failed, so the panels below are centered on the failing tests and the AI fix workflow."),
+  ).toBeVisible();
+  await expect(page.getByTestId("hero-metadata-branch")).toContainText("main");
+  await expect(page.getByTestId("hero-metadata-commit")).toContainText("aaaabbbb");
+  await expect(page.getByText("Pass rate")).toBeVisible();
+  await expect(page.getByText("Duration")).toBeVisible();
   await expect(page.getByRole("link", { name: "Open Playwright report" })).toHaveAttribute(
     "href",
     "/playwright-report/index.html",
   );
-  await expect(page.getByText(/Branch:/)).toBeVisible();
-  await expect(page.getByTestId("ai-provider-select")).toHaveValue("gemini");
-  const titleBox = await page.getByRole("heading", { name: "Latest local run", exact: true }).boundingBox();
-  const providerBox = await page.getByTestId("ai-provider-select").boundingBox();
-
-  expect(titleBox).not.toBeNull();
-  expect(providerBox).not.toBeNull();
-  expect(providerBox!.y).toBeGreaterThan((titleBox!.y || 0) + (titleBox!.height || 0));
+  await expect(page.getByTestId("provider-option-gemini")).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByTestId("run-controls-panel")).toBeVisible();
+  await expect(page.getByTestId("ai-provider-panel")).toBeVisible();
+  await expect(page.getByTestId("run-controls-panel")).toHaveClass(/rounded-3xl/);
+  await expect(page.getByTestId("ai-provider-panel")).toHaveClass(/rounded-3xl/);
   await expect(
-    page.getByText("Use the run controls to execute Playwright locally, then analyze the latest run or a single failure."),
+    page.getByText("Pick the model and review the latest local failures."),
   ).toBeVisible();
+  await page.getByTestId("provider-option-openai").click();
+  await expect(page.getByTestId("provider-option-openai")).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByTestId("provider-option-gemini")).toHaveAttribute("aria-pressed", "false");
   await expect(page.getByTestId("ai-analyze-all")).toContainText("Analyze latest run failures");
+  await expect(page.getByTestId("ai-apply-all")).toContainText("Apply fix to all");
+  await expect(page.getByTestId("ai-apply-all")).toBeDisabled();
+  await expect(page.getByTestId("run-mode-mock")).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByTestId("failing-test-search-by-symbol-finds-the-coin")).toBeVisible();
   await expect(page.getByTestId("failing-test-checkout-flow-completes-with-coupon")).toBeVisible();
   await expect(page.getByTestId("stats-total-runs")).toHaveCount(0);
@@ -347,7 +366,7 @@ test("local qa analytics requires a run, shows the branch and only reveals AI an
 
   await page.getByTestId("ai-analyze-all").click();
 
-  await expect(page.getByTestId("ai-status-message")).toContainText("Gemini");
+  await expect(page.getByTestId("ai-status-message")).toContainText("OpenAI");
   await expect(page.getByRole("button", { name: "Analyze this failure only" })).toHaveCount(2);
   await expect(page.getByTestId("ai-analysis-card-42")).toBeVisible();
   await expect(page.getByTestId("ai-analysis-card-42")).toContainText("fragile selector");
@@ -360,6 +379,10 @@ test("local qa analytics requires a run, shows the branch and only reveals AI an
   await expect(page.getByRole("button", { name: "Not actionable" })).toHaveCount(0);
   await expect(page.getByText("View 1 lower-confidence alternative")).toBeVisible();
   await expect(page.getByText("Historical analysis should not appear in the latest local run view.")).toHaveCount(0);
+  await expect(page.getByTestId("ai-apply-all")).toBeEnabled();
+
+  await page.getByTestId("ai-apply-all").click();
+  await expect(page.getByTestId("ai-status-message")).toContainText("Applied 1 AI fix locally on the current branch");
 });
 
 test("local qa analytics prompts to run Playwright when no local run is available", async ({ page }) => {
@@ -374,11 +397,60 @@ test("local qa analytics prompts to run Playwright when no local run is availabl
 
   await page.goto("/qa-analytics");
 
-  await expect(page.getByText("No local run found")).toBeVisible();
-  await expect(page.getByText("Run your Playwright suite locally and sync the latest results")).toBeVisible();
-  await expect(page.getByTestId("ai-provider-select")).toBeVisible();
+  await expect(page.getByText("No hay corridas locales aún")).toBeVisible();
+  await expect(page.getByText("Corré Playwright para generar una ejecución que podamos analizar.")).toBeVisible();
+  await expect(page.getByTestId("run-tests-button")).toBeVisible();
+  await expect(page.getByTestId("run-controls-panel")).toBeVisible();
+  await expect(page.getByTestId("ai-provider-panel")).toHaveCount(0);
+  await expect(page.getByText("Latest local run")).toHaveCount(0);
   await expect(page.getByTestId("stats-total-runs")).toHaveCount(0);
   await expect(page.getByTestId("test-trends-chart")).toHaveCount(0);
+});
+
+test("local qa analytics recovers from a stale background run and keeps run tests enabled", async ({ page }) => {
+  const fixtures = createQaAnalyticsFixtures({
+    runs: [],
+    results: [],
+    trends: [],
+  });
+
+  await fs.mkdir(path.dirname(runStatePath), { recursive: true });
+  await fs.writeFile(
+    runStatePath,
+    JSON.stringify(
+      {
+        jobId: "stale-run",
+        mode: "mock",
+        status: "running",
+        pid: 999999,
+        progress: 48,
+        currentStep: 12,
+        totalSteps: 25,
+        message: "Running e2e mock tests...",
+        log: "",
+        startedAt: "2026-05-31T00:00:00.000Z",
+        finishedAt: null,
+        exitCode: null,
+      },
+      null,
+      2,
+    ),
+  );
+
+  try {
+    await mockLocalSnapshot(page, fixtures);
+    await mockQaAnalyticsApi(page, fixtures);
+
+    await page.goto("/qa-analytics");
+
+    await expect(page.getByText("No hay corridas locales aún")).toBeVisible();
+    await expect(page.getByTestId("run-tests-button")).toBeEnabled();
+    await expect(page.getByTestId("run-status-message")).toContainText(
+      "Previous test run appears to have been interrupted.",
+    );
+  } finally {
+    await fs.rm(runStatePath, { force: true });
+  }
 });
 
 test("local qa analytics renders duplicate unknown failures with unique cards", async ({ page }) => {
@@ -559,6 +631,7 @@ test("local qa analytics can start a mock run and shows progress before success"
         latestRun,
         latestRunSummary: {
           ...totals,
+          duration_ms: 132000,
           report_path: "/playwright-report/index.html",
         },
         latestFailures,
@@ -578,6 +651,7 @@ test("local qa analytics can start a mock run and shows progress before success"
             progress: 34,
             currentStep: 12,
             totalSteps: 35,
+            currentTestLabel: "Search by symbol finds the coin",
             message: "Running e2e mock tests...",
             finishedAt: null,
             exitCode: null,
@@ -599,6 +673,7 @@ test("local qa analytics can start a mock run and shows progress before success"
             progress: 34,
             currentStep: 12,
             totalSteps: 35,
+            currentTestLabel: "Search by symbol finds the coin",
             message: "Running e2e mock tests...",
             finishedAt: null,
             exitCode: null,
@@ -619,6 +694,7 @@ test("local qa analytics can start a mock run and shows progress before success"
           progress: 100,
           currentStep: 35,
           totalSteps: 35,
+          currentTestLabel: null,
           message: "Test run completed successfully.",
           finishedAt: "2026-05-31T01:10:23.372Z",
           exitCode: 0,
@@ -629,13 +705,104 @@ test("local qa analytics can start a mock run and shows progress before success"
 
   await page.goto("/qa-analytics");
 
-  await expect(page.getByTestId("run-tests-mode-select")).toHaveValue("mock");
+  await expect(page.getByTestId("run-mode-mock")).toHaveAttribute("aria-pressed", "true");
   await page.getByTestId("run-tests-button").click();
   await expect(page.getByRole("progressbar")).toBeVisible();
-  await expect(page.getByText(/E2E mock is running/)).toBeVisible();
-  await expect(page.getByTestId("run-status-message")).toContainText("Running e2e mock mode");
+  await expect(page.getByTestId("ai-provider-panel")).toHaveClass(/opacity-60/);
+  await expect(page.getByText(/Now running:/)).toBeVisible();
+  await expect(page.getByText("Progress 12/35")).toBeVisible();
+  await expect(page.getByTestId("run-tests-button")).toContainText("Running mock tests...");
   await expect(page.getByTestId("run-status-message")).toContainText("Report success");
-  await expect(page.getByText(/21 total/)).toBeVisible();
+  await expect(page.getByRole("progressbar")).toHaveCount(0);
+  await expect(page.getByTestId("summary-metric-total")).toContainText("21");
+});
+
+test("local qa analytics keeps showing progress through a transient polling miss", async ({ page }) => {
+  const fixtures = createQaAnalyticsFixtures();
+  let pollCount = 0;
+
+  await mockQaAnalyticsApi(page, fixtures);
+  await mockLocalSnapshot(page, fixtures);
+
+  await page.route("**/api/qa-analytics/run-tests**", async (route) => {
+    if (route.request().method() === "POST") {
+      await route.fulfill({
+        json: {
+          run: {
+            jobId: "job-3",
+            mode: "mock",
+            status: "running",
+            progress: 22,
+            currentStep: 5,
+            totalSteps: 20,
+            currentTestLabel: "Search by symbol finds the coin",
+            message: "Running e2e mock tests...",
+            finishedAt: null,
+            exitCode: null,
+          },
+        },
+      });
+      return;
+    }
+
+    pollCount += 1;
+
+    if (pollCount === 1) {
+      await route.fulfill({ json: { run: null } });
+      return;
+    }
+
+    if (pollCount === 2) {
+      await route.fulfill({
+        json: {
+          run: {
+            jobId: "job-3",
+            mode: "mock",
+            status: "running",
+            progress: 22,
+            currentStep: 5,
+            totalSteps: 20,
+            currentTestLabel: "Search by symbol finds the coin",
+            message: "Running e2e mock tests...",
+            finishedAt: null,
+            exitCode: null,
+          },
+        },
+      });
+      return;
+    }
+
+    await route.fulfill({
+      json: {
+        run: {
+          jobId: "job-3",
+          mode: "mock",
+          status: "success",
+          progress: 100,
+          currentStep: 20,
+          totalSteps: 20,
+          currentTestLabel: null,
+          message: "Test run completed successfully.",
+          finishedAt: "2026-05-31T01:15:23.372Z",
+          exitCode: 0,
+        },
+      },
+    });
+  });
+
+  await page.goto("/qa-analytics");
+  await page.getByTestId("run-tests-button").click();
+
+  await expect(page.getByRole("progressbar")).toBeVisible();
+  await expect(page.getByText(/Now running:/)).toBeVisible();
+
+  await page.waitForTimeout(1800);
+
+  await expect(page.getByRole("progressbar")).toBeVisible();
+  await expect(page.getByTestId("run-tests-button")).toContainText("Running mock tests...");
+
+  await expect(page.getByTestId("run-status-message")).toContainText("Report success");
+  await expect(page.getByRole("progressbar")).toHaveCount(0);
 });
 
 test("local qa analytics refreshes latest results when a run fails", async ({ page }) => {
@@ -741,6 +908,7 @@ test("local qa analytics refreshes latest results when a run fails", async ({ pa
         latestRun,
         latestRunSummary: {
           ...totals,
+          duration_ms: 135000,
           report_path: "/playwright-report/index.html",
         },
         latestFailures,
@@ -760,6 +928,7 @@ test("local qa analytics refreshes latest results when a run fails", async ({ pa
             progress: 18,
             currentStep: 4,
             totalSteps: 20,
+            currentTestLabel: "Search by symbol finds the coin",
             message: "Running e2e mock tests...",
             finishedAt: null,
             exitCode: null,
@@ -781,6 +950,7 @@ test("local qa analytics refreshes latest results when a run fails", async ({ pa
             progress: 18,
             currentStep: 4,
             totalSteps: 20,
+            currentTestLabel: "Checkout flow completes with coupon",
             message: "Running e2e mock tests...",
             finishedAt: null,
             exitCode: null,
@@ -801,6 +971,7 @@ test("local qa analytics refreshes latest results when a run fails", async ({ pa
           progress: 100,
           currentStep: 20,
           totalSteps: 20,
+          currentTestLabel: null,
           message: "Test run failed with exit code 1.",
           finishedAt: "2026-05-31T01:12:23.372Z",
           exitCode: 1,
@@ -813,10 +984,72 @@ test("local qa analytics refreshes latest results when a run fails", async ({ pa
 
   await page.getByTestId("run-tests-button").click();
   await expect(page.getByRole("progressbar")).toBeVisible();
-  await expect(page.getByTestId("run-status-message")).toContainText("Running e2e mock mode");
+  await expect(page.getByTestId("ai-provider-panel")).toHaveClass(/opacity-60/);
+  await expect(page.getByText(/Now running:/)).toBeVisible();
+  await expect(page.getByTestId("run-tests-button")).toContainText("Running mock tests...");
   await expect(page.getByTestId("run-status-message")).toContainText("Report failed (6 failures)");
-  await expect(page.getByText(/21 total/)).toBeVisible();
+  await expect(page.getByRole("progressbar")).toHaveCount(0);
+  await expect(page.getByTestId("summary-metric-total")).toContainText("21");
   await expect(page.getByTestId("failing-test-search-by-symbol-finds-the-coin")).toContainText("3 failures");
+});
+
+test("local qa analytics aborts the running execution when the page lifecycle ends", async ({ page }) => {
+  const fixtures = createQaAnalyticsFixtures();
+  let abortCalled = false;
+
+  await mockLocalSnapshot(page, fixtures);
+  await mockQaAnalyticsApi(page, fixtures);
+
+  await page.route("**/api/qa-analytics/run-tests**", async (route) => {
+    if (route.request().method() === "POST") {
+      await route.fulfill({
+        json: {
+          run: {
+            jobId: "job-abort",
+            mode: "mock",
+            status: "running",
+            progress: 14,
+            currentStep: 3,
+            totalSteps: 20,
+            currentTestLabel: "Search by symbol finds the coin",
+            message: "Running e2e mock tests...",
+            finishedAt: null,
+            exitCode: null,
+          },
+        },
+      });
+      return;
+    }
+
+    if (route.request().method() === "DELETE") {
+      abortCalled = true;
+      await route.fulfill({ json: { aborted: true } });
+      return;
+    }
+
+    await route.fulfill({
+      json: {
+        run: null,
+      },
+    });
+  });
+
+  await page.goto("/qa-analytics");
+  await page.getByTestId("run-tests-button").click();
+  await expect(page.getByText(/Now running:/)).toBeVisible();
+
+  await page.evaluate(() => {
+    window.dispatchEvent(new Event("pagehide"));
+  });
+
+  await expect
+    .poll(
+      () => abortCalled,
+      {
+        timeout: 5000,
+      },
+    )
+    .toBe(true);
 });
 
 test("live qa analytics hides local-only sections and keeps the trend chart below total runs", async ({ page }) => {
@@ -830,7 +1063,8 @@ test("live qa analytics hides local-only sections and keeps the trend chart belo
   await expect(page.getByRole("heading", { name: "Metrics overview" })).toBeVisible();
   await expect(page.getByTestId("stats-total-runs")).toBeVisible();
   await expect(page.getByTestId("test-trends-chart")).toBeVisible();
-  await expect(page.getByTestId("ai-provider-select")).toHaveCount(0);
+  await expect(page.getByTestId("provider-option-gemini")).toHaveCount(0);
+  await expect(page.getByTestId("ai-provider-panel")).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "Latest run failures" })).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "AI failure analysis" })).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "Runs" })).toHaveCount(0);
