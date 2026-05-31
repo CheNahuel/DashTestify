@@ -80,6 +80,7 @@ type LocalRunSummary = {
   failed: number;
   skipped: number;
   flaky: number;
+  duration_ms: number | null;
   report_path: string;
 };
 
@@ -196,13 +197,14 @@ export function buildLocalQaAnalyticsSnapshot({
 
   return {
     latestRun,
-    latestRunSummary: latestRun
+      latestRunSummary: latestRun
       ? {
           total_tests: latestRun.total_tests,
           passed,
           failed,
           skipped,
           flaky,
+          duration_ms: typeof stats?.duration === "number" ? stats.duration : null,
           report_path: "/playwright-report/index.html",
         }
       : null,
@@ -210,4 +212,3 @@ export function buildLocalQaAnalyticsSnapshot({
     aiAnalysis: localAnalyses,
   };
 }
-
