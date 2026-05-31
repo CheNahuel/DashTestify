@@ -17,11 +17,6 @@ export const test = base.extend<AppFixtures>({
   page: async ({ page }, runFixture, testInfo) => {
     await initializeBrowserStorage(page);
 
-    if (testInfo.title.includes("market error")) {
-      await runFixture(page);
-      return;
-    }
-
     await page.route("**/api/coins/markets*", async (route) => {
       await route.fulfill({ json: testData.dashboard.coins });
     });

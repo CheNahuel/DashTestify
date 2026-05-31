@@ -281,6 +281,30 @@ test("applyGeneratedPatch falls back when hunk context does not match exactly", 
   expect(updated).toContain('await expect(dashboardPage.sortSelect).toHaveValue("market-cap-desc");');
 });
 
+test("applyGeneratedPatch treats an already applied patch as a no-op", async () => {
+  const repoRoot = fs.mkdtempSync(path.join(os.tmpdir(), "ai-patch-repo-applied-"));
+  const filePath = path.join(repoRoot, "sample.ts");
+
+  fs.writeFileSync(filePath, 'export const status = "new";\n', "utf8");
+  execFileSync("git", ["init"], { cwd: repoRoot });
+
+  const patch = [
+    "diff --git a/sample.ts b/sample.ts",
+    "--- a/sample.ts",
+    "+++ b/sample.ts",
+    "@@ -1 +1 @@",
+    '-export const status = "old";',
+    '+export const status = "new";',
+    "",
+  ].join("\n");
+
+  await applyGeneratedPatch(repoRoot, patch);
+
+  const updated = fs.readFileSync(filePath, "utf8");
+
+  expect(updated).toBe('export const status = "new";\n');
+});
+
 test("checkoutBranchFromBase creates the fix branch from the source commit", async () => {
   const repoRoot = fs.mkdtempSync(path.join(os.tmpdir(), "ai-branch-repo-"));
   const filePath = path.join(repoRoot, "sample.ts");
@@ -359,11 +383,11 @@ test("analytics ai route returns a clean error when supabase env is missing", as
       }),
     );
 
-    expect(response.status).toBe(500);
+    expect(response.status).toBe(400);
 
     const payload = (await response.json()) as { error?: string };
 
-    expect(payload.error).toContain("SUPABASE_URL and SUPABASE_KEY are required");
+    expect(payload.error).toContain("Analysis is missing patch information");
   } finally {
     process.env.SUPABASE_URL = originalSupabaseUrl;
     process.env.SUPABASE_KEY = originalSupabaseKey;
