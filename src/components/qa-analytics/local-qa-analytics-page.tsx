@@ -1,53 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { getSupabaseClient } from "@/lib/supabase";
-
-type TestRun = {
-  id: string | number;
-  branch: string | null;
-  commit_sha: string | null;
-  created_at: string;
-  passed: number | null;
-  failed: number | null;
-  total_tests: number | null;
-};
-
-type TestResult = {
-  run_id: string | number;
-  suite: string | null;
-  test_name: string | null;
-  status: string;
-  error_message: string | null;
-};
-
-type LatestFailure = {
-  test_name: string | null;
-  failures: number;
-  run_id: string | number;
-  suite: string | null;
-  error_message: string | null;
-};
-
-type AiAnalysis = {
-  id: string;
-  run_id?: string | number | null;
-  test_name: string;
-  error_message?: string | null;
-  created_at?: string | null;
-  ai_summary: string;
-  suggested_fix: string;
-  severity: string;
-  classification: string;
-  confidence: number;
-  target_file: string | null;
-  generated_patch: string | null;
-};
-
-type AiProvider = "openai" | "gemini";
+import { Progress } from "@/components/ui/progress";
+import type { AiProvider, LatestLocalFailure, LocalAiAnalysis, LocalTestRun } from "@/components/qa-analytics/types";
 
 const providerLabels: Record<AiProvider, string> = {
   openai: "OpenAI",
@@ -55,7 +13,6 @@ const providerLabels: Record<AiProvider, string> = {
 };
 
 const ACTIONABLE_CONFIDENCE_THRESHOLD = 80;
-const AUTO_APPLY_CONFIDENCE_THRESHOLD = 90;
 
 function normalizeTestId(value: string | null | undefined, fallback = "unknown-test") {
   const normalized = value?.trim() ? value.trim() : fallback;
@@ -63,7 +20,21 @@ function normalizeTestId(value: string | null | undefined, fallback = "unknown-t
   return normalized.replace(/[^a-z0-9]+/gi, "-").replace(/^-+|-+$/g, "").toLowerCase();
 }
 
-function formatAnalysisGroupKey(analysis: Pick<AiAnalysis, "test_name" | "target_file" | "error_message">) {
+function buildFailureCardKey(test: LatestLocalFailure, index: number) {
+  const displayName = test.test_name?.trim() || "Unknown test";
+  const suiteName = test.suite?.trim() || "Unknown suite";
+  const errorMessage = test.error_message?.trim() || "No error message captured.";
+
+  return [
+    normalizeTestId(displayName, "unknown-test"),
+    normalizeTestId(suiteName, "unknown-suite"),
+    normalizeTestId(String(test.run_id), "unknown-run"),
+    normalizeTestId(errorMessage, "unknown-error"),
+    index + 1,
+  ].join(":");
+}
+
+function formatAnalysisGroupKey(analysis: Pick<LocalAiAnalysis, "test_name" | "target_file" | "error_message">) {
   const testName = normalizeTestId(analysis.test_name, "unknown-test");
   const targetFile = normalizeTestId(analysis.target_file, "unknown-file");
   const errorMessage = normalizeTestId(analysis.error_message, "unknown-error");
@@ -71,12 +42,32 @@ function formatAnalysisGroupKey(analysis: Pick<AiAnalysis, "test_name" | "target
   return `${testName}::${targetFile}::${errorMessage}`;
 }
 
-function isActionableAnalysis(analysis: AiAnalysis) {
+function isActionableAnalysis(analysis: LocalAiAnalysis) {
   return (
     analysis.classification === "test_issue" &&
     analysis.confidence >= ACTIONABLE_CONFIDENCE_THRESHOLD &&
     Boolean(analysis.generated_patch)
   );
+}
+
+function getRunStatusMessage(runState: QaAnalyticsRunState, latestRunSummary: LocalRunSummary | null) {
+  if (runState.status === "running") {
+    return `Running e2e ${runState.mode} mode...`;
+  }
+
+  if (runState.status === "success") {
+    return "Report success. Latest results refreshed.";
+  }
+
+  if (runState.status === "failed") {
+    const failedCount = latestRunSummary?.failed;
+
+    return typeof failedCount === "number"
+      ? `Report failed (${failedCount} failures). Latest results refreshed.`
+      : "Report failed. Latest results refreshed.";
+  }
+
+  return runState.message;
 }
 
 function toTimestamp(value: string | null | undefined) {
@@ -89,8 +80,8 @@ function toTimestamp(value: string | null | undefined) {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
-function collapseAiAnalyses(analyses: AiAnalysis[]) {
-  const grouped = analyses.reduce<Record<string, AiAnalysis[]>>((acc, analysis) => {
+function collapseAiAnalyses(analyses: LocalAiAnalysis[]) {
+  const grouped = analyses.reduce<Record<string, LocalAiAnalysis[]>>((acc, analysis) => {
     const key = formatAnalysisGroupKey(analysis);
 
     if (!acc[key]) {
@@ -141,120 +132,195 @@ function collapseAiAnalyses(analyses: AiAnalysis[]) {
     });
 }
 
-function formatDisplayDate(value: string | null | undefined) {
-  if (!value) {
-    return "Unknown";
-  }
-
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return "Unknown";
-  }
-
-  return new Intl.DateTimeFormat("es-AR", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(date);
-}
-
 type LocalQaAnalyticsPageProps = {
   currentBranch: string;
 };
 
+type LocalRunSummary = {
+  total_tests: number;
+  passed: number;
+  failed: number;
+  skipped: number;
+  flaky: number;
+  report_path: string;
+};
+
+type LocalSnapshot = {
+  latestRun: LocalTestRun | null;
+  latestRunSummary: LocalRunSummary | null;
+  latestFailures: LatestLocalFailure[];
+  aiAnalysis: LocalAiAnalysis[];
+  error?: string;
+};
+
+type QaAnalyticsRunMode = "mock" | "live";
+
+type QaAnalyticsRunState = {
+  jobId: string;
+  mode: QaAnalyticsRunMode;
+  status: "idle" | "running" | "success" | "failed";
+  progress: number;
+  currentStep: number | null;
+  totalSteps: number | null;
+  message: string;
+  finishedAt: string | null;
+  exitCode: number | null;
+};
+
 export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProps) {
-  const [latestRun, setLatestRun] = useState<TestRun | null>(null);
-  const [latestFailures, setLatestFailures] = useState<LatestFailure[]>([]);
-  const [aiAnalysis, setAiAnalysis] = useState<AiAnalysis[]>([]);
+  const mountedRef = useRef(true);
+  const refreshedJobIdRef = useRef<string | null>(null);
+  const [latestRun, setLatestRun] = useState<LocalTestRun | null>(null);
+  const [latestRunSummary, setLatestRunSummary] = useState<LocalRunSummary | null>(null);
+  const [latestFailures, setLatestFailures] = useState<LatestLocalFailure[]>([]);
+  const [aiAnalysis, setAiAnalysis] = useState<LocalAiAnalysis[]>([]);
   const [analysisRequested, setAnalysisRequested] = useState(false);
   const [selectedProvider, setSelectedProvider] = useState<AiProvider>("gemini");
+  const [selectedRunMode, setSelectedRunMode] = useState<QaAnalyticsRunMode>("mock");
+  const [runState, setRunState] = useState<QaAnalyticsRunState | null>(null);
+  const [isStartingRun, setIsStartingRun] = useState(false);
   const [actionStatus, setActionStatus] = useState<string | null>(null);
   const [busyAction, setBusyAction] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const supabase = getSupabaseClient();
-    let mounted = true;
+  async function loadLocalSnapshot(options?: { showLoading?: boolean; cacheBust?: boolean }) {
+    const showLoading = options?.showLoading ?? false;
+    const cacheBust = options?.cacheBust ?? false;
 
-    async function loadLatestRun() {
-      const { data, error } = await supabase
-        .from("test_runs")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(1);
-
-      if (error) {
-        console.error(error);
-        return;
-      }
-
-      const nextLatestRun = (data || [])[0] as TestRun | undefined;
-
-      if (!mounted) {
-        return;
-      }
-
-      setLatestRun(nextLatestRun ?? null);
-
-      if (!nextLatestRun) {
-        setLatestFailures([]);
-        return;
-      }
-
-      const { data: failuresData, error: failuresError } = await supabase
-        .from("test_results")
-        .select("*")
-        .eq("run_id", nextLatestRun.id)
-        .eq("status", "failed");
-
-      if (failuresError) {
-        console.error(failuresError);
-        if (mounted) {
-          setLatestFailures([]);
-        }
-        return;
-      }
-
-      if (mounted) {
-        const grouped = Object.values(
-          ((failuresData || []) as TestResult[]).reduce<Record<string, LatestFailure>>((acc, test) => {
-            const testName = test.test_name?.trim() || "Unknown test";
-
-            if (!acc[testName]) {
-              acc[testName] = {
-                test_name: test.test_name?.trim() || null,
-                failures: 0,
-                run_id: test.run_id,
-                suite: test.suite,
-                error_message: test.error_message,
-              };
-            }
-
-            acc[testName].failures += 1;
-            acc[testName].run_id = test.run_id;
-            acc[testName].suite = test.suite;
-            acc[testName].error_message = test.error_message;
-
-            return acc;
-          }, {}),
-        ).sort((left, right) => right.failures - left.failures);
-
-        setLatestFailures(grouped);
-      }
+    if (showLoading) {
+      setIsLoading(true);
     }
 
-    void loadLatestRun();
+    try {
+      const response = await fetch(`/api/qa-analytics/local-snapshot${cacheBust ? `?t=${Date.now()}` : ""}`, {
+        cache: "no-store",
+      });
+      const data = (await response.json()) as LocalSnapshot;
+
+      if (!response.ok) {
+        throw new Error(data.error || "Unable to load the local QA Analytics snapshot.");
+      }
+
+      if (!mountedRef.current) {
+        return;
+      }
+
+      setLatestRun(data.latestRun);
+      setLatestRunSummary(data.latestRunSummary);
+      setLatestFailures(data.latestFailures || []);
+      setAiAnalysis(data.aiAnalysis || []);
+      setActionStatus(null);
+
+      return data;
+    } catch (error) {
+      console.error(error);
+
+      if (mountedRef.current) {
+        setLatestRun(null);
+        setLatestRunSummary(null);
+        setLatestFailures([]);
+        setAiAnalysis([]);
+        setActionStatus("Unable to load local QA Analytics from test-results/results.json.");
+      }
+
+      return null;
+    } finally {
+      if (mountedRef.current && showLoading) {
+        setIsLoading(false);
+      }
+    }
+  }
+
+  async function loadRunState() {
+    try {
+      const response = await fetch("/api/qa-analytics/run-tests");
+      const data = (await response.json()) as { run: QaAnalyticsRunState | null };
+
+      if (!response.ok) {
+        return;
+      }
+
+      if (mountedRef.current) {
+        setRunState(data.run);
+      }
+    } catch {
+      if (mountedRef.current) {
+        setRunState(null);
+      }
+    }
+  }
+
+  async function refreshLatestRunAfterCompletion(run: QaAnalyticsRunState) {
+    if (refreshedJobIdRef.current === run.jobId) {
+      return;
+    }
+
+    refreshedJobIdRef.current = run.jobId;
+
+    const retryDelays = [0, 600, 1400];
+    let latestSnapshot: LocalSnapshot | null = null;
+
+    for (const delay of retryDelays) {
+      if (!mountedRef.current) {
+        return;
+      }
+
+      if (delay > 0) {
+        await new Promise((resolve) => window.setTimeout(resolve, delay));
+      }
+
+      latestSnapshot = await loadLocalSnapshot({ cacheBust: true });
+    }
+
+    if (mountedRef.current) {
+      const failedCount = latestSnapshot?.latestRunSummary?.failed ?? latestRunSummary?.failed ?? null;
+      const terminalMessage =
+        run.status === "success"
+          ? "Report success. Latest results refreshed."
+          : failedCount === null
+            ? "Report failed. Latest results refreshed."
+            : `Report failed (${failedCount} failures). Latest results refreshed.`;
+
+      setRunState((current) =>
+        current?.jobId === run.jobId ? { ...current, message: terminalMessage } : current,
+      );
+    }
+  }
+
+  useEffect(() => {
+    mountedRef.current = true;
+
+    void loadLocalSnapshot({ showLoading: true });
 
     return () => {
-      mounted = false;
+      mountedRef.current = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (runState?.status !== "running") {
+      return undefined;
+    }
+
+    const timer = window.setInterval(() => {
+      void loadRunState();
+    }, 1500);
+
+    return () => window.clearInterval(timer);
+  }, [runState?.status]);
+
+  useEffect(() => {
+    if (runState?.status === "success" || runState?.status === "failed") {
+      void refreshLatestRunAfterCompletion(runState);
+    }
+  }, [runState?.status, runState?.jobId]);
 
   async function sendAiAction(payload: unknown) {
     setBusyAction("ai-action");
     setActionStatus(null);
 
     try {
-      const response = await fetch("/api/analytics/ai", {
+      const response = await fetch("/api/qa-analytics/local-ai", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -264,7 +330,7 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
 
       const data = (await response.json()) as {
         error?: string;
-        analyses?: AiAnalysis[];
+        analyses?: LocalAiAnalysis[];
         provider?: string;
         skipped?: string[];
         branchName?: string;
@@ -283,29 +349,48 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
     }
   }
 
-  async function loadAiAnalysis(runId: string | number) {
-    const supabase = getSupabaseClient();
-    const { data, error } = await supabase
-      .from("ai_analysis")
-      .select("*")
-      .eq("run_id", runId)
-      .order("created_at", { ascending: false });
+  async function startTestRun(mode: QaAnalyticsRunMode) {
+    setIsStartingRun(true);
 
-    if (error) {
-      console.error(error);
-      return;
+    try {
+      const response = await fetch("/api/qa-analytics/run-tests", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ mode }),
+      });
+
+      const data = (await response.json()) as {
+        error?: string;
+        run?: QaAnalyticsRunState;
+      };
+
+      if (!response.ok && response.status !== 409) {
+        throw new Error(data.error || "Unable to start the test run.");
+      }
+
+      if (data.run) {
+        setRunState(data.run);
+      }
+
+      if (response.status === 409) {
+        setActionStatus("A test run is already in progress.");
+      }
+    } catch (error) {
+      setActionStatus(error instanceof Error ? error.message : "Unable to start the test run.");
+    } finally {
+      setIsStartingRun(false);
     }
-
-    setAiAnalysis((data || []) as AiAnalysis[]);
   }
 
-  async function runAnalysis(targetFailures: LatestFailure[]) {
+  async function runAnalysis(targetFailures: LatestLocalFailure[]) {
     setAnalysisRequested(true);
 
     if (targetFailures.length === 0 || !latestRun) {
       setActionStatus("No local run is available yet. Run Playwright locally to populate this view.");
       setAiAnalysis([]);
-      return [] as AiAnalysis[];
+      return [] as LocalAiAnalysis[];
     }
 
     const payload = {
@@ -321,9 +406,7 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
 
     try {
       const result = await sendAiAction(payload);
-      const insertedAnalyses = (result?.analyses || []) as AiAnalysis[];
-
-      await loadAiAnalysis(latestRun.id);
+      const insertedAnalyses = (result?.analyses || []) as LocalAiAnalysis[];
 
       if (insertedAnalyses.length > 0) {
         setAiAnalysis((current) => {
@@ -364,34 +447,6 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
     }
   }
 
-  async function analyzeAndAutoApplyHighConfidenceFixes(targetFailures: LatestFailure[]) {
-    const insertedAnalyses = await runAnalysis(targetFailures);
-    const autoApplicableAnalyses = insertedAnalyses.filter(
-      (analysis) =>
-        analysis.classification === "test_issue" &&
-        analysis.confidence >= AUTO_APPLY_CONFIDENCE_THRESHOLD &&
-        Boolean(analysis.generated_patch),
-    );
-
-    if (autoApplicableAnalyses.length === 0) {
-      setActionStatus((current) =>
-        `${current || `Created ${insertedAnalyses.length} AI analysis result(s).`} No high-confidence test fixes were eligible for auto-apply.`,
-      );
-      return;
-    }
-
-    for (const analysis of autoApplicableAnalyses) {
-      await sendAiAction({
-        action: "apply" as const,
-        analysisId: analysis.id,
-      });
-    }
-
-    setActionStatus(
-      `Created ${insertedAnalyses.length} AI analysis result(s) with ${providerLabels[selectedProvider]}. Auto-applied ${autoApplicableAnalyses.length} high-confidence fix(es).`,
-    );
-  }
-
   const canAnalyze = latestRun !== null && latestFailures.length > 0 && busyAction === null;
   const currentBranchLabel = currentBranch || latestRun?.branch || "unknown branch";
   const localRunMissing = latestRun === null;
@@ -402,7 +457,7 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.16),_transparent_40%),linear-gradient(180deg,_#020617_0%,_#0f172a_45%,_#111827_100%)] px-4 py-6 text-slate-100 sm:px-6 lg:px-8">
       <div className="mx-auto flex max-w-5xl flex-col gap-6">
         <header className="rounded-3xl border border-white/10 bg-slate-950/70 p-6 shadow-2xl shadow-cyan-950/20 backdrop-blur">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div className="space-y-4">
             <div className="space-y-3">
               <p className="text-xs uppercase tracking-[0.35em] text-cyan-300">QA Analytics Local</p>
               <div>
@@ -414,7 +469,7 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
               </div>
             </div>
 
-            <div className="flex min-w-0 flex-col gap-3 rounded-2xl border border-white/10 bg-slate-900/80 p-4 sm:min-w-[320px]">
+            <div className="flex min-w-0 flex-col gap-3 rounded-2xl border border-white/10 bg-slate-900/80 p-4">
               <div className="flex items-center justify-between gap-3">
                 <label className="text-xs uppercase tracking-[0.3em] text-slate-400" htmlFor="ai-provider">
                   AI Provider
@@ -434,6 +489,79 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
                 <option value="openai">OpenAI</option>
               </select>
 
+              <div className="rounded-2xl border border-white/10 bg-slate-950/60 p-3">
+                <div className="flex items-center justify-between gap-3">
+                  <label className="text-xs uppercase tracking-[0.3em] text-slate-400" htmlFor="run-mode">
+                    Run tests
+                  </label>
+
+                  {runState?.status && runState.status !== "idle" && (
+                    <Badge
+                      variant="outline"
+                      className={
+                        runState.status === "running"
+                          ? "border-cyan-300/30 bg-cyan-400/10 text-cyan-100"
+                          : runState.status === "success"
+                            ? "border-emerald-300/30 bg-emerald-400/10 text-emerald-100"
+                            : "border-rose-300/30 bg-rose-400/10 text-rose-100"
+                      }
+                    >
+                      {runState.status}
+                    </Badge>
+                  )}
+                </div>
+
+                <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+                  <select
+                    id="run-mode"
+                    data-testid="run-tests-mode-select"
+                    className="w-full min-w-0 rounded-2xl border border-white/10 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-cyan-300/70"
+                    value={selectedRunMode}
+                    onChange={(event) => setSelectedRunMode(event.target.value as QaAnalyticsRunMode)}
+                  >
+                    <option value="mock">E2E Mock</option>
+                    <option value="live">E2E Live</option>
+                  </select>
+
+                  <Button
+                    data-testid="run-tests-button"
+                    className="w-full sm:w-auto"
+                    disabled={isStartingRun || runState?.status === "running"}
+                    onClick={() => void startTestRun(selectedRunMode)}
+                  >
+                    {isStartingRun || runState?.status === "running" ? "Running tests..." : "Run tests"}
+                  </Button>
+                </div>
+
+                {runState?.status === "running" && (
+                  <div className="mt-3 space-y-2">
+                    <Progress value={runState.progress || 8} />
+                    <p className="text-xs text-slate-400">
+                      {runState.mode === "live" ? "E2E live" : "E2E mock"} is running
+                      {runState.currentStep && runState.totalSteps
+                        ? ` · ${runState.currentStep}/${runState.totalSteps}`
+                        : ""}
+                      .
+                    </p>
+                  </div>
+                )}
+
+                {runState?.status && runState.status !== "idle" && (
+                  <p
+                    className={`mt-3 rounded-2xl px-4 py-3 text-sm ${
+                      runState.status === "success"
+                        ? "border border-emerald-300/20 bg-emerald-400/10 text-emerald-100"
+                        : runState.status === "failed"
+                          ? "border border-rose-300/20 bg-rose-400/10 text-rose-100"
+                          : "border border-white/10 bg-white/5 text-slate-200"
+                    }`}
+                    data-testid="run-status-message"
+                  >
+                    {getRunStatusMessage(runState, latestRunSummary)}
+                  </p>
+                )}
+              </div>
+
               <div className="flex min-w-0 flex-wrap gap-2">
                 <Button
                   data-testid="ai-analyze-all"
@@ -441,24 +569,12 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
                   disabled={!canAnalyze}
                   onClick={() => void runAnalysis(latestFailures)}
                 >
-                  {busyAction ? "Working..." : "Analyze all failures"}
-                </Button>
-
-                <Button
-                  data-testid="ai-auto-apply-all"
-                  variant="outline"
-                  className="w-full sm:w-auto"
-                  disabled={!canAnalyze}
-                  onClick={() => void analyzeAndAutoApplyHighConfidenceFixes(latestFailures)}
-                >
-                  Analyze all and auto-apply safe fixes
+                  {busyAction ? "Working..." : "Analyze latest run failures"}
                 </Button>
               </div>
 
               <p className="text-xs leading-5 text-slate-400">
-                Use the first button to analyze every failure in the latest run. Use the second button to analyze the
-                same run and auto-apply only high-confidence fixes. Use a failure card button to analyze just that
-                specific error.
+                Use the run controls to execute Playwright locally, then analyze the latest run or a single failure.
               </p>
 
               {actionStatus && (
@@ -473,7 +589,56 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
           </div>
         </header>
 
-        {localRunMissing ? (
+        {latestRunSummary && !isLoading && (
+          <section className="rounded-3xl border border-white/10 bg-slate-950/60 px-5 py-4 shadow-xl shadow-slate-950/20">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-stretch lg:justify-between">
+              <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 text-sm text-slate-200">
+                <span className="font-medium text-slate-100">Last run results:</span>
+
+                <Badge
+                  variant="outline"
+                  className="border-emerald-300/30 bg-emerald-400/10 text-emerald-100"
+                >
+                  {latestRunSummary.total_tests} total
+                </Badge>
+
+                <Badge variant="outline" className="border-emerald-300/30 bg-emerald-400/10 text-emerald-100">
+                  {latestRunSummary.passed} passed
+                </Badge>
+
+                <Badge variant="outline" className="border-rose-300/30 bg-rose-400/10 text-rose-100">
+                  {latestRunSummary.failed} failed
+                </Badge>
+
+                <Badge variant="outline" className="border-amber-300/30 bg-amber-400/10 text-amber-100">
+                  {latestRunSummary.skipped} skipped
+                </Badge>
+
+                <Badge variant="outline" className="border-sky-300/30 bg-sky-400/10 text-sky-100">
+                  {latestRunSummary.flaky} flaky
+                </Badge>
+              </div>
+
+              <a
+                href={latestRunSummary.report_path}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center self-stretch rounded-full border border-cyan-300/30 bg-cyan-300/10 px-5 py-3 text-sm font-semibold text-cyan-100 transition hover:border-cyan-200/50 hover:bg-cyan-300/15 lg:self-end"
+              >
+                Open Playwright report
+              </a>
+            </div>
+          </section>
+        )}
+
+        {isLoading ? (
+          <section className="rounded-3xl border border-white/10 bg-slate-950/70 p-6 shadow-2xl shadow-cyan-950/10">
+            <h2 className="text-2xl font-semibold text-slate-100">Loading latest local run</h2>
+            <p className="mt-3 max-w-2xl text-sm text-slate-300">
+              Reading the latest Playwright results from test-results/results.json.
+            </p>
+          </section>
+        ) : localRunMissing ? (
           <section className="rounded-3xl border border-amber-300/20 bg-amber-400/10 p-6 shadow-2xl shadow-amber-950/10">
             <h2 className="text-2xl font-semibold text-amber-100">No local run found</h2>
             <p className="mt-3 max-w-2xl text-sm text-amber-50/80">
@@ -491,9 +656,6 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
                   </p>
                 </div>
 
-                <Button variant="outline" disabled={!canAnalyze} onClick={() => void runAnalysis(latestFailures)}>
-                  Analyze latest run again
-                </Button>
               </div>
 
               <div className="space-y-4">
@@ -506,40 +668,46 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
                 {latestFailures.map((test, index) => {
                   const displayName = test.test_name?.trim() || "Unknown test";
                   const testId = normalizeTestId(test.test_name, `unknown-test-${index + 1}`);
+                  const cardTestId = displayName === "Unknown test" ? `unknown-test-${index + 1}` : testId;
 
                   return (
                     <article
-                      key={`${displayName}-${test.run_id}`}
+                      key={buildFailureCardKey(test, index)}
                       className="min-w-0 rounded-2xl border border-white/10 bg-white/5 p-4"
-                      data-testid={`failing-test-${testId}`}
+                      data-testid={`failing-test-${cardTestId}`}
                     >
-                      <div className="flex min-w-0 flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                        <div className="min-w-0 flex-1 space-y-2">
-                          <div className="flex min-w-0 flex-wrap items-center gap-2">
-                            <p className="min-w-0 break-words text-base font-semibold text-white">{displayName}</p>
-                            <Badge variant="destructive">{test.failures} failures</Badge>
+                      <div className="flex min-w-0 flex-col gap-4">
+                        <div className="flex min-w-0 flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                          <div className="min-w-0 flex-1 space-y-2">
+                            <div className="flex min-w-0 flex-wrap items-center gap-2">
+                              <p className="min-w-0 break-words text-base font-semibold text-white">{displayName}</p>
+                              <Badge variant="destructive">{test.failures} failures</Badge>
+                            </div>
+
+                            <p className="break-words text-xs uppercase tracking-[0.2em] text-slate-400">
+                              {test.suite || "Unknown suite"}
+                            </p>
                           </div>
 
-                          <p className="break-words text-xs uppercase tracking-[0.2em] text-slate-400">
-                            {test.suite || "Unknown suite"}
-                          </p>
-
-                          <div className="max-w-full overflow-x-auto rounded-2xl border border-white/10 bg-slate-950/80">
-                            <pre className="min-w-max p-3 text-xs leading-5 whitespace-pre text-slate-300">
-                              {test.error_message || "No error message captured."}
-                            </pre>
-                          </div>
+                          <Button
+                            variant="default"
+                            data-testid={`ai-analyze-${cardTestId}`}
+                            className="w-full shrink-0 lg:ml-4 lg:w-[13rem] lg:max-w-full"
+                            disabled={busyAction !== null}
+                            onClick={() => void runAnalysis([test])}
+                          >
+                            Analyze this failure only
+                          </Button>
                         </div>
 
-                        <Button
-                          variant="default"
-                          data-testid={`ai-analyze-${testId}`}
-                          className="w-full lg:ml-4 lg:w-[13rem] lg:max-w-full"
-                          disabled={busyAction !== null}
-                          onClick={() => void runAnalysis([test])}
+                        <div
+                          className="w-full min-w-0 max-w-none overflow-x-auto rounded-2xl border border-white/10 bg-slate-950/80"
+                          data-testid={`failure-error-log-${cardTestId}`}
                         >
-                          Analyze this failure
-                        </Button>
+                          <pre className="inline-block min-w-full w-max p-3 text-xs leading-5 whitespace-pre text-slate-300">
+                            {test.error_message || "No error message captured."}
+                          </pre>
+                        </div>
                       </div>
                     </article>
                   );

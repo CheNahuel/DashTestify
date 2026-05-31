@@ -1,4 +1,3 @@
-import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 import path from "path";
 import simpleGit from "simple-git";
@@ -7,7 +6,7 @@ import {
   appendLocalAnalyses,
   loadLocalAnalysesForRun,
   loadLocalAnalysisById,
-} from "../../qa-analytics/_local-store";
+} from "../_local-store";
 import { createAiProvider, parseAiProviderName } from "../../../../../scripts/ai/factory";
 import { applyGeneratedPatch } from "../../../../../scripts/ai/patch";
 import { readSourceFileContext } from "../../../../../scripts/ai/source-context";
@@ -31,17 +30,6 @@ type AnalyzeRequestBody = {
 
 const repoRoot = process.cwd();
 
-function getSupabaseClient() {
-  const supabaseUrl = process.env.SUPABASE_URL;
-  const supabaseKey = process.env.SUPABASE_KEY;
-
-  if (!supabaseUrl || !supabaseKey) {
-    return null;
-  }
-
-  return createClient(supabaseUrl, supabaseKey);
-}
-
 function getRepoRelativePath(targetFile: string) {
   return path.isAbsolute(targetFile) ? path.relative(repoRoot, targetFile) : targetFile.replace(/^\.\/+/, "");
 }
@@ -53,10 +41,6 @@ async function getCurrentBranchName() {
   return branchSummary?.current || "current branch";
 }
 
-function isHostedApplyEnvironment() {
-  return process.env.VERCEL === "1";
-}
-
 export async function POST(request: Request) {
   try {
     const body = (await request.json().catch(() => null)) as AnalyzeRequestBody | null;
@@ -66,11 +50,9 @@ export async function POST(request: Request) {
     }
 
     if (body.action === "analyze") {
-      const supabase = getSupabaseClient();
       const provider = parseAiProviderName(body.provider);
       const analyzer = createAiProvider(provider);
       const failures = body.failures ?? (body.failure ? [body.failure] : []);
-      const useLocalStore = !supabase;
 
       if (failures.length === 0) {
         return NextResponse.json({ error: "No failures provided." }, { status: 400 });
@@ -79,34 +61,17 @@ export async function POST(request: Request) {
       const analyses: unknown[] = [];
       const skipped: string[] = [];
       const localExistingKeys = new Set(
-        useLocalStore
-          ? (await loadLocalAnalysesForRun(failures[0].runId)).map((analysis) =>
-              `${analysis.run_id}::${analysis.test_name}::${analysis.error_message || ""}`,
-            )
-          : [],
+        (await loadLocalAnalysesForRun(failures[0].runId)).map(
+          (analysis) => `${analysis.run_id}::${analysis.test_name}::${analysis.error_message || ""}`,
+        ),
       );
 
       for (const failure of failures) {
         const localAnalysisKey = `${failure.runId}::${failure.testName}::${failure.errorMessage || ""}`;
 
-        if (useLocalStore && localExistingKeys.has(localAnalysisKey)) {
+        if (localExistingKeys.has(localAnalysisKey)) {
           skipped.push(failure.testName);
           continue;
-        }
-
-        if (supabase) {
-          const { data: existing } = await supabase
-            .from("ai_analysis")
-            .select("id")
-            .eq("run_id", failure.runId)
-            .eq("test_name", failure.testName)
-            .eq("error_message", failure.errorMessage)
-            .maybeSingle();
-
-          if (existing) {
-            skipped.push(failure.testName);
-            continue;
-          }
         }
 
         const sourceContext = await readSourceFileContext(repoRoot, failure.suite);
@@ -119,32 +84,6 @@ export async function POST(request: Request) {
           sourceFileContent: sourceContext?.content,
           sourceFileTruncated: sourceContext?.truncated,
         });
-
-        if (supabase) {
-          const { data: inserted, error } = await supabase
-            .from("ai_analysis")
-            .insert({
-              run_id: failure.runId,
-              test_name: failure.testName,
-              error_message: failure.errorMessage,
-              ai_summary: analysis.summary,
-              suggested_fix: analysis.suggested_fix,
-              severity: analysis.severity,
-              classification: analysis.classification,
-              confidence: analysis.confidence,
-              target_file: analysis.target_file,
-              generated_patch: analysis.generated_patch,
-            })
-            .select("*")
-            .single();
-
-          if (error) {
-            return NextResponse.json({ error: error.message }, { status: 500 });
-          }
-
-          analyses.push(inserted);
-          continue;
-        }
 
         const inserted = {
           id: globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`,
@@ -174,35 +113,14 @@ export async function POST(request: Request) {
     }
 
     if (body.action === "apply") {
-      const supabase = getSupabaseClient();
       if (!body.analysisId) {
         return NextResponse.json({ error: "Missing analysisId." }, { status: 400 });
       }
 
-      const analysis = supabase
-        ? await supabase
-            .from("ai_analysis")
-            .select("*")
-            .eq("id", body.analysisId)
-            .maybeSingle()
-            .then(({ data, error }) => {
-              if (error) {
-                throw new Error(error.message);
-              }
-
-              return data;
-            })
-        : await loadLocalAnalysisById(body.analysisId);
+      const analysis = await loadLocalAnalysisById(body.analysisId);
 
       if (!analysis?.target_file || !analysis?.generated_patch) {
         return NextResponse.json({ error: "Analysis is missing patch information." }, { status: 400 });
-      }
-
-      if (isHostedApplyEnvironment()) {
-        return NextResponse.json(
-          { error: "Hosted AI apply needs a Git provider workflow before it can create branches or merge requests." },
-          { status: 501 },
-        );
       }
 
       const branchName = await getCurrentBranchName();

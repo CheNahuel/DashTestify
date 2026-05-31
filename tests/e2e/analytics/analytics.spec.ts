@@ -1,5 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
+import { buildLocalQaAnalyticsSnapshot } from "@/lib/qa-analytics/local-results";
+
 type SupabaseRow = Record<string, unknown>;
 
 type TestResultFixture = {
@@ -135,6 +137,95 @@ async function mockQaAnalyticsApi(page: Page, fixtures: QaAnalyticsFixtures) {
   });
 }
 
+async function mockLocalSnapshot(page: Page, fixtures: QaAnalyticsFixtures) {
+  await page.route("**/api/qa-analytics/local-snapshot**", async (route) => {
+    const latestRun = fixtures.runs[0] || null;
+
+    if (!latestRun) {
+      await route.fulfill({
+        json: {
+          latestRun: null,
+          latestRunSummary: null,
+          latestFailures: [],
+          aiAnalysis: [],
+        },
+      });
+      return;
+    }
+
+    const latestFailures = Object.values(
+      fixtures.allResults
+        .filter((result) => result.run_id === latestRun.id && result.status === "failed")
+        .reduce<
+          Record<
+            string,
+            {
+              test_name: string | null;
+              failures: number;
+              run_id: string;
+              suite: string | null;
+              error_message: string | null;
+            }
+          >
+        >((acc, result) => {
+          const key = `${result.suite}::${result.test_name}`;
+
+          if (!acc[key]) {
+            acc[key] = {
+              test_name: result.test_name,
+              failures: 0,
+              run_id: result.run_id,
+              suite: result.suite,
+              error_message: result.error_message,
+            };
+          }
+
+          acc[key].failures += 1;
+          acc[key].error_message = result.error_message;
+
+          return acc;
+        }, {}),
+    ).sort((left, right) => right.failures - left.failures);
+
+    const totals = fixtures.allResults.filter((result) => result.run_id === latestRun.id).reduce(
+      (acc, result) => {
+        acc.total_tests += 1;
+
+        if (result.status === "passed") {
+          acc.passed += 1;
+        } else if (result.status === "skipped") {
+          acc.skipped += 1;
+        } else if (result.status === "flaky") {
+          acc.flaky += 1;
+        } else {
+          acc.failed += 1;
+        }
+
+        return acc;
+      },
+      {
+        total_tests: 0,
+        passed: 0,
+        failed: 0,
+        skipped: 0,
+        flaky: 0,
+      },
+    );
+
+    await route.fulfill({
+      json: {
+        latestRun,
+        latestRunSummary: {
+          ...totals,
+          report_path: "/playwright-report/index.html",
+        },
+        latestFailures,
+        aiAnalysis: fixtures.aiAnalyses.filter((analysis) => analysis.run_id === latestRun.id),
+      },
+    });
+  });
+}
+
 test("local qa analytics requires a run, shows the branch and only reveals AI analysis after analyzing the latest run", async ({
   page,
 }) => {
@@ -154,10 +245,10 @@ test("local qa analytics requires a run, shows the branch and only reveals AI an
     },
   ];
 
-  await mockSupabaseRoutes(page, fixtures);
+  await mockLocalSnapshot(page, fixtures);
   await mockQaAnalyticsApi(page, fixtures);
 
-  await page.route("**/api/analytics/ai", async (route) => {
+  await page.route("**/api/qa-analytics/local-ai", async (route) => {
     const body = route.request().postDataJSON() as {
       action: string;
       provider?: string;
@@ -226,12 +317,25 @@ test("local qa analytics requires a run, shows the branch and only reveals AI an
 
   await page.goto("/qa-analytics");
 
-  await expect(page.getByRole("heading", { name: "Latest local run" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Latest local run", exact: true })).toBeVisible();
+  await expect(page.getByText(/Last run results:/)).toBeVisible();
+  await expect(page.getByText(/passed/)).toBeVisible();
+  await expect(page.getByRole("link", { name: "Open Playwright report" })).toHaveAttribute(
+    "href",
+    "/playwright-report/index.html",
+  );
   await expect(page.getByText(/Branch:/)).toBeVisible();
   await expect(page.getByTestId("ai-provider-select")).toHaveValue("gemini");
-  await expect(page.getByText("Use the first button to analyze every failure in the latest run")).toBeVisible();
-  await expect(page.getByTestId("ai-analyze-all")).toContainText("Analyze all failures");
-  await expect(page.getByTestId("ai-auto-apply-all")).toContainText("Analyze all and auto-apply safe fixes");
+  const titleBox = await page.getByRole("heading", { name: "Latest local run", exact: true }).boundingBox();
+  const providerBox = await page.getByTestId("ai-provider-select").boundingBox();
+
+  expect(titleBox).not.toBeNull();
+  expect(providerBox).not.toBeNull();
+  expect(providerBox!.y).toBeGreaterThan((titleBox!.y || 0) + (titleBox!.height || 0));
+  await expect(
+    page.getByText("Use the run controls to execute Playwright locally, then analyze the latest run or a single failure."),
+  ).toBeVisible();
+  await expect(page.getByTestId("ai-analyze-all")).toContainText("Analyze latest run failures");
   await expect(page.getByTestId("failing-test-search-by-symbol-finds-the-coin")).toBeVisible();
   await expect(page.getByTestId("failing-test-checkout-flow-completes-with-coupon")).toBeVisible();
   await expect(page.getByTestId("stats-total-runs")).toHaveCount(0);
@@ -244,9 +348,13 @@ test("local qa analytics requires a run, shows the branch and only reveals AI an
   await page.getByTestId("ai-analyze-all").click();
 
   await expect(page.getByTestId("ai-status-message")).toContainText("Gemini");
-  await expect(page.getByRole("button", { name: "Analyze this failure" })).toHaveCount(2);
+  await expect(page.getByRole("button", { name: "Analyze this failure only" })).toHaveCount(2);
   await expect(page.getByTestId("ai-analysis-card-42")).toBeVisible();
   await expect(page.getByTestId("ai-analysis-card-42")).toContainText("fragile selector");
+  await expect(page.getByTestId("failure-error-log-search-by-symbol-finds-the-coin")).toBeVisible();
+  await expect(page.getByTestId("failure-error-log-search-by-symbol-finds-the-coin")).toHaveClass(
+    /w-full/,
+  );
   await expect(page.getByTestId("ai-analysis-card-42")).toContainText("Apply AI fix");
   await expect(page.getByRole("button", { name: "Apply AI fix" })).toHaveCount(1);
   await expect(page.getByRole("button", { name: "Not actionable" })).toHaveCount(0);
@@ -261,7 +369,7 @@ test("local qa analytics prompts to run Playwright when no local run is availabl
     trends: [],
   });
 
-  await mockSupabaseRoutes(page, fixtures);
+  await mockLocalSnapshot(page, fixtures);
   await mockQaAnalyticsApi(page, fixtures);
 
   await page.goto("/qa-analytics");
@@ -271,6 +379,444 @@ test("local qa analytics prompts to run Playwright when no local run is availabl
   await expect(page.getByTestId("ai-provider-select")).toBeVisible();
   await expect(page.getByTestId("stats-total-runs")).toHaveCount(0);
   await expect(page.getByTestId("test-trends-chart")).toHaveCount(0);
+});
+
+test("local qa analytics renders duplicate unknown failures with unique cards", async ({ page }) => {
+  const fixtures = createQaAnalyticsFixtures({
+    results: [
+      {
+        run_id: "run-3",
+        suite: "suite-a.spec.ts",
+        test_name: null,
+        status: "failed",
+        error_message: "First unknown failure.",
+      },
+      {
+        run_id: "run-3",
+        suite: "suite-b.spec.ts",
+        test_name: null,
+        status: "failed",
+        error_message: "Second unknown failure.",
+      },
+    ],
+  });
+
+  await mockLocalSnapshot(page, fixtures);
+  await mockQaAnalyticsApi(page, fixtures);
+
+  await page.goto("/qa-analytics");
+
+  await expect(page.getByTestId("failing-test-unknown-test-1")).toBeVisible();
+  await expect(page.getByTestId("failing-test-unknown-test-2")).toBeVisible();
+  await expect(page.getByTestId("failing-test-unknown-test-1")).toContainText("First unknown failure.");
+  await expect(page.getByTestId("failing-test-unknown-test-2")).toContainText("Second unknown failure.");
+});
+
+test("local qa analytics parser uses spec titles for the latest run", async () => {
+  const snapshot = buildLocalQaAnalyticsSnapshot({
+    resultsFile: {
+      stats: {
+        startTime: "2026-05-31T01:09:23.372Z",
+        expected: 1,
+        unexpected: 1,
+        skipped: 0,
+        flaky: 0,
+      },
+      suites: [
+        {
+          title: "e2e/dashboard/interactions.spec.ts",
+          file: "e2e/dashboard/interactions.spec.ts",
+          specs: [
+            {
+              title: "selected coin card is visually highlighted",
+              file: "e2e/dashboard/interactions.spec.ts",
+              tests: [
+                {
+                  status: "failed",
+                  results: [
+                    {
+                      status: "failed",
+                      errors: [{ message: "Selector was not highlighted." }],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+    aiAnalysesFile: [],
+    gitState: {
+      branch: "feature/local-analytics",
+      commitSha: "abc123",
+    },
+  });
+
+  expect(snapshot.latestFailures).toHaveLength(1);
+  expect(snapshot.latestFailures[0].test_name).toBe("selected coin card is visually highlighted");
+});
+
+test("local qa analytics can start a mock run and shows progress before success", async ({ page }) => {
+  const fixtures = createQaAnalyticsFixtures();
+  let pollCount = 0;
+  let snapshotVersion = 0;
+
+  await mockQaAnalyticsApi(page, fixtures);
+
+  await page.route("**/api/qa-analytics/local-snapshot**", async (route) => {
+    const latestRun =
+      snapshotVersion === 0
+        ? fixtures.runs[0] || null
+        : {
+            ...fixtures.runs[0],
+            total_tests: 21,
+            passed: 18,
+            failed: 3,
+          };
+
+    const latestFailures =
+      snapshotVersion === 0
+        ? Object.values(
+            fixtures.allResults
+              .filter((result) => result.run_id === latestRun?.id && result.status === "failed")
+              .reduce<
+                Record<
+                  string,
+                  {
+                    test_name: string | null;
+                    failures: number;
+                    run_id: string;
+                    suite: string | null;
+                    error_message: string | null;
+                  }
+                >
+              >((acc, result) => {
+                const key = `${result.suite}::${result.test_name}`;
+
+                if (!acc[key]) {
+                  acc[key] = {
+                    test_name: result.test_name,
+                    failures: 0,
+                    run_id: result.run_id,
+                    suite: result.suite,
+                    error_message: result.error_message,
+                  };
+                }
+
+                acc[key].failures += 1;
+                acc[key].error_message = result.error_message;
+
+                return acc;
+              }, {}),
+          ).sort((left, right) => right.failures - left.failures)
+        : [
+            {
+              test_name: "Search by symbol finds the coin",
+              failures: 2,
+              run_id: "run-3",
+              suite: "dashboard/search.spec.ts",
+              error_message: "Latest flaky selector broke again.",
+            },
+          ];
+
+    const totals =
+      snapshotVersion === 0
+        ? fixtures.allResults.filter((result) => result.run_id === latestRun?.id).reduce(
+            (acc, result) => {
+              acc.total_tests += 1;
+
+              if (result.status === "passed") {
+                acc.passed += 1;
+              } else if (result.status === "skipped") {
+                acc.skipped += 1;
+              } else if (result.status === "flaky") {
+                acc.flaky += 1;
+              } else {
+                acc.failed += 1;
+              }
+
+              return acc;
+            },
+            {
+              total_tests: 0,
+              passed: 0,
+              failed: 0,
+              skipped: 0,
+              flaky: 0,
+            },
+          )
+        : {
+            total_tests: 21,
+            passed: 18,
+            failed: 3,
+            skipped: 0,
+            flaky: 0,
+          };
+
+    await route.fulfill({
+      json: {
+        latestRun,
+        latestRunSummary: {
+          ...totals,
+          report_path: "/playwright-report/index.html",
+        },
+        latestFailures,
+        aiAnalysis: [],
+      },
+    });
+  });
+
+  await page.route("**/api/qa-analytics/run-tests**", async (route) => {
+    if (route.request().method() === "POST") {
+      await route.fulfill({
+        json: {
+          run: {
+            jobId: "job-1",
+            mode: "mock",
+            status: "running",
+            progress: 34,
+            currentStep: 12,
+            totalSteps: 35,
+            message: "Running e2e mock tests...",
+            finishedAt: null,
+            exitCode: null,
+          },
+        },
+      });
+      return;
+    }
+
+    pollCount += 1;
+
+    if (pollCount < 2) {
+      await route.fulfill({
+        json: {
+          run: {
+            jobId: "job-1",
+            mode: "mock",
+            status: "running",
+            progress: 34,
+            currentStep: 12,
+            totalSteps: 35,
+            message: "Running e2e mock tests...",
+            finishedAt: null,
+            exitCode: null,
+          },
+        },
+      });
+      return;
+    }
+
+    snapshotVersion = 1;
+
+    await route.fulfill({
+      json: {
+        run: {
+          jobId: "job-1",
+          mode: "mock",
+          status: "success",
+          progress: 100,
+          currentStep: 35,
+          totalSteps: 35,
+          message: "Test run completed successfully.",
+          finishedAt: "2026-05-31T01:10:23.372Z",
+          exitCode: 0,
+        },
+      },
+    });
+  });
+
+  await page.goto("/qa-analytics");
+
+  await expect(page.getByTestId("run-tests-mode-select")).toHaveValue("mock");
+  await page.getByTestId("run-tests-button").click();
+  await expect(page.getByRole("progressbar")).toBeVisible();
+  await expect(page.getByText(/E2E mock is running/)).toBeVisible();
+  await expect(page.getByTestId("run-status-message")).toContainText("Running e2e mock mode");
+  await expect(page.getByTestId("run-status-message")).toContainText("Report success");
+  await expect(page.getByText(/21 total/)).toBeVisible();
+});
+
+test("local qa analytics refreshes latest results when a run fails", async ({ page }) => {
+  const fixtures = createQaAnalyticsFixtures({
+    runs: [
+      {
+        id: "run-4",
+        branch: "feature/analytics",
+        commit_sha: "deadbeef",
+        created_at: "2026-05-26T10:00:00.000Z",
+        passed: 15,
+        failed: 5,
+        total_tests: 20,
+      },
+    ],
+    results: [
+      {
+        run_id: "run-4",
+        suite: "dashboard/search.spec.ts",
+        test_name: "Search by symbol finds the coin",
+        status: "failed",
+        error_message: "Selector timed out.",
+      },
+      {
+        run_id: "run-4",
+        suite: "dashboard/checkout.spec.ts",
+        test_name: "Checkout flow completes with coupon",
+        status: "failed",
+        error_message: "Checkout button was disabled.",
+      },
+      {
+        run_id: "run-4",
+        suite: "dashboard/history.spec.ts",
+        test_name: "History fetch handles a 429 response",
+        status: "passed",
+        error_message: null,
+      },
+    ],
+  });
+  let pollCount = 0;
+  let snapshotVersion = 0;
+
+  await mockQaAnalyticsApi(page, fixtures);
+
+  await page.route("**/api/qa-analytics/local-snapshot**", async (route) => {
+    const latestRun =
+      snapshotVersion === 0
+        ? fixtures.runs[0] || null
+        : {
+            ...fixtures.runs[0],
+            total_tests: 21,
+            passed: 15,
+            failed: 6,
+          };
+
+    const latestFailures =
+      snapshotVersion === 0
+        ? fixtures.allResults
+            .filter((result) => result.run_id === latestRun?.id && result.status === "failed")
+            .map((result, index) => ({
+              test_name: result.test_name,
+              failures: index === 0 ? 2 : 1,
+              run_id: result.run_id,
+              suite: result.suite,
+              error_message: result.error_message,
+            }))
+        : [
+            {
+              test_name: "Search by symbol finds the coin",
+              failures: 3,
+              run_id: "run-4",
+              suite: "dashboard/search.spec.ts",
+              error_message: "Selector timed out.",
+            },
+            {
+              test_name: "Checkout flow completes with coupon",
+              failures: 1,
+              run_id: "run-4",
+              suite: "dashboard/checkout.spec.ts",
+              error_message: "Checkout button was disabled.",
+            },
+          ];
+
+    const totals =
+      snapshotVersion === 0
+        ? {
+            total_tests: 20,
+            passed: 15,
+            failed: 5,
+            skipped: 0,
+            flaky: 0,
+          }
+        : {
+            total_tests: 21,
+            passed: 15,
+            failed: 6,
+            skipped: 0,
+            flaky: 0,
+          };
+
+    await route.fulfill({
+      json: {
+        latestRun,
+        latestRunSummary: {
+          ...totals,
+          report_path: "/playwright-report/index.html",
+        },
+        latestFailures,
+        aiAnalysis: [],
+      },
+    });
+  });
+
+  await page.route("**/api/qa-analytics/run-tests**", async (route) => {
+    if (route.request().method() === "POST") {
+      await route.fulfill({
+        json: {
+          run: {
+            jobId: "job-2",
+            mode: "mock",
+            status: "running",
+            progress: 18,
+            currentStep: 4,
+            totalSteps: 20,
+            message: "Running e2e mock tests...",
+            finishedAt: null,
+            exitCode: null,
+          },
+        },
+      });
+      return;
+    }
+
+    pollCount += 1;
+
+    if (pollCount < 2) {
+      await route.fulfill({
+        json: {
+          run: {
+            jobId: "job-2",
+            mode: "mock",
+            status: "running",
+            progress: 18,
+            currentStep: 4,
+            totalSteps: 20,
+            message: "Running e2e mock tests...",
+            finishedAt: null,
+            exitCode: null,
+          },
+        },
+      });
+      return;
+    }
+
+    snapshotVersion = 1;
+
+    await route.fulfill({
+      json: {
+        run: {
+          jobId: "job-2",
+          mode: "mock",
+          status: "failed",
+          progress: 100,
+          currentStep: 20,
+          totalSteps: 20,
+          message: "Test run failed with exit code 1.",
+          finishedAt: "2026-05-31T01:12:23.372Z",
+          exitCode: 1,
+        },
+      },
+    });
+  });
+
+  await page.goto("/qa-analytics");
+
+  await page.getByTestId("run-tests-button").click();
+  await expect(page.getByRole("progressbar")).toBeVisible();
+  await expect(page.getByTestId("run-status-message")).toContainText("Running e2e mock mode");
+  await expect(page.getByTestId("run-status-message")).toContainText("Report failed (6 failures)");
+  await expect(page.getByText(/21 total/)).toBeVisible();
+  await expect(page.getByTestId("failing-test-search-by-symbol-finds-the-coin")).toContainText("3 failures");
 });
 
 test("live qa analytics hides local-only sections and keeps the trend chart below total runs", async ({ page }) => {
