@@ -4,13 +4,11 @@ import path from "path";
 
 import simpleGit from "simple-git";
 
-import { buildLocalQaAnalyticsSnapshot, type PlaywrightJsonFile } from "@/lib/qa-analytics/local-results";
-
-import type { LocalAiAnalysis } from "@/components/qa-analytics/types";
-
-type StoredAiAnalysis = LocalAiAnalysis & {
-  created_at: string;
-};
+import {
+  buildLocalQaAnalyticsSnapshot,
+  type PlaywrightJsonFile,
+  type StoredAiAnalysis,
+} from "@/lib/qa-analytics/local-results";
 
 const repoRoot = process.cwd();
 const localResultsPath = path.join(repoRoot, "test-results", "results.json");

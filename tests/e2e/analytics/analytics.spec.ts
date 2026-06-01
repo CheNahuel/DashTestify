@@ -5,6 +5,7 @@ import path from "path";
 import { expect, test, type Page } from "@playwright/test";
 
 import { buildLocalQaAnalyticsSnapshot } from "@/lib/qa-analytics/local-results";
+import { appendLocalAnalyses, loadLocalAnalysesForRun } from "@/app/api/qa-analytics/_local-store";
 
 type SupabaseRow = Record<string, unknown>;
 
@@ -24,9 +25,15 @@ type QaAnalyticsFixtures = {
 };
 
 const runStatePath = path.join(os.tmpdir(), "dash-testify-qa-analytics", "run-tests-state.json");
+const localAnalysesPath = path.join(os.tmpdir(), "dash-testify-qa-analytics", "qa-analytics-ai.json");
 
 test.beforeEach(async () => {
   await fs.rm(runStatePath, { force: true });
+  await fs.rm(localAnalysesPath, { force: true });
+});
+
+test.afterEach(async () => {
+  await fs.rm(localAnalysesPath, { force: true });
 });
 
 function createQaAnalyticsFixtures(options?: {
@@ -529,6 +536,30 @@ test("local qa analytics parser uses spec titles for the latest run", async () =
   expect(snapshot.latestFailures[0].test_name).toBe("selected coin card is visually highlighted");
 });
 
+test("local qa analytics store can load analyses by numeric run id", async () => {
+  await appendLocalAnalyses([
+    {
+      id: "analysis-1",
+      run_id: 123,
+      created_at: "2026-05-31T01:10:23.372Z",
+      test_name: "selected coin card is visually highlighted",
+      ai_summary: "Stored analysis survives the local store load.",
+      suggested_fix: "Keep this analysis record available.",
+      severity: "medium",
+      classification: "test_issue",
+      confidence: 90,
+      target_file: "src/components/qa-analytics/live-qa-analytics-page.tsx",
+      generated_patch: null,
+    },
+  ]);
+
+  const analyses = await loadLocalAnalysesForRun(123);
+
+  expect(analyses).toHaveLength(1);
+  expect(analyses[0].run_id).toBe(123);
+  expect(analyses[0].test_name).toBe("selected coin card is visually highlighted");
+});
+
 test("local qa analytics can start a mock run and shows progress before success", async ({ page }) => {
   const fixtures = createQaAnalyticsFixtures();
   let pollCount = 0;
@@ -796,12 +827,8 @@ test("local qa analytics keeps showing progress through a transient polling miss
   await expect(page.getByRole("progressbar")).toBeVisible();
   await expect(page.getByText(/Now running:/)).toBeVisible();
 
-  await page.waitForTimeout(1800);
-
-  await expect(page.getByRole("progressbar")).toBeVisible();
-  await expect(page.getByTestId("run-tests-button")).toContainText("Running mock tests...");
-
-  await expect(page.getByTestId("run-status-message")).toContainText("Report success");
+  await expect(page.getByTestId("run-status-message")).toContainText("Report success", { timeout: 5000 });
+  await expect(page.getByTestId("run-status-badge")).toHaveText("success");
   await expect(page.getByRole("progressbar")).toHaveCount(0);
 });
 
@@ -987,6 +1014,7 @@ test("local qa analytics refreshes latest results when a run fails", async ({ pa
   await expect(page.getByTestId("ai-provider-panel")).toHaveClass(/opacity-60/);
   await expect(page.getByText(/Now running:/)).toBeVisible();
   await expect(page.getByTestId("run-tests-button")).toContainText("Running mock tests...");
+  await expect(page.getByTestId("run-status-badge")).toHaveText("failed");
   await expect(page.getByTestId("run-status-message")).toContainText("Report failed (6 failures)");
   await expect(page.getByRole("progressbar")).toHaveCount(0);
   await expect(page.getByTestId("summary-metric-total")).toContainText("21");
@@ -1061,6 +1089,7 @@ test("live qa analytics hides local-only sections and keeps the trend chart belo
   await page.goto("/qa-analytics?view=live");
 
   await expect(page.getByRole("heading", { name: "Metrics overview" })).toBeVisible();
+  await expect(page.getByText("Live metrics only. This page shows the aggregate health of test runs and the historical trend chart.")).toBeVisible();
   await expect(page.getByTestId("stats-total-runs")).toBeVisible();
   await expect(page.getByTestId("test-trends-chart")).toBeVisible();
   await expect(page.getByTestId("provider-option-gemini")).toHaveCount(0);

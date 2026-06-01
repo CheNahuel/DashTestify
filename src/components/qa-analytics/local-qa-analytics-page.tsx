@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -258,7 +258,7 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
   const [busyAction, setBusyAction] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  async function loadLocalSnapshot(options?: { showLoading?: boolean; cacheBust?: boolean }) {
+  const loadLocalSnapshot = useCallback(async (options?: { showLoading?: boolean; cacheBust?: boolean }) => {
     const showLoading = options?.showLoading ?? false;
     const cacheBust = options?.cacheBust ?? false;
 
@@ -277,7 +277,7 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
       }
 
       if (!mountedRef.current) {
-        return;
+        return null;
       }
 
       setLatestRun(data.latestRun);
@@ -304,7 +304,7 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
         setIsLoading(false);
       }
     }
-  }
+  }, []);
 
   async function loadRunState() {
     try {
@@ -351,42 +351,45 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
     }
   }
 
-  async function refreshLatestRunAfterCompletion(run: QaAnalyticsRunState) {
-    if (refreshedJobIdRef.current === run.jobId) {
-      return;
-    }
-
-    refreshedJobIdRef.current = run.jobId;
-
-    const retryDelays = [0, 600, 1400];
-    let latestSnapshot: LocalSnapshot | null = null;
-
-    for (const delay of retryDelays) {
-      if (!mountedRef.current) {
+  const refreshLatestRunAfterCompletion = useCallback(
+    async (run: QaAnalyticsRunState) => {
+      if (refreshedJobIdRef.current === run.jobId) {
         return;
       }
 
-      if (delay > 0) {
-        await new Promise((resolve) => window.setTimeout(resolve, delay));
+      refreshedJobIdRef.current = run.jobId;
+
+      const retryDelays = [0, 600, 1400];
+      let latestSnapshot: LocalSnapshot | null = null;
+
+      for (const delay of retryDelays) {
+        if (!mountedRef.current) {
+          return;
+        }
+
+        if (delay > 0) {
+          await new Promise((resolve) => window.setTimeout(resolve, delay));
+        }
+
+        latestSnapshot = await loadLocalSnapshot({ cacheBust: true });
       }
 
-      latestSnapshot = await loadLocalSnapshot({ cacheBust: true });
-    }
+      if (mountedRef.current) {
+        const failedCount = latestSnapshot?.latestRunSummary?.failed ?? latestRunSummary?.failed ?? null;
+        const terminalMessage =
+          run.status === "success"
+            ? "Report success. Latest results refreshed."
+            : failedCount === null
+              ? "Report failed. Latest results refreshed."
+              : `Report failed (${failedCount} failures). Latest results refreshed.`;
 
-    if (mountedRef.current) {
-      const failedCount = latestSnapshot?.latestRunSummary?.failed ?? latestRunSummary?.failed ?? null;
-      const terminalMessage =
-        run.status === "success"
-          ? "Report success. Latest results refreshed."
-          : failedCount === null
-            ? "Report failed. Latest results refreshed."
-            : `Report failed (${failedCount} failures). Latest results refreshed.`;
-
-      setRunState((current) =>
-        current?.jobId === run.jobId ? { ...current, message: terminalMessage } : current,
-      );
-    }
-  }
+        setRunState((current) =>
+          current?.jobId === run.jobId ? { ...current, message: terminalMessage } : current,
+        );
+      }
+    },
+    [latestRunSummary, loadLocalSnapshot],
+  );
 
   useEffect(() => {
     mountedRef.current = true;
@@ -397,7 +400,7 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
     return () => {
       mountedRef.current = false;
     };
-  }, []);
+  }, [loadLocalSnapshot]);
 
   useEffect(() => {
     if (runState?.status !== "running") {
@@ -423,10 +426,16 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
   }, [runState?.status]);
 
   useEffect(() => {
-    if ((runState?.status === "success" || runState?.status === "failed") && !runState?.isStale) {
-      void refreshLatestRunAfterCompletion(runState);
+    if (runState?.status !== "success" && runState?.status !== "failed") {
+      return;
     }
-  }, [runState?.status, runState?.jobId]);
+
+    if (runState.isStale) {
+      return;
+    }
+
+    void refreshLatestRunAfterCompletion(runState);
+  }, [refreshLatestRunAfterCompletion, runState]);
 
   async function sendAiAction(payload: unknown) {
     setBusyAction("ai-action");
@@ -787,12 +796,11 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
                     {runState?.status && runState.status !== "idle" && runState.status !== "running" && (
                       <Badge
                         variant="outline"
+                        data-testid="run-status-badge"
                         className={
-                          runState.status === "running"
-                            ? "border-cyan-300/30 bg-cyan-400/10 text-cyan-100"
-                            : runState.status === "success"
-                              ? "border-emerald-300/30 bg-emerald-400/10 text-emerald-100"
-                              : "border-rose-300/30 bg-rose-400/10 text-rose-100"
+                          runState.status === "success"
+                            ? "border-emerald-300/30 bg-emerald-400/10 text-emerald-100"
+                            : "border-rose-300/30 bg-rose-400/10 text-rose-100"
                         }
                       >
                         {runState.status}
@@ -1176,7 +1184,7 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
                 <section className={`${panelShellClass} border-emerald-300/20 bg-emerald-400/10 shadow-2xl shadow-emerald-950/10`}>
                   <h2 className="text-2xl font-semibold text-emerald-100">Latest run is green</h2>
                   <p className="mt-3 max-w-2xl text-sm text-emerald-50/80">
-                    The latest local run passed. Re-run Playwright from the control panel when you're ready to keep
+                    The latest local run passed. Re-run Playwright from the control panel when you are ready to keep
                     this view centered on the newest execution.
                   </p>
                 </section>
