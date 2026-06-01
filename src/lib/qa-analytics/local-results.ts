@@ -42,6 +42,7 @@ type LocalGitState = {
 };
 
 export type StoredAiAnalysis = {
+  provider: string;
   run_id: string | number;
   created_at: string;
   test_name: string;
@@ -102,7 +103,9 @@ function getResultMessage(result: PlaywrightJsonResult | undefined) {
 }
 
 function getTestName(spec: PlaywrightJsonSpec, test: PlaywrightJsonTest, fallbackIndex: number) {
-  return test.title?.trim() || spec.title?.trim() || spec.file?.trim() || `Unknown test ${fallbackIndex}`;
+  return (
+    test.title?.trim() || spec.title?.trim() || spec.file?.trim() || `Unknown test ${fallbackIndex}`
+  );
 }
 
 function getSuiteName(suite: PlaywrightJsonSuite, spec: PlaywrightJsonSpec) {
@@ -156,8 +159,11 @@ export function buildLocalQaAnalyticsSnapshot({
         failed += 1;
 
         const key = `${suiteName}::${testName}`;
-        const latestResult = [...(test.results || [])].reverse().find((result) => result.status !== "passed");
-        const errorMessage = getResultMessage(latestResult) || getResultMessage(test.results?.[0]) || null;
+        const latestResult = [...(test.results || [])]
+          .reverse()
+          .find((result) => result.status !== "passed");
+        const errorMessage =
+          getResultMessage(latestResult) || getResultMessage(test.results?.[0]) || null;
 
         const existing = failuresByKey.get(key);
         if (!existing) {
@@ -197,7 +203,7 @@ export function buildLocalQaAnalyticsSnapshot({
 
   return {
     latestRun,
-      latestRunSummary: latestRun
+    latestRunSummary: latestRun
       ? {
           total_tests: latestRun.total_tests,
           passed,
@@ -208,7 +214,9 @@ export function buildLocalQaAnalyticsSnapshot({
           report_path: "/playwright-report/index.html",
         }
       : null,
-    latestFailures: [...failuresByKey.values()].sort((left, right) => right.failures - left.failures),
+    latestFailures: [...failuresByKey.values()].sort(
+      (left, right) => right.failures - left.failures,
+    ),
     aiAnalysis: localAnalyses,
   };
 }

@@ -25,7 +25,11 @@ type QaAnalyticsFixtures = {
 };
 
 const runStatePath = path.join(os.tmpdir(), "dash-testify-qa-analytics", "run-tests-state.json");
-const localAnalysesPath = path.join(os.tmpdir(), "dash-testify-qa-analytics", "qa-analytics-ai.json");
+const localAnalysesPath = path.join(
+  os.tmpdir(),
+  "dash-testify-qa-analytics",
+  "qa-analytics-ai.json",
+);
 
 test.beforeEach(async () => {
   await fs.rm(runStatePath, { force: true });
@@ -42,68 +46,64 @@ function createQaAnalyticsFixtures(options?: {
   runs?: SupabaseRow[];
   trends?: SupabaseRow[];
 }) {
-  const runs =
-    options?.runs ?? [
-      {
-        id: "run-3",
-        branch: "main",
-        commit_sha: "aaaabbbbccccdddd",
-        created_at: "2026-05-25T10:00:00.000Z",
-        passed: 17,
-        failed: 3,
-        total_tests: 20,
-      },
-      {
-        id: "run-2",
-        branch: "feature/analytics",
-        commit_sha: "abcdef1234567890",
-        created_at: "2026-05-24T10:00:00.000Z",
-        passed: 18,
-        failed: 2,
-        total_tests: 20,
-      },
-    ];
+  const runs = options?.runs ?? [
+    {
+      id: "run-3",
+      branch: "main",
+      commit_sha: "aaaabbbbccccdddd",
+      created_at: "2026-05-25T10:00:00.000Z",
+      passed: 17,
+      failed: 3,
+      total_tests: 20,
+    },
+    {
+      id: "run-2",
+      branch: "feature/analytics",
+      commit_sha: "abcdef1234567890",
+      created_at: "2026-05-24T10:00:00.000Z",
+      passed: 18,
+      failed: 2,
+      total_tests: 20,
+    },
+  ];
 
-  const allResults =
-    options?.results ??
-    [
-      {
-        run_id: "run-3",
-        suite: "dashboard/search.spec.ts",
-        test_name: "Search by symbol finds the coin",
-        status: "failed",
-        error_message: "Latest flaky selector broke again.",
-      },
-      {
-        run_id: "run-3",
-        suite: "dashboard/checkout.spec.ts",
-        test_name: "Checkout flow completes with coupon",
-        status: "failed",
-        error_message: "Coupon banner never appeared.",
-      },
-      {
-        run_id: "run-2",
-        suite: "dashboard/search.spec.ts",
-        test_name: "Search by symbol finds the coin",
-        status: "passed",
-        error_message: null,
-      },
-      {
-        run_id: "run-2",
-        suite: "dashboard/error.spec.ts",
-        test_name: "History fetch handles a 429 response",
-        status: "passed",
-        error_message: null,
-      },
-    ];
+  const allResults = options?.results ?? [
+    {
+      run_id: "run-3",
+      suite: "dashboard/search.spec.ts",
+      test_name: "Search by symbol finds the coin",
+      status: "failed",
+      error_message: "Latest flaky selector broke again.",
+    },
+    {
+      run_id: "run-3",
+      suite: "dashboard/checkout.spec.ts",
+      test_name: "Checkout flow completes with coupon",
+      status: "failed",
+      error_message: "Coupon banner never appeared.",
+    },
+    {
+      run_id: "run-2",
+      suite: "dashboard/search.spec.ts",
+      test_name: "Search by symbol finds the coin",
+      status: "passed",
+      error_message: null,
+    },
+    {
+      run_id: "run-2",
+      suite: "dashboard/error.spec.ts",
+      test_name: "History fetch handles a 429 response",
+      status: "passed",
+      error_message: null,
+    },
+  ];
 
   const aiAnalyses = options?.analyses ?? [];
 
-  const trends =
-    options?.trends ?? [
-      { date: "2026-05-24", passed: 18, failed: 2, pass_rate: 90 },
-      { date: "2026-05-25", passed: 17, failed: 3, pass_rate: 85 },
-    ];
+  const trends = options?.trends ?? [
+    { date: "2026-05-24", passed: 18, failed: 2, pass_rate: 90 },
+    { date: "2026-05-25", passed: 17, failed: 3, pass_rate: 85 },
+  ];
 
   return { runs, allResults, aiAnalyses, trends };
 }
@@ -120,9 +120,10 @@ async function mockSupabaseRoutes(page: Page, fixtures: QaAnalyticsFixtures) {
     if (url.pathname.includes("/ai_analysis")) {
       const runIdFilter = url.searchParams.get("run_id")?.replace(/^eq\./, "");
       const errorMessageFilter = url.searchParams.get("error_message")?.replace(/^eq\./, "");
-      const payload = fixtures.aiAnalyses.filter((analysis) =>
-        (runIdFilter ? analysis.run_id === runIdFilter : true) &&
-        (errorMessageFilter ? analysis.error_message === errorMessageFilter : true),
+      const payload = fixtures.aiAnalyses.filter(
+        (analysis) =>
+          (runIdFilter ? analysis.run_id === runIdFilter : true) &&
+          (errorMessageFilter ? analysis.error_message === errorMessageFilter : true),
       );
 
       await route.fulfill({ json: payload });
@@ -204,30 +205,32 @@ async function mockLocalSnapshot(page: Page, fixtures: QaAnalyticsFixtures) {
         }, {}),
     ).sort((left, right) => right.failures - left.failures);
 
-    const totals = fixtures.allResults.filter((result) => result.run_id === latestRun.id).reduce(
-      (acc, result) => {
-        acc.total_tests += 1;
+    const totals = fixtures.allResults
+      .filter((result) => result.run_id === latestRun.id)
+      .reduce(
+        (acc, result) => {
+          acc.total_tests += 1;
 
-        if (result.status === "passed") {
-          acc.passed += 1;
-        } else if (result.status === "skipped") {
-          acc.skipped += 1;
-        } else if (result.status === "flaky") {
-          acc.flaky += 1;
-        } else {
-          acc.failed += 1;
-        }
+          if (result.status === "passed") {
+            acc.passed += 1;
+          } else if (result.status === "skipped") {
+            acc.skipped += 1;
+          } else if (result.status === "flaky") {
+            acc.flaky += 1;
+          } else {
+            acc.failed += 1;
+          }
 
-        return acc;
-      },
-      {
-        total_tests: 0,
-        passed: 0,
-        failed: 0,
-        skipped: 0,
-        flaky: 0,
-      },
-    );
+          return acc;
+        },
+        {
+          total_tests: 0,
+          passed: 0,
+          failed: 0,
+          skipped: 0,
+          flaky: 0,
+        },
+      );
 
     await route.fulfill({
       json: {
@@ -296,8 +299,10 @@ test("local qa analytics requires a run, shows the branch and only reveals AI an
           test_name: firstFailure?.testName || "Search by symbol finds the coin",
           error_message: "Latest flaky selector broke again.",
           created_at: "2026-05-25T10:04:00.000Z",
-          ai_summary: "This looks related, but the confidence is low and the fix is not yet actionable.",
-          suggested_fix: "Treat this as a low-confidence note until the selector issue is confirmed.",
+          ai_summary:
+            "This looks related, but the confidence is low and the fix is not yet actionable.",
+          suggested_fix:
+            "Treat this as a low-confidence note until the selector issue is confirmed.",
           severity: "low",
           classification: "test_issue",
           confidence: 30,
@@ -337,7 +342,9 @@ test("local qa analytics requires a run, shows the branch and only reveals AI an
 
   await expect(page.getByRole("heading", { name: "Latest local run", exact: true })).toBeVisible();
   await expect(
-    page.getByText("The latest run failed, so the panels below are centered on the failing tests and the AI fix workflow."),
+    page.getByText(
+      "The latest run failed, so the panels below are centered on the failing tests and the AI fix workflow.",
+    ),
   ).toBeVisible();
   await expect(page.getByTestId("hero-metadata-branch")).toContainText("main");
   await expect(page.getByTestId("hero-metadata-commit")).toContainText("aaaabbbb");
@@ -348,6 +355,13 @@ test("local qa analytics requires a run, shows the branch and only reveals AI an
     "/playwright-report/index.html",
   );
   await expect(page.getByTestId("provider-option-gemini")).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByTestId("provider-option-groq")).toBeVisible();
+  await expect(page.getByTestId("provider-option-groq")).toHaveAttribute("aria-pressed", "false");
+  await expect(page.getByTestId("provider-option-openrouter")).toBeVisible();
+  await expect(page.getByTestId("provider-option-openrouter")).toHaveAttribute(
+    "aria-pressed",
+    "false",
+  );
   await expect(page.getByTestId("run-controls-panel")).toBeVisible();
   await expect(page.getByTestId("ai-provider-panel")).toBeVisible();
   await expect(page.getByTestId("run-controls-panel")).toHaveClass(/rounded-3xl/);
@@ -358,7 +372,28 @@ test("local qa analytics requires a run, shows the branch and only reveals AI an
   await page.getByTestId("provider-option-openai").click();
   await expect(page.getByTestId("provider-option-openai")).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByTestId("provider-option-gemini")).toHaveAttribute("aria-pressed", "false");
-  await expect(page.getByTestId("ai-analyze-all")).toContainText("Analyze latest run failures");
+  await expect(page.getByTestId("provider-option-groq")).toHaveAttribute("aria-pressed", "false");
+  await expect(page.getByTestId("provider-option-openrouter")).toHaveAttribute(
+    "aria-pressed",
+    "false",
+  );
+  await page.getByTestId("provider-option-groq").click();
+  await expect(page.getByTestId("provider-option-groq")).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByTestId("provider-option-openai")).toHaveAttribute("aria-pressed", "false");
+  await page.getByTestId("provider-option-openrouter").click();
+  await expect(page.getByTestId("provider-option-openrouter")).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  await expect(page.getByTestId("provider-option-openai")).toHaveAttribute("aria-pressed", "false");
+  await page.getByTestId("provider-option-openai").click();
+  await expect(page.getByTestId("provider-option-openai")).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByTestId("provider-option-groq")).toHaveAttribute("aria-pressed", "false");
+  await expect(page.getByTestId("provider-option-openrouter")).toHaveAttribute(
+    "aria-pressed",
+    "false",
+  );
+  await expect(page.getByTestId("ai-analyze-all")).toContainText("Analyze selected failures");
   await expect(page.getByTestId("ai-apply-all")).toContainText("Apply fix to all");
   await expect(page.getByTestId("ai-apply-all")).toBeDisabled();
   await expect(page.getByTestId("run-mode-mock")).toHaveAttribute("aria-pressed", "true");
@@ -371,10 +406,17 @@ test("local qa analytics requires a run, shows the branch and only reveals AI an
   await expect(page.getByRole("heading", { name: "Branch health" })).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "AI failure analysis" })).toHaveCount(0);
 
+  // Select both failures before analyzing
+  await page.getByTestId("failure-checkbox-search-by-symbol-finds-the-coin").check();
+  await page.getByTestId("failure-checkbox-checkout-flow-completes-with-coupon").check();
+
   await page.getByTestId("ai-analyze-all").click();
 
   await expect(page.getByTestId("ai-status-message")).toContainText("OpenAI");
-  await expect(page.getByRole("button", { name: "Analyze this failure only" })).toHaveCount(2);
+  await expect(page.getByTestId("failure-checkbox-search-by-symbol-finds-the-coin")).toBeChecked();
+  await expect(
+    page.getByTestId("failure-checkbox-checkout-flow-completes-with-coupon"),
+  ).toBeChecked();
   await expect(page.getByTestId("ai-analysis-card-42")).toBeVisible();
   await expect(page.getByTestId("ai-analysis-card-42")).toContainText("fragile selector");
   await expect(page.getByTestId("failure-error-log-search-by-symbol-finds-the-coin")).toBeVisible();
@@ -385,14 +427,20 @@ test("local qa analytics requires a run, shows the branch and only reveals AI an
   await expect(page.getByRole("button", { name: "Apply AI fix" })).toHaveCount(1);
   await expect(page.getByRole("button", { name: "Not actionable" })).toHaveCount(0);
   await expect(page.getByText("View 1 lower-confidence alternative")).toBeVisible();
-  await expect(page.getByText("Historical analysis should not appear in the latest local run view.")).toHaveCount(0);
+  await expect(
+    page.getByText("Historical analysis should not appear in the latest local run view."),
+  ).toHaveCount(0);
   await expect(page.getByTestId("ai-apply-all")).toBeEnabled();
 
   await page.getByTestId("ai-apply-all").click();
-  await expect(page.getByTestId("ai-status-message")).toContainText("Applied 1 AI fix locally on the current branch");
+  await expect(page.getByTestId("ai-status-message")).toContainText(
+    "Applied 1 AI fix locally on the current branch",
+  );
 });
 
-test("local qa analytics prompts to run Playwright when no local run is available", async ({ page }) => {
+test("local qa analytics prompts to run Playwright when no local run is available", async ({
+  page,
+}) => {
   const fixtures = createQaAnalyticsFixtures({
     runs: [],
     results: [],
@@ -405,7 +453,9 @@ test("local qa analytics prompts to run Playwright when no local run is availabl
   await page.goto("/qa-analytics");
 
   await expect(page.getByText("No hay corridas locales aún")).toBeVisible();
-  await expect(page.getByText("Corré Playwright para generar una ejecución que podamos analizar.")).toBeVisible();
+  await expect(
+    page.getByText("Corré Playwright para generar una ejecución que podamos analizar."),
+  ).toBeVisible();
   await expect(page.getByTestId("run-tests-button")).toBeVisible();
   await expect(page.getByTestId("run-controls-panel")).toBeVisible();
   await expect(page.getByTestId("ai-provider-panel")).toHaveCount(0);
@@ -414,7 +464,9 @@ test("local qa analytics prompts to run Playwright when no local run is availabl
   await expect(page.getByTestId("test-trends-chart")).toHaveCount(0);
 });
 
-test("local qa analytics recovers from a stale background run and keeps run tests enabled", async ({ page }) => {
+test("local qa analytics recovers from a stale background run and keeps run tests enabled", async ({
+  page,
+}) => {
   const fixtures = createQaAnalyticsFixtures({
     runs: [],
     results: [],
@@ -460,7 +512,9 @@ test("local qa analytics recovers from a stale background run and keeps run test
   }
 });
 
-test("local qa analytics renders duplicate unknown failures with unique cards", async ({ page }) => {
+test("local qa analytics renders duplicate unknown failures with unique cards", async ({
+  page,
+}) => {
   const fixtures = createQaAnalyticsFixtures({
     results: [
       {
@@ -487,8 +541,12 @@ test("local qa analytics renders duplicate unknown failures with unique cards", 
 
   await expect(page.getByTestId("failing-test-unknown-test-1")).toBeVisible();
   await expect(page.getByTestId("failing-test-unknown-test-2")).toBeVisible();
-  await expect(page.getByTestId("failing-test-unknown-test-1")).toContainText("First unknown failure.");
-  await expect(page.getByTestId("failing-test-unknown-test-2")).toContainText("Second unknown failure.");
+  await expect(page.getByTestId("failing-test-unknown-test-1")).toContainText(
+    "First unknown failure.",
+  );
+  await expect(page.getByTestId("failing-test-unknown-test-2")).toContainText(
+    "Second unknown failure.",
+  );
 });
 
 test("local qa analytics parser uses spec titles for the latest run", async () => {
@@ -560,7 +618,9 @@ test("local qa analytics store can load analyses by numeric run id", async () =>
   expect(analyses[0].test_name).toBe("selected coin card is visually highlighted");
 });
 
-test("local qa analytics can start a mock run and shows progress before success", async ({ page }) => {
+test("local qa analytics can start a mock run and shows progress before success", async ({
+  page,
+}) => {
   const fixtures = createQaAnalyticsFixtures();
   let pollCount = 0;
   let snapshotVersion = 0;
@@ -625,30 +685,32 @@ test("local qa analytics can start a mock run and shows progress before success"
 
     const totals =
       snapshotVersion === 0
-        ? fixtures.allResults.filter((result) => result.run_id === latestRun?.id).reduce(
-            (acc, result) => {
-              acc.total_tests += 1;
+        ? fixtures.allResults
+            .filter((result) => result.run_id === latestRun?.id)
+            .reduce(
+              (acc, result) => {
+                acc.total_tests += 1;
 
-              if (result.status === "passed") {
-                acc.passed += 1;
-              } else if (result.status === "skipped") {
-                acc.skipped += 1;
-              } else if (result.status === "flaky") {
-                acc.flaky += 1;
-              } else {
-                acc.failed += 1;
-              }
+                if (result.status === "passed") {
+                  acc.passed += 1;
+                } else if (result.status === "skipped") {
+                  acc.skipped += 1;
+                } else if (result.status === "flaky") {
+                  acc.flaky += 1;
+                } else {
+                  acc.failed += 1;
+                }
 
-              return acc;
-            },
-            {
-              total_tests: 0,
-              passed: 0,
-              failed: 0,
-              skipped: 0,
-              flaky: 0,
-            },
-          )
+                return acc;
+              },
+              {
+                total_tests: 0,
+                passed: 0,
+                failed: 0,
+                skipped: 0,
+                flaky: 0,
+              },
+            )
         : {
             total_tests: 21,
             passed: 18,
@@ -748,7 +810,9 @@ test("local qa analytics can start a mock run and shows progress before success"
   await expect(page.getByTestId("summary-metric-total")).toContainText("21");
 });
 
-test("local qa analytics keeps showing progress through a transient polling miss", async ({ page }) => {
+test("local qa analytics keeps showing progress through a transient polling miss", async ({
+  page,
+}) => {
   const fixtures = createQaAnalyticsFixtures();
   let pollCount = 0;
 
@@ -827,7 +891,9 @@ test("local qa analytics keeps showing progress through a transient polling miss
   await expect(page.getByRole("progressbar")).toBeVisible();
   await expect(page.getByText(/Now running:/)).toBeVisible();
 
-  await expect(page.getByTestId("run-status-message")).toContainText("Report success", { timeout: 5000 });
+  await expect(page.getByTestId("run-status-message")).toContainText("Report success", {
+    timeout: 5000,
+  });
   await expect(page.getByTestId("run-status-badge")).toHaveText("success");
   await expect(page.getByRole("progressbar")).toHaveCount(0);
 });
@@ -1018,10 +1084,14 @@ test("local qa analytics refreshes latest results when a run fails", async ({ pa
   await expect(page.getByTestId("run-status-message")).toContainText("Report failed (6 failures)");
   await expect(page.getByRole("progressbar")).toHaveCount(0);
   await expect(page.getByTestId("summary-metric-total")).toContainText("21");
-  await expect(page.getByTestId("failing-test-search-by-symbol-finds-the-coin")).toContainText("3 failures");
+  await expect(page.getByTestId("failing-test-search-by-symbol-finds-the-coin")).toContainText(
+    "3 failures",
+  );
 });
 
-test("local qa analytics aborts the running execution when the page lifecycle ends", async ({ page }) => {
+test("local qa analytics aborts the running execution when the page lifecycle ends", async ({
+  page,
+}) => {
   const fixtures = createQaAnalyticsFixtures();
   let abortCalled = false;
 
@@ -1071,16 +1141,15 @@ test("local qa analytics aborts the running execution when the page lifecycle en
   });
 
   await expect
-    .poll(
-      () => abortCalled,
-      {
-        timeout: 5000,
-      },
-    )
+    .poll(() => abortCalled, {
+      timeout: 5000,
+    })
     .toBe(true);
 });
 
-test("live qa analytics hides local-only sections and keeps the trend chart below total runs", async ({ page }) => {
+test("live qa analytics hides local-only sections and keeps the trend chart below total runs", async ({
+  page,
+}) => {
   const fixtures = createQaAnalyticsFixtures();
 
   await mockSupabaseRoutes(page, fixtures);
@@ -1089,7 +1158,11 @@ test("live qa analytics hides local-only sections and keeps the trend chart belo
   await page.goto("/qa-analytics?view=live");
 
   await expect(page.getByRole("heading", { name: "Metrics overview" })).toBeVisible();
-  await expect(page.getByText("Live metrics only. This page shows the aggregate health of test runs and the historical trend chart.")).toBeVisible();
+  await expect(
+    page.getByText(
+      "Live metrics only. This page shows the aggregate health of test runs and the historical trend chart.",
+    ),
+  ).toBeVisible();
   await expect(page.getByTestId("stats-total-runs")).toBeVisible();
   await expect(page.getByTestId("test-trends-chart")).toBeVisible();
   await expect(page.getByTestId("provider-option-gemini")).toHaveCount(0);

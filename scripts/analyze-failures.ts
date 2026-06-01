@@ -43,10 +43,13 @@ async function main() {
     return;
   }
 
+  const provider = readProviderName();
+
   for (const failure of (failures || []) as FailureRow[]) {
     const { data: existing } = await supabase
       .from("ai_analysis")
       .select("id")
+      .eq("provider", provider)
       .eq("run_id", failure.run_id)
       .eq("test_name", failure.test_name)
       .eq("error_message", failure.error_message)
@@ -69,6 +72,7 @@ async function main() {
     });
 
     const { error: insertError } = await supabase.from("ai_analysis").insert({
+      provider,
       run_id: failure.run_id,
       test_name: failure.test_name,
       error_message: failure.error_message,
