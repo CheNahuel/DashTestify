@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import type { TooltipProps } from "recharts";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 import { BranchHealthWidget } from "@/components/qa-analytics/branch-health-widget";
@@ -29,6 +30,26 @@ type TrendPoint = {
 type TestTrendsResponse = {
   data?: TrendPoint[];
   error?: string;
+};
+
+const trendTooltipFormatter: NonNullable<TooltipProps["formatter"]> = (value, name) => {
+  if (name === "pass_rate" && typeof value === "number") {
+    return [`${value}%`, "Pass rate"];
+  }
+
+  if (typeof value === "number") {
+    return [value, name === "passed" ? "Passed" : "Failed"];
+  }
+
+  if (typeof value === "string") {
+    return [value, name ?? ""];
+  }
+
+  if (Array.isArray(value)) {
+    return [value.join(" - "), name ?? ""];
+  }
+
+  return ["", name ?? ""];
 };
 
 function formatDateOnly(value: string) {
@@ -173,13 +194,7 @@ export function LiveQaAnalyticsPage() {
                       border: "1px solid rgba(148, 163, 184, 0.2)",
                       borderRadius: "1rem",
                     }}
-                    formatter={(value: number, name: string) => {
-                      if (name === "pass_rate") {
-                        return [`${value}%`, "Pass rate"];
-                      }
-
-                      return [value, name === "passed" ? "Passed" : "Failed"];
-                    }}
+                    formatter={trendTooltipFormatter}
                     labelFormatter={(label) => `Day: ${label}`}
                   />
                   <Line type="monotone" dataKey="passed" stroke="#22c55e" strokeWidth={3} />

@@ -41,8 +41,8 @@ type LocalGitState = {
   commitSha: string | null;
 };
 
-type StoredAiAnalysis = {
-  run_id: string;
+export type StoredAiAnalysis = {
+  run_id: string | number;
   created_at: string;
   test_name: string;
   error_message?: string | null;
@@ -191,7 +191,7 @@ export function buildLocalQaAnalyticsSnapshot({
 
   const localAnalyses = resultsFile
     ? (aiAnalysesFile || [])
-        .filter((analysis) => analysis.run_id === runId)
+        .filter((analysis) => String(analysis.run_id) === String(runId))
         .sort((left, right) => (right.created_at || "").localeCompare(left.created_at || ""))
     : [];
 

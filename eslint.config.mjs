@@ -4,11 +4,29 @@ import nextTs from "eslint-config-next/typescript";
 import playwright from "eslint-plugin-playwright";
 import prettier from "eslint-config-prettier";
 
+const appFiles = [
+  "app/**/*.{js,jsx,ts,tsx}",
+  "components/**/*.{js,jsx,ts,tsx}",
+  "lib/**/*.{js,jsx,ts,tsx}",
+  "src/**/*.{js,jsx,ts,tsx}",
+];
+
+const testFiles = ["tests/**/*.{js,jsx,ts,tsx}"];
+const testLanguageOptions = nextVitals[0].languageOptions;
+
+function scopeConfigsToFiles(configs, files) {
+  return configs.map((config) => ({
+    ...config,
+    files,
+  }));
+}
+
 export default defineConfig([
-  ...nextVitals,
-  ...nextTs,
+  ...scopeConfigsToFiles(nextVitals, appFiles),
+  ...scopeConfigsToFiles(nextTs, appFiles),
   {
-    files: ["tests/**/*.{ts,tsx}"],
+    files: testFiles,
+    languageOptions: testLanguageOptions,
     plugins: {
       playwright,
     },
