@@ -5,11 +5,18 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import type { AiProvider, LatestLocalFailure, LocalAiAnalysis, LocalTestRun } from "@/components/qa-analytics/types";
+import type {
+  AiProvider,
+  LatestLocalFailure,
+  LocalAiAnalysis,
+  LocalTestRun,
+} from "@/components/qa-analytics/types";
 
 const providerLabels: Record<AiProvider, string> = {
   openai: "OpenAI",
   gemini: "Gemini",
+  groq: "Groq",
+  openrouter: "OpenRouter",
 };
 
 const providerOptions: Array<{
@@ -26,6 +33,16 @@ const providerOptions: Array<{
     value: "openai",
     label: "OpenAI",
     description: "Alternative model for comparison",
+  },
+  {
+    value: "groq",
+    label: "Groq",
+    description: "Alternative provider for failure analysis",
+  },
+  {
+    value: "openrouter",
+    label: "OpenRouter",
+    description: "Additional provider via OpenRouter API",
   },
 ];
 
@@ -51,7 +68,10 @@ const ACTIONABLE_CONFIDENCE_THRESHOLD = 80;
 function normalizeTestId(value: string | null | undefined, fallback = "unknown-test") {
   const normalized = value?.trim() ? value.trim() : fallback;
 
-  return normalized.replace(/[^a-z0-9]+/gi, "-").replace(/^-+|-+$/g, "").toLowerCase();
+  return normalized
+    .replace(/[^a-z0-9]+/gi, "-")
+    .replace(/^-+|-+$/g, "")
+    .toLowerCase();
 }
 
 function buildFailureCardKey(test: LatestLocalFailure, index: number) {
@@ -68,7 +88,9 @@ function buildFailureCardKey(test: LatestLocalFailure, index: number) {
   ].join(":");
 }
 
-function formatAnalysisGroupKey(analysis: Pick<LocalAiAnalysis, "test_name" | "target_file" | "error_message">) {
+function formatAnalysisGroupKey(
+  analysis: Pick<LocalAiAnalysis, "test_name" | "target_file" | "error_message">,
+) {
   const testName = normalizeTestId(analysis.test_name, "unknown-test");
   const targetFile = normalizeTestId(analysis.target_file, "unknown-file");
   const errorMessage = normalizeTestId(analysis.error_message, "unknown-error");
@@ -84,7 +106,10 @@ function isActionableAnalysis(analysis: LocalAiAnalysis) {
   );
 }
 
-function getRunStatusMessage(runState: QaAnalyticsRunState, latestRunSummary: LocalRunSummary | null) {
+function getRunStatusMessage(
+  runState: QaAnalyticsRunState,
+  latestRunSummary: LocalRunSummary | null,
+) {
   if (runState.isStale) {
     return runState.message;
   }
@@ -166,7 +191,8 @@ function collapseAiAnalyses(analyses: LocalAiAnalysis[]) {
   return Object.values(grouped)
     .map((group) => {
       const ordered = [...group].sort((left, right) => {
-        const actionableDiff = Number(isActionableAnalysis(right)) - Number(isActionableAnalysis(left));
+        const actionableDiff =
+          Number(isActionableAnalysis(right)) - Number(isActionableAnalysis(left));
 
         if (actionableDiff !== 0) {
           return actionableDiff;
@@ -183,11 +209,18 @@ function collapseAiAnalyses(analyses: LocalAiAnalysis[]) {
 
       return {
         primary: ordered[0],
-        alternatives: ordered.slice(1),
+        alternatives: ordered
+          .slice(1)
+          .filter(
+            (a) =>
+              (a.suggested_fix && String(a.suggested_fix).trim().length > 0) ||
+              Boolean(a.generated_patch),
+          ),
       };
     })
     .sort((left, right) => {
-      const actionableDiff = Number(isActionableAnalysis(right.primary)) - Number(isActionableAnalysis(left.primary));
+      const actionableDiff =
+        Number(isActionableAnalysis(right.primary)) - Number(isActionableAnalysis(left.primary));
 
       if (actionableDiff !== 0) {
         return actionableDiff;
@@ -250,6 +283,7 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
   const [latestFailures, setLatestFailures] = useState<LatestLocalFailure[]>([]);
   const [aiAnalysis, setAiAnalysis] = useState<LocalAiAnalysis[]>([]);
   const [analysisRequested, setAnalysisRequested] = useState(false);
+  const [selectedFailureIds, setSelectedFailureIds] = useState<Set<string>>(new Set());
   const [selectedProvider, setSelectedProvider] = useState<AiProvider>("gemini");
   const [selectedRunMode, setSelectedRunMode] = useState<QaAnalyticsRunMode>("mock");
   const [runState, setRunState] = useState<QaAnalyticsRunState | null>(null);
@@ -258,53 +292,60 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
   const [busyAction, setBusyAction] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const loadLocalSnapshot = useCallback(async (options?: { showLoading?: boolean; cacheBust?: boolean }) => {
-    const showLoading = options?.showLoading ?? false;
-    const cacheBust = options?.cacheBust ?? false;
+  const loadLocalSnapshot = useCallback(
+    async (options?: { showLoading?: boolean; cacheBust?: boolean }) => {
+      const showLoading = options?.showLoading ?? false;
+      const cacheBust = options?.cacheBust ?? false;
 
-    if (showLoading) {
-      setIsLoading(true);
-    }
-
-    try {
-      const response = await fetch(`/api/qa-analytics/local-snapshot${cacheBust ? `?t=${Date.now()}` : ""}`, {
-        cache: "no-store",
-      });
-      const data = (await response.json()) as LocalSnapshot;
-
-      if (!response.ok) {
-        throw new Error(data.error || "Unable to load the local QA Analytics snapshot.");
+      if (showLoading) {
+        setIsLoading(true);
       }
 
-      if (!mountedRef.current) {
+      try {
+        const response = await fetch(
+          `/api/qa-analytics/local-snapshot${cacheBust ? `?t=${Date.now()}` : ""}`,
+          {
+            cache: "no-store",
+          },
+        );
+        const data = (await response.json()) as LocalSnapshot;
+
+        if (!response.ok) {
+          throw new Error(data.error || "Unable to load the local QA Analytics snapshot.");
+        }
+
+        if (!mountedRef.current) {
+          return null;
+        }
+
+        setLatestRun(data.latestRun);
+        setLatestRunSummary(data.latestRunSummary);
+        setLatestFailures(data.latestFailures || []);
+        setAiAnalysis(data.aiAnalysis || []);
+        setActionStatus(null);
+        setSelectedFailureIds(new Set());
+
+        return data;
+      } catch (error) {
+        console.error(error);
+
+        if (mountedRef.current) {
+          setLatestRun(null);
+          setLatestRunSummary(null);
+          setLatestFailures([]);
+          setAiAnalysis([]);
+          setActionStatus("Unable to load local QA Analytics from test-results/results.json.");
+        }
+
         return null;
+      } finally {
+        if (mountedRef.current && showLoading) {
+          setIsLoading(false);
+        }
       }
-
-      setLatestRun(data.latestRun);
-      setLatestRunSummary(data.latestRunSummary);
-      setLatestFailures(data.latestFailures || []);
-      setAiAnalysis(data.aiAnalysis || []);
-      setActionStatus(null);
-
-      return data;
-    } catch (error) {
-      console.error(error);
-
-      if (mountedRef.current) {
-        setLatestRun(null);
-        setLatestRunSummary(null);
-        setLatestFailures([]);
-        setAiAnalysis([]);
-        setActionStatus("Unable to load local QA Analytics from test-results/results.json.");
-      }
-
-      return null;
-    } finally {
-      if (mountedRef.current && showLoading) {
-        setIsLoading(false);
-      }
-    }
-  }, []);
+    },
+    [],
+  );
 
   async function loadRunState() {
     try {
@@ -375,7 +416,8 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
       }
 
       if (mountedRef.current) {
-        const failedCount = latestSnapshot?.latestRunSummary?.failed ?? latestRunSummary?.failed ?? null;
+        const failedCount =
+          latestSnapshot?.latestRunSummary?.failed ?? latestRunSummary?.failed ?? null;
         const terminalMessage =
           run.status === "success"
             ? "Report success. Latest results refreshed."
@@ -511,7 +553,9 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
     setAnalysisRequested(true);
 
     if (targetFailures.length === 0 || !latestRun) {
-      setActionStatus("No local run is available yet. Run Playwright locally to populate this view.");
+      setActionStatus(
+        "No local run is available yet. Run Playwright locally to populate this view.",
+      );
       setAiAnalysis([]);
       return [] as LocalAiAnalysis[];
     }
@@ -540,7 +584,9 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
         });
       }
 
-      const skippedText = result?.skipped?.length ? ` Skipped ${result.skipped.length} existing analysis row(s).` : "";
+      const skippedText = result?.skipped?.length
+        ? ` Skipped ${result.skipped.length} existing analysis row(s).`
+        : "";
       setActionStatus(
         `Created ${insertedAnalyses.length} AI analysis result(s) with ${providerLabels[selectedProvider]}.${skippedText}`,
       );
@@ -572,14 +618,20 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
 
   const localRunMissing = latestRun === null;
   const isRunInProgress = runState?.status === "running";
-  const canAnalyze = latestRun !== null && latestFailures.length > 0 && busyAction === null;
+  const canAnalyze = latestRun !== null && selectedFailureIds.size > 0 && busyAction === null;
   const currentBranchLabel = currentBranch || latestRun?.branch || "unknown branch";
   const isAnalysisAvailable = latestFailures.length > 0 && !isRunInProgress;
   const aiPanelMuted = !isAnalysisAvailable;
   const showAiAnalysisSection = analysisRequested;
   const visibleAiAnalyses = collapseAiAnalyses(aiAnalysis);
-  const actionableAiAnalyses = visibleAiAnalyses.map(({ primary }) => primary).filter(isActionableAnalysis);
-  const canApplyAll = latestRun !== null && actionableAiAnalyses.length > 0 && busyAction === null && !isRunInProgress;
+  const actionableAiAnalyses = visibleAiAnalyses
+    .map(({ primary }) => primary)
+    .filter(isActionableAnalysis);
+  const canApplyAll =
+    latestRun !== null &&
+    actionableAiAnalyses.length > 0 &&
+    busyAction === null &&
+    !isRunInProgress;
   const latestRunPassRate =
     latestRunSummary && latestRunSummary.total_tests > 0
       ? Math.round((latestRunSummary.passed / latestRunSummary.total_tests) * 1000) / 10
@@ -607,14 +659,16 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
         },
         { label: "Skipped", value: String(latestRunSummary.skipped), tone: "amber" as const },
         { label: "Flaky", value: String(latestRunSummary.flaky), tone: "sky" as const },
-    ]
+      ]
     : [];
   const panelShellClass =
     "rounded-3xl border border-white/10 bg-slate-950/70 p-6 shadow-2xl shadow-cyan-950/10 backdrop-blur";
 
   async function applyAllAnalysisFixes() {
     if (latestRun === null) {
-      setActionStatus("No local run is available yet. Run Playwright locally to populate this view.");
+      setActionStatus(
+        "No local run is available yet. Run Playwright locally to populate this view.",
+      );
       return;
     }
 
@@ -674,7 +728,9 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
               <section className={panelShellClass}>
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div className="space-y-3">
-                    <p className="text-xs uppercase tracking-[0.35em] text-cyan-300">QA Analytics Local</p>
+                    <p className="text-xs uppercase tracking-[0.35em] text-cyan-300">
+                      QA Analytics Local
+                    </p>
                     {localRunMissing ? (
                       <>
                         <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">
@@ -690,8 +746,8 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
                           Latest local run
                         </h1>
                         <p className="max-w-2xl text-sm text-slate-300 sm:text-base">
-                          This view is focused on the newest local Playwright run only. It does not use historical
-                          runs for the main dashboard.
+                          This view is focused on the newest local Playwright run only. It does not
+                          use historical runs for the main dashboard.
                         </p>
                       </>
                     )}
@@ -706,8 +762,12 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
                         data-testid={`hero-metadata-${normalizeTestId(item.label, "meta")}`}
                         className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3"
                       >
-                        <p className="text-xs uppercase tracking-[0.2em] text-slate-500">{item.label}</p>
-                        <p className="mt-2 break-words text-sm font-medium text-slate-100">{item.value}</p>
+                        <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
+                          {item.label}
+                        </p>
+                        <p className="mt-2 break-words text-sm font-medium text-slate-100">
+                          {item.value}
+                        </p>
                       </div>
                     ))}
                   </div>
@@ -735,13 +795,19 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
                 )}
               </section>
 
-              <section className={`${panelShellClass} flex min-w-0 flex-col gap-4`} data-testid="run-controls-panel">
+              <section
+                className={`${panelShellClass} flex min-w-0 flex-col gap-4`}
+                data-testid="run-controls-panel"
+              >
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="space-y-1">
-                    <p className="text-xs uppercase tracking-[0.28em] text-cyan-300/90">Run Controls</p>
-                    <p className="text-sm text-slate-300">Pick the mode and launch Playwright locally.</p>
+                    <p className="text-xs uppercase tracking-[0.28em] text-cyan-300/90">
+                      Run Controls
+                    </p>
+                    <p className="text-sm text-slate-300">
+                      Pick the mode and launch Playwright locally.
+                    </p>
                   </div>
-
                 </div>
 
                 <div className="space-y-2">
@@ -765,7 +831,9 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
                             .join(" ")}
                           onClick={() => setSelectedRunMode(option.value)}
                         >
-                          <span className={`text-sm font-semibold ${isSelected ? "text-emerald-100" : "text-slate-100"}`}>
+                          <span
+                            className={`text-sm font-semibold ${isSelected ? "text-emerald-100" : "text-slate-100"}`}
+                          >
                             {option.label}
                           </span>
                           <span
@@ -792,20 +860,24 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
 
                 <div className="rounded-2xl border border-white/10 bg-slate-950/55 px-4 py-3">
                   <div className="flex flex-wrap items-center justify-between gap-3">
-                    <p className="text-xs uppercase tracking-[0.25em] text-slate-500">Execution status</p>
-                    {runState?.status && runState.status !== "idle" && runState.status !== "running" && (
-                      <Badge
-                        variant="outline"
-                        data-testid="run-status-badge"
-                        className={
-                          runState.status === "success"
-                            ? "border-emerald-300/30 bg-emerald-400/10 text-emerald-100"
-                            : "border-rose-300/30 bg-rose-400/10 text-rose-100"
-                        }
-                      >
-                        {runState.status}
-                      </Badge>
-                    )}
+                    <p className="text-xs uppercase tracking-[0.25em] text-slate-500">
+                      Execution status
+                    </p>
+                    {runState?.status &&
+                      runState.status !== "idle" &&
+                      runState.status !== "running" && (
+                        <Badge
+                          variant="outline"
+                          data-testid="run-status-badge"
+                          className={
+                            runState.status === "success"
+                              ? "border-emerald-300/30 bg-emerald-400/10 text-emerald-100"
+                              : "border-rose-300/30 bg-rose-400/10 text-rose-100"
+                          }
+                        >
+                          {runState.status}
+                        </Badge>
+                      )}
                   </div>
 
                   {runState?.status === "running" && (
@@ -829,20 +901,22 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
                     </div>
                   )}
 
-                  {runState?.status && runState.status !== "idle" && runState.status !== "running" && (
-                    <p
-                      className={`mt-3 rounded-2xl px-4 py-3 text-sm ${
-                        runState.status === "success"
-                          ? "border border-emerald-300/20 bg-emerald-400/10 text-emerald-100"
-                          : runState.status === "failed"
-                            ? "border border-rose-300/20 bg-rose-400/10 text-rose-100"
-                            : "border border-white/10 bg-white/5 text-slate-200"
-                      }`}
-                      data-testid="run-status-message"
-                    >
-                      {getRunStatusMessage(runState, latestRunSummary)}
-                    </p>
-                  )}
+                  {runState?.status &&
+                    runState.status !== "idle" &&
+                    runState.status !== "running" && (
+                      <p
+                        className={`mt-3 rounded-2xl px-4 py-3 text-sm ${
+                          runState.status === "success"
+                            ? "border border-emerald-300/20 bg-emerald-400/10 text-emerald-100"
+                            : runState.status === "failed"
+                              ? "border border-rose-300/20 bg-rose-400/10 text-rose-100"
+                              : "border border-white/10 bg-white/5 text-slate-200"
+                        }`}
+                        data-testid="run-status-message"
+                      >
+                        {getRunStatusMessage(runState, latestRunSummary)}
+                      </p>
+                    )}
                 </div>
               </section>
             </header>
@@ -867,7 +941,9 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
                         .filter(Boolean)
                         .join(" ")}
                     >
-                      <p className="text-xs uppercase tracking-[0.2em] text-slate-400">{item.label}</p>
+                      <p className="text-xs uppercase tracking-[0.2em] text-slate-400">
+                        {item.label}
+                      </p>
                       <p className="mt-2 text-lg font-semibold text-white">{item.value}</p>
                     </div>
                   ))}
@@ -880,7 +956,9 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
                 <section className="grid gap-6 xl:grid-cols-2">
                   <div className={panelShellClass}>
                     <div className="mb-6">
-                      <p className="text-xs uppercase tracking-[0.28em] text-cyan-300/90">Latest run failures</p>
+                      <p className="text-xs uppercase tracking-[0.28em] text-cyan-300/90">
+                        Latest run failures
+                      </p>
                       <p className="text-sm text-slate-300">
                         These are the failures from the latest local run only.
                       </p>
@@ -896,7 +974,8 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
                       {latestFailures.map((test, index) => {
                         const displayName = test.test_name?.trim() || "Unknown test";
                         const testId = normalizeTestId(test.test_name, `unknown-test-${index + 1}`);
-                        const cardTestId = displayName === "Unknown test" ? `unknown-test-${index + 1}` : testId;
+                        const cardTestId =
+                          displayName === "Unknown test" ? `unknown-test-${index + 1}` : testId;
 
                         return (
                           <article
@@ -908,6 +987,22 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
                               <div className="flex min-w-0 flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                                 <div className="min-w-0 flex-1 space-y-2">
                                   <div className="flex min-w-0 flex-wrap items-center gap-2">
+                                    <input
+                                      type="checkbox"
+                                      data-testid={`failure-checkbox-${cardTestId}`}
+                                      checked={selectedFailureIds.has(cardTestId)}
+                                      disabled={busyAction !== null}
+                                      onChange={(e) => {
+                                        const next = new Set(selectedFailureIds);
+                                        if (e.target.checked) {
+                                          next.add(cardTestId);
+                                        } else {
+                                          next.delete(cardTestId);
+                                        }
+                                        setSelectedFailureIds(next);
+                                      }}
+                                      className="h-5 w-5 cursor-pointer rounded border-slate-400 text-cyan-500"
+                                    />
                                     <p className="min-w-0 break-words text-base font-semibold text-white">
                                       {displayName}
                                     </p>
@@ -918,16 +1013,6 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
                                     {test.suite || "Unknown suite"}
                                   </p>
                                 </div>
-
-                                <Button
-                                  variant="default"
-                                  data-testid={`ai-analyze-${cardTestId}`}
-                                  className="w-full shrink-0 lg:ml-4 lg:w-[13rem] lg:max-w-full"
-                                  disabled={busyAction !== null}
-                                  onClick={() => void runAnalysis([test])}
-                                >
-                                  Analyze this failure only
-                                </Button>
                               </div>
 
                               <div
@@ -957,8 +1042,12 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
                   >
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div className="space-y-1">
-                        <p className="text-xs uppercase tracking-[0.28em] text-cyan-300/90">AI Provider</p>
-                        <p className="text-sm text-slate-300">Pick the model and review the latest local failures.</p>
+                        <p className="text-xs uppercase tracking-[0.28em] text-cyan-300/90">
+                          AI Provider
+                        </p>
+                        <p className="text-sm text-slate-300">
+                          Pick the model and review the latest local failures.
+                        </p>
                       </div>
 
                       <Badge variant="secondary" className="border border-white/10 bg-white/5">
@@ -992,7 +1081,9 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
                           >
                             <span
                               className={`text-base font-semibold ${
-                                isSelected ? "text-cyan-100" : "text-slate-100 group-hover:text-white"
+                                isSelected
+                                  ? "text-cyan-100"
+                                  : "text-slate-100 group-hover:text-white"
                               }`}
                             >
                               {option.label}
@@ -1009,7 +1100,9 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
 
                     <div className="rounded-2xl border border-white/10 bg-slate-950/55 px-4 py-3">
                       <div className="flex items-center justify-between gap-3">
-                        <p className="text-xs uppercase tracking-[0.25em] text-slate-500">Analysis</p>
+                        <p className="text-xs uppercase tracking-[0.25em] text-slate-500">
+                          Analysis
+                        </p>
                         <Badge
                           variant={isAnalysisAvailable ? "secondary" : "outline"}
                           className={
@@ -1027,9 +1120,17 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
                           data-testid="ai-analyze-all"
                           className="w-full sm:w-auto"
                           disabled={!canAnalyze}
-                          onClick={() => void runAnalysis(latestFailures)}
+                          onClick={() => {
+                            const selectedTests = latestFailures.filter((f, i) => {
+                              const testId = normalizeTestId(f.test_name, `unknown-test-${i + 1}`);
+                              return selectedFailureIds.has(testId);
+                            });
+                            void runAnalysis(selectedTests);
+                          }}
                         >
-                          {busyAction ? "Working..." : "Analyze latest run failures"}
+                          {busyAction
+                            ? "Working..."
+                            : `Analyze selected failures${selectedFailureIds.size > 0 ? ` (${selectedFailureIds.size})` : ""}`}
                         </Button>
 
                         <Button
@@ -1056,8 +1157,8 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
                       <div className="space-y-4">
                         {aiAnalysis.length === 0 && (
                           <p className="rounded-2xl border border-white/10 bg-slate-900/50 p-4 text-sm text-slate-300">
-                            No AI analysis available yet. Run Analyze all failures to generate the primary fix for
-                            the latest local run.
+                            No AI analysis available yet. Run Analyze all failures to generate the
+                            primary fix for the latest local run.
                           </p>
                         )}
 
@@ -1069,7 +1170,9 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
                           >
                             <div className="mb-3 flex min-w-0 flex-wrap items-start justify-between gap-3">
                               <div className="min-w-0 flex-1">
-                                <p className="break-words text-lg font-semibold text-white">{primary.test_name}</p>
+                                <p className="break-words text-lg font-semibold text-white">
+                                  {primary.test_name}
+                                </p>
                                 <p className="mt-1 break-words text-sm text-slate-400">
                                   {primary.classification} · confidence {primary.confidence}%
                                 </p>
@@ -1092,12 +1195,18 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
 
                             <div className="space-y-4">
                               <div>
-                                <p className="text-xs uppercase tracking-[0.2em] text-slate-400">AI Summary</p>
-                                <p className="mt-2 break-words text-sm leading-6 text-slate-200">{primary.ai_summary}</p>
+                                <p className="text-xs uppercase tracking-[0.2em] text-slate-400">
+                                  AI Summary
+                                </p>
+                                <p className="mt-2 break-words text-sm leading-6 text-slate-200">
+                                  {primary.ai_summary}
+                                </p>
                               </div>
 
                               <div>
-                                <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Suggested Fix</p>
+                                <p className="text-xs uppercase tracking-[0.2em] text-slate-400">
+                                  Suggested Fix
+                                </p>
                                 <p className="mt-2 break-words text-sm leading-6 text-slate-200">
                                   {primary.suggested_fix}
                                 </p>
@@ -1105,15 +1214,21 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
 
                               <div className="grid min-w-0 gap-3 sm:grid-cols-2">
                                 <div>
-                                  <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Target File</p>
+                                  <p className="text-xs uppercase tracking-[0.2em] text-slate-400">
+                                    Target File
+                                  </p>
                                   <p className="mt-2 break-words text-sm text-slate-200">
                                     {primary.target_file || "Unknown"}
                                   </p>
                                 </div>
 
                                 <div>
-                                  <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Confidence</p>
-                                  <p className="mt-2 text-sm text-slate-200">{primary.confidence}%</p>
+                                  <p className="text-xs uppercase tracking-[0.2em] text-slate-400">
+                                    Confidence
+                                  </p>
+                                  <p className="mt-2 text-sm text-slate-200">
+                                    {primary.confidence}%
+                                  </p>
                                 </div>
                               </div>
 
@@ -1129,9 +1244,12 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
                                         key={alternative.id}
                                         className="rounded-2xl border border-white/10 bg-slate-900/60 p-3"
                                       >
-                                        <p className="text-sm font-medium text-white">{alternative.test_name}</p>
+                                        <p className="text-sm font-medium text-white">
+                                          {alternative.test_name}
+                                        </p>
                                         <p className="mt-1 text-xs uppercase tracking-[0.2em] text-slate-400">
-                                          {alternative.classification} · confidence {alternative.confidence}%
+                                          {alternative.classification} · confidence{" "}
+                                          {alternative.confidence}%
                                         </p>
                                         <p className="mt-2 break-words text-sm leading-6 text-slate-200">
                                           {alternative.suggested_fix}
@@ -1161,7 +1279,9 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
                                   disabled={!isActionableAnalysis(primary) || busyAction !== null}
                                   onClick={() => void applyAnalysisFix(primary.id)}
                                 >
-                                  {isActionableAnalysis(primary) ? "Apply AI fix" : "Not actionable"}
+                                  {isActionableAnalysis(primary)
+                                    ? "Apply AI fix"
+                                    : "Not actionable"}
                                 </Button>
                               </div>
                             </div>
@@ -1181,11 +1301,13 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
                   </section>
                 </section>
               ) : (
-                <section className={`${panelShellClass} border-emerald-300/20 bg-emerald-400/10 shadow-2xl shadow-emerald-950/10`}>
+                <section
+                  className={`${panelShellClass} border-emerald-300/20 bg-emerald-400/10 shadow-2xl shadow-emerald-950/10`}
+                >
                   <h2 className="text-2xl font-semibold text-emerald-100">Latest run is green</h2>
                   <p className="mt-3 max-w-2xl text-sm text-emerald-50/80">
-                    The latest local run passed. Re-run Playwright from the control panel when you are ready to keep
-                    this view centered on the newest execution.
+                    The latest local run passed. Re-run Playwright from the control panel when you
+                    are ready to keep this view centered on the newest execution.
                   </p>
                 </section>
               )

@@ -1,4 +1,4 @@
-export type AiProvider = "openai" | "gemini";
+export type AiProvider = "openai" | "gemini" | "groq" | "openrouter";
 
 export type LatestLocalFailure = {
   test_name: string | null;

@@ -121,7 +121,8 @@ function isProcessAlive(pid: number) {
 
 function createInitialState(mode: QaAnalyticsRunMode): QaAnalyticsRunState {
   return {
-    jobId: globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+    jobId:
+      globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`,
     mode,
     status: "running",
     ownerPid: process.pid,
@@ -221,7 +222,7 @@ export async function abortQaAnalyticsRun() {
 export async function startQaAnalyticsRun(mode: QaAnalyticsRunMode) {
   const currentState = await readQaAnalyticsRunState();
 
-  if (currentState?.status === "running") {
+  if (currentState?.status === "running" && !currentState.isStale) {
     return { state: currentState, started: false as const };
   }
 
@@ -272,7 +273,8 @@ export async function startQaAnalyticsRun(mode: QaAnalyticsRunMode) {
     state.finishedAt = finishedAt;
     state.exitCode = code;
     state.currentTestLabel = null;
-    state.message = code === 0 ? "Test run completed successfully." : `Test run failed with exit code ${code}.`;
+    state.message =
+      code === 0 ? "Test run completed successfully." : `Test run failed with exit code ${code}.`;
     state.log = state.log.slice(-12000);
 
     void persistState(state);

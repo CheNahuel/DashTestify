@@ -31,7 +31,9 @@ type AnalyzeRequestBody = {
 const repoRoot = process.cwd();
 
 function getRepoRelativePath(targetFile: string) {
-  return path.isAbsolute(targetFile) ? path.relative(repoRoot, targetFile) : targetFile.replace(/^\.\/+/, "");
+  return path.isAbsolute(targetFile)
+    ? path.relative(repoRoot, targetFile)
+    : targetFile.replace(/^\.\/+/, "");
 }
 
 async function getCurrentBranchName() {
@@ -62,12 +64,13 @@ export async function POST(request: Request) {
       const skipped: string[] = [];
       const localExistingKeys = new Set(
         (await loadLocalAnalysesForRun(failures[0].runId)).map(
-          (analysis) => `${analysis.run_id}::${analysis.test_name}::${analysis.error_message || ""}`,
+          (analysis) =>
+            `${analysis.run_id}::${analysis.provider ?? ""}::${analysis.test_name}::${analysis.error_message || ""}`,
         ),
       );
 
       for (const failure of failures) {
-        const localAnalysisKey = `${failure.runId}::${failure.testName}::${failure.errorMessage || ""}`;
+        const localAnalysisKey = `${provider}::${failure.runId}::${failure.testName}::${failure.errorMessage || ""}`;
 
         if (localExistingKeys.has(localAnalysisKey)) {
           skipped.push(failure.testName);
@@ -86,7 +89,10 @@ export async function POST(request: Request) {
         });
 
         const inserted = {
-          id: globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+          id:
+            globalThis.crypto?.randomUUID?.() ||
+            `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+          provider,
           run_id: failure.runId,
           test_name: failure.testName,
           error_message: failure.errorMessage,
@@ -120,7 +126,10 @@ export async function POST(request: Request) {
       const analysis = await loadLocalAnalysisById(body.analysisId);
 
       if (!analysis?.target_file || !analysis?.generated_patch) {
-        return NextResponse.json({ error: "Analysis is missing patch information." }, { status: 400 });
+        return NextResponse.json(
+          { error: "Analysis is missing patch information." },
+          { status: 400 },
+        );
       }
 
       const branchName = await getCurrentBranchName();
