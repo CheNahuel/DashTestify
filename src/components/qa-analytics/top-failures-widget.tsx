@@ -103,7 +103,7 @@ export function TopFailuresWidget() {
                     <p className="text-xs uppercase tracking-[0.2em] text-slate-400">{item.suite}</p>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                  <div className="grid grid-cols-4 gap-4">
                     <div>
                       <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Failures</p>
                       <p className="mt-2 text-lg font-semibold text-rose-200">{item.total_failures}</p>
@@ -139,9 +139,10 @@ export function TopFailuresWidget() {
                   )}
 
                   {item.latest_error && (
-                    <div>
-                      <p className="mb-2 text-xs uppercase tracking-[0.2em] text-slate-400">Latest error</p>
-                      <p className="line-clamp-2 text-sm text-slate-300">{item.latest_error}</p>
+                    <div className="max-h-24 overflow-y-auto rounded-lg bg-white/5 p-2">
+                      <p className="whitespace-pre-wrap text-sm text-slate-300">
+                        {item.latest_error}
+                      </p>
                     </div>
                   )}
                 </div>
