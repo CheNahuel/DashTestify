@@ -28,7 +28,8 @@ export default async function Page({
 }) {
   const params = await searchParams;
   const currentBranch = await getCurrentBranchName();
-  const mode = params.view === "live" || process.env.VERCEL === "1" ? "live" : "local";
+  const isDeployedProduction = process.env.NODE_ENV === "production" || process.env.VERCEL === "1";
+  const mode = params.view === "live" || isDeployedProduction ? "live" : "local";
 
   return <QaAnalyticsPage mode={mode} currentBranch={currentBranch} />;
 }

@@ -3,6 +3,7 @@ import { createGroqFailureAnalyzer } from "./groq-provider";
 import { createOpenAiFailureAnalyzer } from "./openai-provider";
 import { createOpenRouterFailureAnalyzer } from "./openrouter-provider";
 import { createDeepseekFailureAnalyzer } from "./deepseek-provider";
+import { createClaudeFailureAnalyzer } from "./claude-provider";
 import type { AiProviderName, FailureAnalysis, FailureAnalysisInput } from "./types";
 
 type FetchLike = typeof fetch;
@@ -24,6 +25,9 @@ type AiProviderOptions = {
   deepseekApiKey?: string;
   deepseekModel?: string;
   deepseekMaxCompletionTokens?: number;
+  claudeApiKey?: string;
+  claudeModel?: string;
+  claudeMaxCompletionTokens?: number;
 };
 
 export type FailureAnalyzer = {
@@ -56,6 +60,10 @@ export function parseAiProviderName(value: string | undefined | null): AiProvide
 
   if (value === "deepseek") {
     return "deepseek";
+  }
+
+  if (value === "claude") {
+    return "claude";
   }
 
   return "openai";
@@ -105,6 +113,17 @@ export function createAiProvider(
       maxCompletionTokens:
         options.deepseekMaxCompletionTokens ??
         parsePositiveInteger(process.env.DEEPSEEK_MAX_COMPLETION_TOKENS),
+      fetchImpl,
+    });
+  }
+
+  if (providerName === "claude") {
+    return createClaudeFailureAnalyzer({
+      apiKey: options.claudeApiKey ?? process.env.CLAUDE_API_KEY ?? "",
+      model: options.claudeModel ?? process.env.CLAUDE_MODEL,
+      maxCompletionTokens:
+        options.claudeMaxCompletionTokens ??
+        parsePositiveInteger(process.env.CLAUDE_MAX_COMPLETION_TOKENS),
       fetchImpl,
     });
   }
