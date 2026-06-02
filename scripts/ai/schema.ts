@@ -70,6 +70,7 @@ export function buildFailureAnalysisPrompt(failure: FailureAnalysisInput) {
   return [
     "Analyze this Playwright test failure and return only JSON that matches the provided schema.",
     "Return exactly one primary actionable fix. Do not provide alternate fixes or competing explanations in the JSON fields.",
+    "IMPORTANT: Return ONLY the JSON object with no additional text, explanations, or markdown formatting.",
     "",
     `Test name: ${failure.testName}`,
     `Run ID: ${failure.runId ?? "unknown"}`,
@@ -91,7 +92,6 @@ export function buildFailureAnalysisPrompt(failure: FailureAnalysisInput) {
     "- If current source content is provided, base generated_patch only on those exact lines.",
     "- Do not invent selectors, page-object fields, or helper names that are not present in the current source content.",
     "- Use the Current source file path as target_file unless the error clearly belongs to a different file.",
-    "- Do not wrap the JSON in markdown fences.",
   ].join("\n");
 }
 

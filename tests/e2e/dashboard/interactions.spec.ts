@@ -63,7 +63,7 @@ test("trend losers shows only negative-change coins", async ({ dashboardData, da
   await dashboardPage.selectTrend("losers");
 
   // Only Ethereum has negative change (-1.2%)
-  await expect(dashboardPage.coinsList).toContainText("Ethereum");
+  await expect(dashboardPage.coinsList).toContainText("Ethessreum");
   await expect(dashboardPage.coinsList).not.toContainText("Bitcoin");
   await expect(dashboardPage.coinsList).not.toContainText("Solana");
   await dashboardPage.expectVisibleCoinsCount(1);

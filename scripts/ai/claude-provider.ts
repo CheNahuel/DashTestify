@@ -23,26 +23,50 @@ type ClaudeChatCompletionResponse = {
   error?: {
     message?: string;
   };
+  content?: Array<{
+    type: string;
+    text?: string;
+  }>;
 };
 
-function extractClaudeText(payload: ClaudeChatCompletionResponse) {
-  if (typeof payload.completion === "string" && payload.completion.trim().length > 0) {
-    return payload.completion.trim();
+function extractClaudeText(payload: ClaudeChatCompletionResponse): string {
+  let rawText = "";
+
+  if (Array.isArray(payload.content)) {
+    const textBlock = payload.content.find((block) => block.type === "text");
+    if (textBlock?.text) {
+      rawText = textBlock.text.trim();
+    }
   }
 
-  const outputText = payload.response?.output_text;
-
-  if (typeof outputText === "string" && outputText.trim().length > 0) {
-    return outputText.trim();
+  if (!rawText && typeof payload.completion === "string" && payload.completion.trim().length > 0) {
+    rawText = payload.completion.trim();
   }
 
-  return "";
+  if (!rawText) {
+    const outputText = payload.response?.output_text;
+    if (typeof outputText === "string" && outputText.trim().length > 0) {
+      rawText = outputText.trim();
+    }
+  }
+
+  if (!rawText) {
+    return "";
+  }
+
+  // Extract JSON if it's wrapped in markdown fences or other text
+  const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+  if (jsonMatch) {
+    return jsonMatch[0];
+  }
+
+  return rawText;
 }
 
 export function createClaudeFailureAnalyzer(options: ClaudeFailureAnalyzerOptions) {
   const fetchImpl = options.fetchImpl ?? fetch;
   const apiKey = options.apiKey.trim();
-  const model = options.model?.trim() || "claude-3.5-mini";
+  const model = options.model?.trim() || "claude-haiku-4-5";
   const maxCompletionTokens = options.maxCompletionTokens ?? 1024;
 
   if (!apiKey) {
@@ -53,29 +77,19 @@ export function createClaudeFailureAnalyzer(options: ClaudeFailureAnalyzerOption
     provider: "claude" as AiProviderName,
 
     async analyzeFailure(failure: FailureAnalysisInput): Promise<FailureAnalysis> {
-      const response = await fetchImpl("https://api.anthropic.com/v1/chat/completions", {
+      const response = await fetchImpl("https://api.anthropic.com/v1/messages", {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${apiKey}`,
+          "x-api-key": apiKey,
           "Content-Type": "application/json",
+          "anthropic-version": "2023-06-01",
         },
         body: JSON.stringify({
           model,
-          temperature: 0.2,
           max_tokens: maxCompletionTokens,
-          response_format: {
-            type: "json_schema",
-            json_schema: {
-              name: "playwright_failure_analysis",
-              strict: true,
-              schema: FAILURE_ANALYSIS_JSON_SCHEMA,
-            },
-          },
+          temperature: 0.2,
+          system: FAILURE_ANALYSIS_SYSTEM_PROMPT,
           messages: [
-            {
-              role: "system",
-              content: FAILURE_ANALYSIS_SYSTEM_PROMPT,
-            },
             {
               role: "user",
               content: buildFailureAnalysisPrompt(failure),
@@ -84,12 +98,18 @@ export function createClaudeFailureAnalyzer(options: ClaudeFailureAnalyzerOption
         }),
       });
 
-      const payload = (await response.json()) as ClaudeChatCompletionResponse;
+      let payload: ClaudeChatCompletionResponse;
+      try {
+        payload = (await response.json()) as ClaudeChatCompletionResponse;
+      } catch (parseError) {
+        throw new Error(`Claude API returned invalid JSON: ${parseError instanceof Error ? parseError.message : String(parseError)}`);
+      }
 
       if (!response.ok) {
-        throw new Error(
-          payload.error?.message || `Claude request failed with status ${response.status}`,
-        );
+        const errorMsg = typeof payload.error?.message === "string"
+          ? payload.error.message
+          : `Claude request failed with status ${response.status}`;
+        throw new Error(errorMsg);
       }
 
       const content = extractClaudeText(payload);

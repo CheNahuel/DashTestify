@@ -25,7 +25,7 @@ type OpenAiChatCompletionResponse = {
 export function createOpenAiFailureAnalyzer(options: OpenAiFailureAnalyzerOptions) {
   const fetchImpl = options.fetchImpl ?? fetch;
   const apiKey = options.apiKey.trim();
-  const model = options.model?.trim() || "gpt-4.1-nano";
+  const model = options.model?.trim() || "gpt-4o-mini";
   const maxCompletionTokens = options.maxCompletionTokens ?? 1024;
 
   if (!apiKey) {

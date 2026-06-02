@@ -30,7 +30,7 @@ type DeepseekChatCompletionResponse = {
 export function createDeepseekFailureAnalyzer(options: DeepseekFailureAnalyzerOptions) {
   const fetchImpl = options.fetchImpl ?? fetch;
   const apiKey = options.apiKey.trim();
-  const model = options.model?.trim() || "deepseek-v4";
+  const model = options.model?.trim() || "deepseek-chat";
   const maxCompletionTokens = options.maxCompletionTokens ?? 1024;
 
   if (!apiKey) {
