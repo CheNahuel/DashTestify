@@ -423,20 +423,23 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
       }
 
       if (mountedRef.current) {
-        const failedCount =
-          latestSnapshot?.latestRunSummary?.failed ?? latestRunSummary?.failed ?? null;
-        const terminalMessage =
-          run.status === "success"
-            ? "Report success. Latest results refreshed."
-            : failedCount === 0
-              ? "Tests completed. Latest results refreshed."
-              : failedCount === null
-                ? "Report failed. Latest results refreshed."
-                : `Report failed (${failedCount} failures). Latest results refreshed.`;
+        // Only update message for non-stale runs
+        if (!run.isStale) {
+          const failedCount =
+            latestSnapshot?.latestRunSummary?.failed ?? latestRunSummary?.failed ?? null;
+          const terminalMessage =
+            run.status === "success"
+              ? "Report success. Latest results refreshed."
+              : failedCount === 0
+                ? "Tests completed. Latest results refreshed."
+                : failedCount === null
+                  ? "Report failed. Latest results refreshed."
+                  : `Report failed (${failedCount} failures). Latest results refreshed.`;
 
-        setRunState((current) =>
-          current?.jobId === run.jobId ? { ...current, message: terminalMessage } : current,
-        );
+          setRunState((current) =>
+            current?.jobId === run.jobId ? { ...current, message: terminalMessage } : current,
+          );
+        }
       }
     },
     [latestRunSummary, loadLocalSnapshot],

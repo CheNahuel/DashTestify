@@ -53,7 +53,7 @@ const trendTooltipFormatter: NonNullable<TooltipProps["formatter"]> = (value, na
 };
 
 function formatDateOnly(value: string) {
-  return new Intl.DateTimeFormat("es-AR", {
+  return new Intl.DateTimeFormat("en-US", {
     month: "short",
     day: "numeric",
   }).format(new Date(value));
@@ -180,7 +180,7 @@ export function LiveQaAnalyticsPage() {
           <div className="h-[320px] w-full min-w-0" data-testid="test-trends-chart">
             {trendChartData.length === 0 ? (
               <p className="rounded-2xl border border-white/10 bg-slate-900/50 p-4 text-sm text-slate-300">
-                No hay datos suficientes
+                Insufficient data to display trends.
               </p>
             ) : (
               <ResponsiveContainer width="100%" height={320} minWidth={0}>
