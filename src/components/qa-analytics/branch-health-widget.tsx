@@ -23,14 +23,10 @@ type BranchHealthResponse = {
 };
 
 function formatDate(value: string | null) {
-  if (!value) {
-    return "Unknown";
-  }
+  if (!value) return "Unknown";
 
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return "Unknown";
-  }
+  if (Number.isNaN(date.getTime())) return "Unknown";
 
   return new Intl.DateTimeFormat("es-AR", {
     dateStyle: "medium",
@@ -73,7 +69,9 @@ export function BranchHealthWidget() {
       <CardHeader className="flex flex-row items-start justify-between gap-4">
         <div className="space-y-1">
           <CardTitle>Branch health</CardTitle>
-          <CardDescription>Run health and unique failures grouped by branch for the last 30 days.</CardDescription>
+          <CardDescription>
+            Run health and unique failures grouped by branch for the last 30 days.
+          </CardDescription>
         </div>
 
         <Button variant="outline" size="sm" onClick={() => void loadData()} disabled={loading}>
@@ -105,35 +103,44 @@ export function BranchHealthWidget() {
                   <Badge variant="outline">{item.pass_rate}% pass rate</Badge>
                 </div>
 
-                <div className="mt-4 space-y-3">
-                  <div>
-                    <div className="mb-2 flex items-center justify-between text-xs uppercase tracking-[0.2em] text-slate-400">
-                      <span>Pass rate</span>
-                      <span>{item.pass_rate}%</span>
-                    </div>
-                    <Progress value={item.pass_rate} />
+                <div className="mt-5 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Pass rate</p>
+                    <p className="text-sm font-medium text-slate-300">{item.pass_rate}%</p>
                   </div>
 
-                  <div className="grid gap-3 sm:grid-cols-4">
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Runs</p>
-                      <p className="mt-2 text-lg font-semibold text-white">{item.total_runs}</p>
-                    </div>
+                  <Progress value={item.pass_rate} />
+                </div>
 
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Failed</p>
-                      <p className="mt-2 text-lg font-semibold text-rose-200">{item.failed_runs}</p>
-                    </div>
+                <div className="mt-5 grid gap-3 sm:grid-cols-4">
+                  <div>
+                    <p className="flex min-h-10 items-end text-xs uppercase tracking-[0.2em] text-slate-400">
+                      Runs
+                    </p>
+                    <p className="mt-2 text-lg font-semibold text-white">{item.total_runs}</p>
+                  </div>
 
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Passed</p>
-                      <p className="mt-2 text-lg font-semibold text-emerald-200">{item.passed_runs}</p>
-                    </div>
+                  <div>
+                    <p className="flex min-h-10 items-end text-xs uppercase tracking-[0.2em] text-slate-400">
+                      Failed
+                    </p>
+                    <p className="mt-2 text-lg font-semibold text-rose-200">{item.failed_runs}</p>
+                  </div>
 
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Unique failed</p>
-                      <p className="mt-2 text-lg font-semibold text-cyan-200">{item.unique_tests_failed}</p>
-                    </div>
+                  <div>
+                    <p className="flex min-h-10 items-end text-xs uppercase tracking-[0.2em] text-slate-400">
+                      Passed
+                    </p>
+                    <p className="mt-2 text-lg font-semibold text-emerald-200">{item.passed_runs}</p>
+                  </div>
+
+                  <div>
+                    <p className="flex min-h-10 items-end text-xs uppercase tracking-[0.2em] text-slate-400">
+                      Failed tests
+                    </p>
+                    <p className="mt-2 text-lg font-semibold text-cyan-200">
+                      {item.unique_tests_failed}
+                    </p>
                   </div>
                 </div>
               </article>
