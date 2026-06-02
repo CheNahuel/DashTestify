@@ -32,7 +32,7 @@ function formatDate(value: string | null) {
     return "Unknown";
   }
 
-  return new Intl.DateTimeFormat("es-AR", {
+  return new Intl.DateTimeFormat("en-US", {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(date);
@@ -87,38 +87,47 @@ export function TopFailuresWidget() {
         {!loading && error && <p className="text-sm text-rose-200">{error}</p>}
 
         {!loading && !error && items.length === 0 && (
-          <p className="text-sm text-slate-300">No hay datos suficientes</p>
+          <p className="text-sm text-slate-300">No top failures in the last 30 days.</p>
         )}
 
         {!loading && !error && items.length > 0 && (
-          <div className="overflow-hidden rounded-2xl border border-white/10">
-            <table className="min-w-full divide-y divide-white/10 text-left text-sm">
-              <thead className="bg-white/5 text-xs uppercase tracking-[0.2em] text-slate-400">
-                <tr>
-                  <th className="px-4 py-3">Test</th>
-                  <th className="px-4 py-3">Failures</th>
-                  <th className="px-4 py-3">Passes</th>
-                  <th className="px-4 py-3">Pass rate</th>
-                  <th className="px-4 py-3">Branches</th>
-                  <th className="px-4 py-3">Last failed</th>
-                  <th className="px-4 py-3">Latest error</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/5">
-                {items.map((item) => (
-                  <tr key={`${item.test_name}-${item.suite}`} className="align-top">
-                    <td className="px-4 py-4">
-                      <div className="space-y-1">
-                        <p className="font-medium text-white">{item.test_name}</p>
-                        <p className="text-xs uppercase tracking-[0.2em] text-slate-400">{item.suite}</p>
-                      </div>
-                    </td>
-                    <td className="px-4 py-4 text-rose-200">{item.total_failures}</td>
-                    <td className="px-4 py-4 text-emerald-200">{item.total_passes}</td>
-                    <td className="px-4 py-4">
-                      <Badge variant="secondary">{item.pass_rate}%</Badge>
-                    </td>
-                    <td className="px-4 py-4">
+          <div className="space-y-3">
+            {items.map((item) => (
+              <article
+                key={`${item.test_name}-${item.suite}`}
+                className="rounded-2xl border border-white/10 bg-white/5 p-4"
+              >
+                <div className="space-y-3">
+                  <div className="min-w-0">
+                    <p className="break-words text-base font-semibold text-white">{item.test_name}</p>
+                    <p className="text-xs uppercase tracking-[0.2em] text-slate-400">{item.suite}</p>
+                  </div>
+
+                  <div className="grid grid-cols-4 gap-4">
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Failures</p>
+                      <p className="mt-2 text-lg font-semibold text-rose-200">{item.total_failures}</p>
+                    </div>
+
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Passes</p>
+                      <p className="mt-2 text-lg font-semibold text-emerald-200">{item.total_passes}</p>
+                    </div>
+
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Pass rate</p>
+                      <p className="mt-2 text-lg font-semibold text-cyan-200">{item.pass_rate}%</p>
+                    </div>
+
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Last failed</p>
+                      <p className="mt-2 text-sm text-slate-300">{formatDate(item.last_failed_at)}</p>
+                    </div>
+                  </div>
+
+                  {item.branches_affected.length > 0 && (
+                    <div>
+                      <p className="mb-2 text-xs uppercase tracking-[0.2em] text-slate-400">Affected branches</p>
                       <div className="flex flex-wrap gap-2">
                         {item.branches_affected.map((branch) => (
                           <Badge key={branch} variant="outline">
@@ -126,13 +135,19 @@ export function TopFailuresWidget() {
                           </Badge>
                         ))}
                       </div>
-                    </td>
-                    <td className="px-4 py-4 text-slate-300">{formatDate(item.last_failed_at)}</td>
-                    <td className="px-4 py-4 text-slate-300">{item.latest_error || "No error message"}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    </div>
+                  )}
+
+                  {item.latest_error && (
+                    <div className="max-h-24 overflow-y-auto rounded-lg bg-white/5 p-2">
+                      <p className="whitespace-pre-wrap text-sm text-slate-300">
+                        {item.latest_error}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </article>
+            ))}
           </div>
         )}
       </CardContent>

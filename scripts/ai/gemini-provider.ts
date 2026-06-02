@@ -41,7 +41,7 @@ function extractGeminiText(payload: GeminiGenerateContentResponse) {
 export function createGeminiFailureAnalyzer(options: GeminiFailureAnalyzerOptions) {
   const fetchImpl = options.fetchImpl ?? fetch;
   const apiKey = options.apiKey.trim();
-  const model = options.model?.trim() || "gemini-2.5-flash-lite";
+  const model = options.model?.trim() || "gemini-2.0-flash-lite";
   const maxOutputTokens = options.maxOutputTokens ?? 1024;
 
   if (!apiKey) {
