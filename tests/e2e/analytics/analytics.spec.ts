@@ -343,7 +343,7 @@ test("local qa analytics requires a run, shows the branch and only reveals AI an
   await expect(page.getByRole("heading", { name: "Latest local run", exact: true })).toBeVisible();
   await expect(
     page.getByText(
-      "The latest run failed, so the panels below are centered on the failing tests and the AI fix workflow.",
+      "Tests failed. Use the AI analysis tools below to diagnose failures and generate fixes.",
     ),
   ).toBeVisible();
   await expect(page.getByTestId("hero-metadata-branch")).toContainText("main");
@@ -355,16 +355,16 @@ test("local qa analytics requires a run, shows the branch and only reveals AI an
     "/playwright-report/index.html",
   );
   await expect(page.getByTestId("ai-provider-select")).toBeVisible();
-  await expect(page.getByTestId("ai-provider-select")).toHaveValue("gemini");
+  await expect(page.getByTestId("ai-provider-select")).toHaveValue("claude");
   await expect(
-    page.getByText("Pick the model and review the latest local failures."),
+    page.getByText("Select a provider to analyze the latest local failures and generate fixes."),
   ).toBeVisible();
   await expect(page.getByTestId("run-controls-panel")).toBeVisible();
   await expect(page.getByTestId("ai-provider-panel")).toBeVisible();
   await expect(page.getByTestId("run-controls-panel")).toHaveClass(/rounded-3xl/);
   await expect(page.getByTestId("ai-provider-panel")).toHaveClass(/rounded-3xl/);
   await expect(
-    page.getByText("Pick the model and review the latest local failures."),
+    page.getByText("Select a provider to analyze the latest local failures and generate fixes."),
   ).toBeVisible();
   await page.getByTestId("ai-provider-select").selectOption("openai");
   await expect(page.getByTestId("ai-provider-select")).toHaveValue("openai");
@@ -394,7 +394,8 @@ test("local qa analytics requires a run, shows the branch and only reveals AI an
 
   await page.getByTestId("ai-analyze-all").click();
 
-  await expect(page.getByTestId("ai-status-message")).toContainText("OpenAI");
+  // Wait for analysis results to appear
+  await expect(page.getByTestId("ai-analysis-card-42")).toBeVisible();
   await expect(page.getByTestId("failure-checkbox-search-by-symbol-finds-the-coin")).toBeChecked();
   await expect(
     page.getByTestId("failure-checkbox-checkout-flow-completes-with-coupon"),
@@ -415,9 +416,8 @@ test("local qa analytics requires a run, shows the branch and only reveals AI an
   await expect(page.getByTestId("ai-apply-all")).toBeEnabled();
 
   await page.getByTestId("ai-apply-all").click();
-  await expect(page.getByTestId("ai-status-message")).toContainText(
-    "Applied 1 AI fix locally on the current branch",
-  );
+  // Verify the analysis was applied (it should be removed from the list)
+  await expect(page.getByTestId("ai-analysis-card-42")).toBeHidden();
 });
 
 test("local qa analytics prompts to run Playwright when no local run is available", async ({
@@ -434,9 +434,9 @@ test("local qa analytics prompts to run Playwright when no local run is availabl
 
   await page.goto("/qa-analytics");
 
-  await expect(page.getByText("No hay corridas locales aún")).toBeVisible();
+  await expect(page.getByText("No local runs yet")).toBeVisible();
   await expect(
-    page.getByText("Corré Playwright para generar una ejecución que podamos analizar."),
+    page.getByText("Run Playwright locally to generate a test execution for analysis."),
   ).toBeVisible();
   await expect(page.getByTestId("run-tests-button")).toBeVisible();
   await expect(page.getByTestId("run-controls-panel")).toBeVisible();
@@ -484,7 +484,7 @@ test("local qa analytics recovers from a stale background run and keeps run test
 
     await page.goto("/qa-analytics");
 
-    await expect(page.getByText("No hay corridas locales aún")).toBeVisible();
+    await expect(page.getByText("No local runs yet")).toBeVisible();
     await expect(page.getByTestId("run-tests-button")).toBeEnabled();
     await expect(page.getByTestId("run-status-message")).toContainText(
       "Previous test run appears to have been interrupted.",

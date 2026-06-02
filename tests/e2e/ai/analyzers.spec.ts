@@ -183,8 +183,12 @@ test("claude provider sends the shared schema and parses the response", async ()
       ok: true,
       status: 200,
       json: async () => ({
-        completion:
-          '{"summary":"claude issue","severity":"medium","classification":"app_issue","confidence":75,"target_file":"src/app/api/analytics/ai/route.ts","suggested_fix":"correct provider mapping","generated_patch":"diff --git a/src/app/api/analytics/ai/route.ts b/src/app/api/analytics/ai/route.ts\\n--- a/src/app/api/analytics/ai/route.ts\\n+++ b/src/app/api/analytics/ai/route.ts\\n@@ -1 +1 @@\\n-old\\n+new"}',
+        content: [
+          {
+            type: "text",
+            text: '{"summary":"claude issue","severity":"medium","classification":"app_issue","confidence":75,"target_file":"src/app/api/analytics/ai/route.ts","suggested_fix":"correct provider mapping","generated_patch":"diff --git a/src/app/api/analytics/ai/route.ts b/src/app/api/analytics/ai/route.ts\\n--- a/src/app/api/analytics/ai/route.ts\\n+++ b/src/app/api/analytics/ai/route.ts\\n@@ -1 +1 @@\\n-old\\n+new"}',
+          },
+        ],
       }),
     } as Response;
   };
@@ -201,7 +205,7 @@ test("claude provider sends the shared schema and parses the response", async ()
   });
 
   expect(requestBody?.model).toBe("claude-test");
-  expect(requestBody?.response_format).toBeTruthy();
+  expect(requestBody?.system).toBeTruthy();
   expect(analysis.classification).toBe("app_issue");
   expect(analysis.target_file).toBe("src/app/api/analytics/ai/route.ts");
 });
