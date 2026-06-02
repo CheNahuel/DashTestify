@@ -1,5 +1,6 @@
 import {
   buildFailureAnalysisPrompt,
+  FAILURE_ANALYSIS_JSON_SCHEMA,
   FAILURE_ANALYSIS_SYSTEM_PROMPT,
   parseFailureAnalysisResponse,
 } from "./schema";
@@ -14,82 +15,32 @@ type GroqFailureAnalyzerOptions = {
   fetchImpl?: FetchLike;
 };
 
-type GroqGenerateResponse = {
+type GroqChatCompletionResponse = {
+  choices?: Array<{
+    message?: {
+      content?: string | null;
+      refusal?: string | null;
+    };
+  }>;
   error?: {
     message?: string;
-    code?: string;
   };
-  output_text?: string;
-  output?: Array<{
-    type?: string;
-    content?: Array<{
-      type?: string;
-      text?: string;
-    }>;
-  }>;
-  results?: Array<{
-    output?: Array<{
-      type?: string;
-      text?: string;
-    }>;
-  }>;
 };
 
-function extractGroqText(payload: GroqGenerateResponse) {
-  if (typeof payload.output_text === "string" && payload.output_text.trim().length > 0) {
-    return payload.output_text.trim();
+function extractGroqText(payload: GroqChatCompletionResponse) {
+  const completion = payload.choices?.[0]?.message;
+
+  if (completion?.refusal) {
+    return "";
   }
 
-  const outputText = payload.output
-    ?.flatMap((item) => item.content ?? [])
-    .map((content) => content.text ?? "")
-    .join("")
-    .trim();
-
-  if (outputText) {
-    return outputText;
-  }
-
-  const result = payload.results?.[0];
-  const fallbackText = result?.output
-    ?.map((item) => item.text ?? "")
-    .join("")
-    .trim();
-
-  return fallbackText || "";
-}
-
-function parseRetryAfter(value: string | null): number | null {
-  if (!value) {
-    return null;
-  }
-
-  const parsed = Number.parseInt(value, 10);
-  return Number.isFinite(parsed) && parsed >= 0 ? parsed * 1000 : null;
-}
-
-async function fetchWithGroqRetry(
-  fetchImpl: FetchLike,
-  url: string,
-  init: RequestInit,
-): Promise<Response> {
-  const firstResponse = await fetchImpl(url, init);
-
-  if (firstResponse.status !== 429) {
-    return firstResponse;
-  }
-
-  const retryAfterMs = parseRetryAfter(firstResponse.headers.get("retry-after")) ?? 22000;
-
-  await new Promise((resolve) => setTimeout(resolve, retryAfterMs));
-
-  return fetchImpl(url, init);
+  return completion?.content?.trim() || "";
 }
 
 export function createGroqFailureAnalyzer(options: GroqFailureAnalyzerOptions) {
   const fetchImpl = options.fetchImpl ?? fetch;
   const apiKey = options.apiKey.trim();
-  const model = options.model?.trim() || "openai/gpt-oss-20b";
+  const model = options.model?.trim() || "mixtral-8x7b-32768";
   const maxOutputTokens = options.maxOutputTokens ?? 1024;
 
   if (!apiKey) {
@@ -100,55 +51,41 @@ export function createGroqFailureAnalyzer(options: GroqFailureAnalyzerOptions) {
     provider: "groq" as AiProviderName,
 
     async analyzeFailure(failure: FailureAnalysisInput): Promise<FailureAnalysis> {
-      const requestBody = JSON.stringify({
-        model,
-        input: [
-          {
-            role: "system",
-            content: FAILURE_ANALYSIS_SYSTEM_PROMPT,
+      const response = await fetchImpl("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model,
+          temperature: 0.2,
+          max_tokens: maxOutputTokens,
+          response_format: {
+            type: "json_schema",
+            json_schema: {
+              name: "playwright_failure_analysis",
+              strict: true,
+              schema: FAILURE_ANALYSIS_JSON_SCHEMA,
+            },
           },
-          {
-            role: "user",
-            content: buildFailureAnalysisPrompt(failure),
-          },
-        ],
-        temperature: 0.2,
-        max_output_tokens: maxOutputTokens,
+          messages: [
+            {
+              role: "system",
+              content: FAILURE_ANALYSIS_SYSTEM_PROMPT,
+            },
+            {
+              role: "user",
+              content: buildFailureAnalysisPrompt(failure),
+            },
+          ],
+        }),
       });
 
-      const response = await fetchWithGroqRetry(
-        fetchImpl,
-        "https://api.groq.com/openai/v1/responses",
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${apiKey}`,
-            "Content-Type": "application/json",
-          },
-          body: requestBody,
-        },
-      );
-
-      const responseText = await response.text();
-      let payload: GroqGenerateResponse = {};
-
-      try {
-        payload = JSON.parse(responseText) as GroqGenerateResponse;
-      } catch {
-        throw new Error(`Groq returned invalid JSON: ${responseText}`);
-      }
+      const payload = (await response.json()) as GroqChatCompletionResponse;
 
       if (!response.ok) {
-        const errorMessage =
-          payload.error?.message || `Groq request failed with status ${response.status}`;
-
-        if (response.status === 429) {
-          throw new Error(
-            `${errorMessage}. Rate limit reached for Groq in the current minute. Try again after a short wait or use a smaller model with GROQ_MODEL.`,
-          );
-        }
-
-        throw new Error(errorMessage);
+        throw new Error(payload.error?.message || `Groq request failed with status ${response.status}`);
       }
 
       const content = extractGroqText(payload);
