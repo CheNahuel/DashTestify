@@ -11,6 +11,7 @@ type AnalysisRow = {
   id: string | number;
   run_id: string | number;
   test_name: string;
+  error_message: string | null;
   target_file: string | null;
   generated_patch: string | null;
 };
@@ -29,7 +30,18 @@ async function main() {
     return;
   }
 
+  const seenAnalyses = new Set<string>();
+
   for (const analysis of (analyses || []) as AnalysisRow[]) {
+    const canonicalKey = `${analysis.run_id}::${analysis.test_name}::${analysis.error_message || ""}`;
+
+    if (seenAnalyses.has(canonicalKey)) {
+      console.log(`Skipping duplicate analysis: ${analysis.test_name}`);
+      continue;
+    }
+
+    seenAnalyses.add(canonicalKey);
+
     if (!analysis.target_file || !analysis.generated_patch) {
       console.log(`Skipping ${analysis.test_name} - missing patch info`);
       continue;

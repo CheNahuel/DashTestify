@@ -162,7 +162,10 @@ function sanitizeUnifiedDiffHeaders(patch: string) {
 }
 
 function normalizeLineForMatch(line: string) {
-  return line.replace(/\s+/g, " ").trim();
+  return line
+    .replace(/\s+/g, " ")
+    .replace(/\s*([.()[\]{}:,;<>+\-*/!?=])\s*/g, "$1")
+    .trim();
 }
 
 function findLineIndexRelaxed(haystack: string[], needle: string) {
@@ -179,6 +182,34 @@ function findLineIndexRelaxed(haystack: string[], needle: string) {
   }
 
   return haystack.findIndex((line) => normalizeLineForMatch(line) === normalizedNeedle);
+}
+
+function findSequenceRelaxed(haystack: string[], needle: string[], preferredIndex: number) {
+  if (needle.length === 0) {
+    return Math.max(0, Math.min(preferredIndex, haystack.length));
+  }
+
+  const searchFrom = Math.max(0, Math.min(preferredIndex, haystack.length));
+  const windows = [...Array.from({ length: Math.max(0, haystack.length - needle.length + 1) }, (_, offset) => offset)];
+  const normalizedNeedle = needle.map((line) => normalizeLineForMatch(line));
+
+  const preferredHit = windows.find((start) => {
+    if (start !== searchFrom) {
+      return false;
+    }
+
+    return normalizedNeedle.every((line, lineIndex) => normalizeLineForMatch(haystack[start + lineIndex]) === line);
+  });
+
+  if (typeof preferredHit === "number") {
+    return preferredHit;
+  }
+
+  const exactHit = windows.find((start) =>
+    normalizedNeedle.every((line, lineIndex) => normalizeLineForMatch(haystack[start + lineIndex]) === line),
+  );
+
+  return typeof exactHit === "number" ? exactHit : -1;
 }
 
 function findSequence(haystack: string[], needle: string[], preferredIndex: number) {
@@ -219,6 +250,18 @@ function applyUnifiedDiffToContent(originalContent: string, patch: string) {
 
     if (matchIndex >= 0) {
       updatedLines.splice(matchIndex, hunk.oldLines.length, ...hunk.newLines);
+      continue;
+    }
+
+    const alreadyAppliedIndex = findSequence(updatedLines, hunk.newLines, preferredIndex);
+
+    if (alreadyAppliedIndex >= 0) {
+      continue;
+    }
+
+    const alreadyAppliedRelaxedIndex = findSequenceRelaxed(updatedLines, hunk.newLines, preferredIndex);
+
+    if (alreadyAppliedRelaxedIndex >= 0) {
       continue;
     }
 

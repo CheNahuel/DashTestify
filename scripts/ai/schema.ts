@@ -57,7 +57,9 @@ export function buildFailureAnalysisPrompt(failure: FailureAnalysisInput) {
     ? [
         "",
         `Current source file: ${failure.sourceFilePath}`,
-        failure.sourceFileTruncated ? "Source note: content was truncated; keep the patch within the visible content." : "",
+        failure.sourceFileTruncated
+          ? "Source note: content was truncated; keep the patch within the visible content."
+          : "",
         "Current source content:",
         "```",
         failure.sourceFileContent || "",
@@ -67,6 +69,7 @@ export function buildFailureAnalysisPrompt(failure: FailureAnalysisInput) {
 
   return [
     "Analyze this Playwright test failure and return only JSON that matches the provided schema.",
+    "Return exactly one primary actionable fix. Do not provide alternate fixes or competing explanations in the JSON fields.",
     "",
     `Test name: ${failure.testName}`,
     `Run ID: ${failure.runId ?? "unknown"}`,
@@ -82,6 +85,7 @@ export function buildFailureAnalysisPrompt(failure: FailureAnalysisInput) {
     "- Use classification=infra_issue for environment or dependency failures.",
     "- Use classification=flaky_test when the failure is intermittent and not clearly a product bug.",
     "- confidence must be an integer from 0 to 100.",
+    "- If the fix is not clearly actionable, keep the answer conservative and lower the confidence instead of inventing a stronger fix.",
     "- target_file should be a repository-relative path, preferably inside tests/ for test fixes.",
     "- generated_patch must be a unified diff for exactly one file and should apply cleanly with git apply.",
     "- If current source content is provided, base generated_patch only on those exact lines.",
@@ -153,9 +157,13 @@ export function parseFailureAnalysisResponse(rawContent: string): FailureAnalysi
   const cleaned = stripMarkdownFences(rawContent);
 
   try {
-    const parsed = JSON.parse(cleaned) as FailureAnalysisApiPayload;
+    let parsed = JSON.parse(cleaned) as unknown;
 
-    return normalizeFailureAnalysis(parsed, cleaned);
+    if (typeof parsed === "string") {
+      parsed = JSON.parse(parsed) as unknown;
+    }
+
+    return normalizeFailureAnalysis(parsed as FailureAnalysisApiPayload, cleaned);
   } catch {
     return normalizeFailureAnalysis({ summary: cleaned, suggested_fix: cleaned }, cleaned);
   }
