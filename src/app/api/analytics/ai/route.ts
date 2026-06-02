@@ -155,6 +155,7 @@ export async function POST(request: Request) {
           id:
             globalThis.crypto?.randomUUID?.() ||
             `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+          provider,
           run_id: failure.runId,
           test_name: failure.testName,
           error_message: failure.errorMessage,

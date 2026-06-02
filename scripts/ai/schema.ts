@@ -57,7 +57,9 @@ export function buildFailureAnalysisPrompt(failure: FailureAnalysisInput) {
     ? [
         "",
         `Current source file: ${failure.sourceFilePath}`,
-        failure.sourceFileTruncated ? "Source note: content was truncated; keep the patch within the visible content." : "",
+        failure.sourceFileTruncated
+          ? "Source note: content was truncated; keep the patch within the visible content."
+          : "",
         "Current source content:",
         "```",
         failure.sourceFileContent || "",
@@ -155,9 +157,13 @@ export function parseFailureAnalysisResponse(rawContent: string): FailureAnalysi
   const cleaned = stripMarkdownFences(rawContent);
 
   try {
-    const parsed = JSON.parse(cleaned) as FailureAnalysisApiPayload;
+    let parsed = JSON.parse(cleaned) as unknown;
 
-    return normalizeFailureAnalysis(parsed, cleaned);
+    if (typeof parsed === "string") {
+      parsed = JSON.parse(parsed) as unknown;
+    }
+
+    return normalizeFailureAnalysis(parsed as FailureAnalysisApiPayload, cleaned);
   } catch {
     return normalizeFailureAnalysis({ summary: cleaned, suggested_fix: cleaned }, cleaned);
   }

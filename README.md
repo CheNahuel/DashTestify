@@ -51,10 +51,10 @@ Restart the dev server after adding the key. The app detects the key at startup;
 
 #### Endpoints used
 
-| Endpoint | Description |
-|---|---|
-| `GET /v3/assets?limit=20` | Top 20 coins by market cap |
-| `GET /v3/assets/{slug}/history` | OHLCV history for a coin |
+| Endpoint                        | Description                |
+| ------------------------------- | -------------------------- |
+| `GET /v3/assets?limit=20`       | Top 20 coins by market cap |
+| `GET /v3/assets/{slug}/history` | OHLCV history for a coin   |
 
 ### Mock data mode
 
@@ -140,6 +140,23 @@ tests/
 ```bash
 npm install
 npm run dev
+```
+
+### 📊 QA Analytics Dashboard
+
+- Local analytics dashboard: `http://localhost:3000/qa-analytics`
+- Live metrics dashboard: `http://localhost:3000/qa-analytics?view=live`
+
+On local development, `/qa-analytics` shows the local QA analytics workflow with test analysis and AI fix tooling. In production deploys, the same URL defaults to live metrics only.
+
+The live view loads aggregate run data from Supabase and uses the QA analytics API routes.
+Make sure the following env vars are set locally:
+
+```bash
+SUPABASE_URL=your_supabase_url
+SUPABASE_KEY=your_supabase_key
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_KEY=your_supabase_key
 ```
 
 ### 🧪 Run Tests

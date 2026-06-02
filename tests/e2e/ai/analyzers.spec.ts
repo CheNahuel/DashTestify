@@ -9,6 +9,7 @@ import {
   applyGeneratedPatch,
   checkoutBranchFromBase,
   buildFailureAnalysisPrompt,
+  createClaudeFailureAnalyzer,
   createGeminiFailureAnalyzer,
   createOpenAiFailureAnalyzer,
   normalizeFailureAnalysis,
@@ -25,7 +26,7 @@ test("builds a prompt that includes the failure context and patch rules", async 
     suite: "dashboard/search.spec.ts",
     runId: 42,
     sourceFilePath: "tests/e2e/dashboard/search.spec.ts",
-    sourceFileContent: "await expect(dashboardPage.searchInput).toHaveValue(\"\");\n",
+    sourceFileContent: 'await expect(dashboardPage.searchInput).toHaveValue("");\n',
   });
 
   expect(prompt).toContain("dashboard search keeps failing");
@@ -42,7 +43,11 @@ test("readSourceFileContext resolves shortened suite paths", async () => {
   const filePath = path.join(repoRoot, "tests/e2e/dashboard/interactions.spec.ts");
 
   fs.mkdirSync(path.dirname(filePath), { recursive: true });
-  fs.writeFileSync(filePath, "test('reset dashboard returns filters to default', async () => {});\n", "utf8");
+  fs.writeFileSync(
+    filePath,
+    "test('reset dashboard returns filters to default', async () => {});\n",
+    "utf8",
+  );
 
   const context = await readSourceFileContext(repoRoot, "e2e/dashboard/interactions.spec.ts");
 
@@ -75,7 +80,7 @@ test("normalizes malformed analysis payloads into safe defaults", async () => {
 
 test("parses fenced JSON responses", async () => {
   const analysis = parseFailureAnalysisResponse(
-    "```json\n{\"summary\":\"ok\",\"severity\":\"low\",\"classification\":\"test_issue\",\"confidence\":87,\"target_file\":\"tests/a.spec.ts\",\"suggested_fix\":\"fix\",\"generated_patch\":\"diff --git a/tests/a.spec.ts b/tests/a.spec.ts\\n--- a/tests/a.spec.ts\\n+++ b/tests/a.spec.ts\\n@@ -1 +1 @@\\n-old\\n+new\"}\n```",
+    '```json\n{"summary":"ok","severity":"low","classification":"test_issue","confidence":87,"target_file":"tests/a.spec.ts","suggested_fix":"fix","generated_patch":"diff --git a/tests/a.spec.ts b/tests/a.spec.ts\\n--- a/tests/a.spec.ts\\n+++ b/tests/a.spec.ts\\n@@ -1 +1 @@\\n-old\\n+new"}\n```',
   );
 
   expect(analysis.summary).toBe("ok");
@@ -141,8 +146,7 @@ test("gemini provider sends the shared schema and parses the response", async ()
             content: {
               parts: [
                 {
-                  text:
-                    '{"summary":"infra issue","severity":"medium","classification":"infra_issue","confidence":80,"target_file":"scripts/analyze-failures.ts","suggested_fix":"retry later","generated_patch":"diff --git a/scripts/analyze-failures.ts b/scripts/analyze-failures.ts\\n--- a/scripts/analyze-failures.ts\\n+++ b/scripts/analyze-failures.ts\\n@@ -1 +1 @@\\n-old\\n+new"}',
+                  text: '{"summary":"infra issue","severity":"medium","classification":"infra_issue","confidence":80,"target_file":"scripts/analyze-failures.ts","suggested_fix":"retry later","generated_patch":"diff --git a/scripts/analyze-failures.ts b/scripts/analyze-failures.ts\\n--- a/scripts/analyze-failures.ts\\n+++ b/scripts/analyze-failures.ts\\n@@ -1 +1 @@\\n-old\\n+new"}',
                 },
               ],
             },
@@ -167,6 +171,39 @@ test("gemini provider sends the shared schema and parses the response", async ()
   expect(requestBody?.generationConfig).toBeTruthy();
   expect(analysis.classification).toBe("infra_issue");
   expect(analysis.target_file).toBe("scripts/analyze-failures.ts");
+});
+
+test("claude provider sends the shared schema and parses the response", async () => {
+  let requestBody: Record<string, unknown> | undefined;
+
+  const fetchImpl = async (_url: RequestInfo | URL, init?: RequestInit) => {
+    requestBody = JSON.parse(String(init?.body)) as Record<string, unknown>;
+
+    return {
+      ok: true,
+      status: 200,
+      json: async () => ({
+        completion:
+          '{"summary":"claude issue","severity":"medium","classification":"app_issue","confidence":75,"target_file":"src/app/api/analytics/ai/route.ts","suggested_fix":"correct provider mapping","generated_patch":"diff --git a/src/app/api/analytics/ai/route.ts b/src/app/api/analytics/ai/route.ts\\n--- a/src/app/api/analytics/ai/route.ts\\n+++ b/src/app/api/analytics/ai/route.ts\\n@@ -1 +1 @@\\n-old\\n+new"}',
+      }),
+    } as Response;
+  };
+
+  const analyzer = createClaudeFailureAnalyzer({
+    apiKey: "test-key",
+    model: "claude-test",
+    fetchImpl,
+  });
+
+  const analysis = await analyzer.analyzeFailure({
+    testName: "provider mapping fails",
+    errorMessage: "Incorrect route",
+  });
+
+  expect(requestBody?.model).toBe("claude-test");
+  expect(requestBody?.response_format).toBeTruthy();
+  expect(analysis.classification).toBe("app_issue");
+  expect(analysis.target_file).toBe("src/app/api/analytics/ai/route.ts");
 });
 
 test("applyGeneratedPatch applies a unified diff to the working tree", async () => {
@@ -198,7 +235,11 @@ test("applyGeneratedPatch resolves shortened paths and survives corrupt hunk hea
   const filePath = path.join(repoRoot, "tests/e2e/dashboard/interactions.spec.ts");
 
   fs.mkdirSync(path.dirname(filePath), { recursive: true });
-  fs.writeFileSync(filePath, 'await expect(dashboardPage.searchInput).toHaveValue("FAILURE");\n', "utf8");
+  fs.writeFileSync(
+    filePath,
+    'await expect(dashboardPage.searchInput).toHaveValue("FAILURE");\n',
+    "utf8",
+  );
   execFileSync("git", ["init"], { cwd: repoRoot });
 
   const patch = [
@@ -222,7 +263,11 @@ test("applyGeneratedPatch strips ansi escapes before applying the patch", async 
   const repoRoot = fs.mkdtempSync(path.join(os.tmpdir(), "ai-patch-repo-ansi-"));
   const filePath = path.join(repoRoot, "sample.ts");
 
-  fs.writeFileSync(filePath, 'await expect(dashboardPage.searchInput).toHaveValue("FAILURE");\n', "utf8");
+  fs.writeFileSync(
+    filePath,
+    'await expect(dashboardPage.searchInput).toHaveValue("FAILURE");\n',
+    "utf8",
+  );
   execFileSync("git", ["init"], { cwd: repoRoot });
 
   const patch = [
@@ -230,8 +275,8 @@ test("applyGeneratedPatch strips ansi escapes before applying the patch", async 
     "--- a/sample.ts",
     "+++ b/sample.ts",
     "@@ -1 +1 @@",
-    "\u001b[31m-await expect(dashboardPage.searchInput).toHaveValue(\"FAILURE\");\u001b[0m",
-    "\u001b[32m+await expect(dashboardPage.searchInput).toHaveValue(\"\");\u001b[0m",
+    '\u001b[31m-await expect(dashboardPage.searchInput).toHaveValue("FAILURE");\u001b[0m',
+    '\u001b[32m+await expect(dashboardPage.searchInput).toHaveValue("");\u001b[0m',
     "",
   ].join("\n");
 
@@ -249,7 +294,7 @@ test("applyGeneratedPatch falls back when hunk context does not match exactly", 
   fs.writeFileSync(
     filePath,
     [
-      'await dashboardPage.resetButton.click();',
+      "await dashboardPage.resetButton.click();",
       'await expect(dashboardPage.searchInput).toHaveValue("FAILURE");',
       'await expect(dashboardPage.sortSelect).toHaveValue("market-cap-desc");',
       "",
@@ -264,7 +309,7 @@ test("applyGeneratedPatch falls back when hunk context does not match exactly", 
     "+++ b/sample.ts",
     "@@ -1,3 +1,4 @@",
     "-await dashboardPage.someOtherStep();",
-    ' await dashboardPage.resetButton.click();',
+    " await dashboardPage.resetButton.click();",
     '+await page.getByTestId("search-input").fill("FAILURE");',
     '-await expect(dashboardPage.searchInput).toHaveValue("FAILURE");',
     '+await expect(dashboardPage.searchInput).toHaveValue("");',
@@ -278,7 +323,9 @@ test("applyGeneratedPatch falls back when hunk context does not match exactly", 
 
   expect(updated).toContain('await page.getByTestId("search-input").fill("FAILURE");');
   expect(updated).toContain('await expect(dashboardPage.searchInput).toHaveValue("");');
-  expect(updated).toContain('await expect(dashboardPage.sortSelect).toHaveValue("market-cap-desc");');
+  expect(updated).toContain(
+    'await expect(dashboardPage.sortSelect).toHaveValue("market-cap-desc");',
+  );
 });
 
 test("applyGeneratedPatch treats an already applied patch as a no-op", async () => {
@@ -316,7 +363,10 @@ test("checkoutBranchFromBase creates the fix branch from the source commit", asy
   execFileSync("git", ["add", "sample.ts"], { cwd: repoRoot });
   execFileSync("git", ["commit", "-m", "base"], { cwd: repoRoot });
 
-  const baseCommit = execFileSync("git", ["rev-parse", "HEAD"], { cwd: repoRoot, encoding: "utf8" }).trim();
+  const baseCommit = execFileSync("git", ["rev-parse", "HEAD"], {
+    cwd: repoRoot,
+    encoding: "utf8",
+  }).trim();
 
   fs.writeFileSync(filePath, 'export const status = "head";\n', "utf8");
   execFileSync("git", ["add", "sample.ts"], { cwd: repoRoot });

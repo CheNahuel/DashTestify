@@ -1,4 +1,4 @@
-export type AiProvider = "openai" | "gemini" | "deepseek" | "openrouter";
+export type AiProvider = "openai" | "gemini" | "deepseek" | "openrouter" | "claude";
 
 export type LatestLocalFailure = {
   test_name: string | null;

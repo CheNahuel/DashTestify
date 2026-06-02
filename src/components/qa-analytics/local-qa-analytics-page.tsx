@@ -17,6 +17,7 @@ const providerLabels: Record<AiProvider, string> = {
   gemini: "Gemini",
   deepseek: "Deepseek",
   openrouter: "OpenRouter",
+  claude: "Claude",
 };
 
 const providerOptions: Array<{
@@ -38,6 +39,11 @@ const providerOptions: Array<{
     value: "deepseek",
     label: "Deepseek",
     description: "Alternative provider for failure analysis",
+  },
+  {
+    value: "claude",
+    label: "Claude",
+    description: "Anthropic Claude provider for conversational analysis",
   },
   {
     value: "openrouter",
