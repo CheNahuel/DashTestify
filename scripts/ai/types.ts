@@ -1,4 +1,4 @@
-export type AiProviderName = "openai" | "gemini" | "groq" | "openrouter";
+export type AiProviderName = "openai" | "gemini" | "groq" | "openrouter" | "deepseek";
 
 export type FailureAnalysisSeverity = "low" | "medium" | "high";
 
