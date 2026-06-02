@@ -354,14 +354,11 @@ test("local qa analytics requires a run, shows the branch and only reveals AI an
     "href",
     "/playwright-report/index.html",
   );
-  await expect(page.getByTestId("provider-option-gemini")).toHaveAttribute("aria-pressed", "true");
-  await expect(page.getByTestId("provider-option-groq")).toBeVisible();
-  await expect(page.getByTestId("provider-option-groq")).toHaveAttribute("aria-pressed", "false");
-  await expect(page.getByTestId("provider-option-openrouter")).toBeVisible();
-  await expect(page.getByTestId("provider-option-openrouter")).toHaveAttribute(
-    "aria-pressed",
-    "false",
-  );
+  await expect(page.getByTestId("ai-provider-select")).toBeVisible();
+  await expect(page.getByTestId("ai-provider-select")).toHaveValue("gemini");
+  await expect(
+    page.getByText("Pick the model and review the latest local failures."),
+  ).toBeVisible();
   await expect(page.getByTestId("run-controls-panel")).toBeVisible();
   await expect(page.getByTestId("ai-provider-panel")).toBeVisible();
   await expect(page.getByTestId("run-controls-panel")).toHaveClass(/rounded-3xl/);
@@ -369,30 +366,15 @@ test("local qa analytics requires a run, shows the branch and only reveals AI an
   await expect(
     page.getByText("Pick the model and review the latest local failures."),
   ).toBeVisible();
-  await page.getByTestId("provider-option-openai").click();
-  await expect(page.getByTestId("provider-option-openai")).toHaveAttribute("aria-pressed", "true");
-  await expect(page.getByTestId("provider-option-gemini")).toHaveAttribute("aria-pressed", "false");
-  await expect(page.getByTestId("provider-option-groq")).toHaveAttribute("aria-pressed", "false");
-  await expect(page.getByTestId("provider-option-openrouter")).toHaveAttribute(
-    "aria-pressed",
-    "false",
-  );
-  await page.getByTestId("provider-option-groq").click();
-  await expect(page.getByTestId("provider-option-groq")).toHaveAttribute("aria-pressed", "true");
-  await expect(page.getByTestId("provider-option-openai")).toHaveAttribute("aria-pressed", "false");
-  await page.getByTestId("provider-option-openrouter").click();
-  await expect(page.getByTestId("provider-option-openrouter")).toHaveAttribute(
-    "aria-pressed",
-    "true",
-  );
-  await expect(page.getByTestId("provider-option-openai")).toHaveAttribute("aria-pressed", "false");
-  await page.getByTestId("provider-option-openai").click();
-  await expect(page.getByTestId("provider-option-openai")).toHaveAttribute("aria-pressed", "true");
-  await expect(page.getByTestId("provider-option-groq")).toHaveAttribute("aria-pressed", "false");
-  await expect(page.getByTestId("provider-option-openrouter")).toHaveAttribute(
-    "aria-pressed",
-    "false",
-  );
+  await page.getByTestId("ai-provider-select").selectOption("openai");
+  await expect(page.getByTestId("ai-provider-select")).toHaveValue("openai");
+  await page.getByTestId("ai-provider-select").selectOption("deepseek");
+  await expect(page.getByTestId("ai-provider-select")).toHaveValue("deepseek");
+  await page.getByTestId("ai-provider-select").selectOption("openrouter");
+  await expect(page.getByTestId("ai-provider-select")).toHaveValue("openrouter");
+  await page.getByTestId("ai-provider-select").selectOption("openai");
+  await expect(page.getByTestId("ai-provider-select")).toHaveValue("openai");
+  await expect(page.getByTestId("ai-provider-panel")).toBeVisible();
   await expect(page.getByTestId("ai-analyze-all")).toContainText("Analyze selected failures");
   await expect(page.getByTestId("ai-apply-all")).toContainText("Apply fix to all");
   await expect(page.getByTestId("ai-apply-all")).toBeDisabled();
@@ -598,6 +580,7 @@ test("local qa analytics store can load analyses by numeric run id", async () =>
   await appendLocalAnalyses([
     {
       id: "analysis-1",
+      provider: "openai",
       run_id: 123,
       created_at: "2026-05-31T01:10:23.372Z",
       test_name: "selected coin card is visually highlighted",
@@ -1165,7 +1148,7 @@ test("live qa analytics hides local-only sections and keeps the trend chart belo
   ).toBeVisible();
   await expect(page.getByTestId("stats-total-runs")).toBeVisible();
   await expect(page.getByTestId("test-trends-chart")).toBeVisible();
-  await expect(page.getByTestId("provider-option-gemini")).toHaveCount(0);
+  await expect(page.getByTestId("ai-provider-select")).toHaveCount(0);
   await expect(page.getByTestId("ai-provider-panel")).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "Latest run failures" })).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "AI failure analysis" })).toHaveCount(0);

@@ -15,7 +15,7 @@ import type {
 const providerLabels: Record<AiProvider, string> = {
   openai: "OpenAI",
   gemini: "Gemini",
-  groq: "Groq",
+  deepseek: "Deepseek",
   openrouter: "OpenRouter",
 };
 
@@ -35,8 +35,8 @@ const providerOptions: Array<{
     description: "Alternative model for comparison",
   },
   {
-    value: "groq",
-    label: "Groq",
+    value: "deepseek",
+    label: "Deepseek",
     description: "Alternative provider for failure analysis",
   },
   {
@@ -1059,43 +1059,39 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
                       </Badge>
                     </div>
 
-                    <div className="grid gap-2 sm:grid-cols-2">
-                      {providerOptions.map((option) => {
-                        const isSelected = selectedProvider === option.value;
-
-                        return (
-                          <button
-                            key={option.value}
-                            type="button"
-                            data-testid={`provider-option-${option.value}`}
-                            aria-pressed={isSelected}
-                            className={[
-                              "group flex min-w-0 flex-col rounded-2xl border px-4 py-4 text-left transition-all",
-                              isSelected
-                                ? "border-cyan-300/50 bg-cyan-300/12 shadow-[0_0_0_1px_rgba(34,211,238,0.15)]"
-                                : "border-white/10 bg-slate-950/70 hover:border-white/20 hover:bg-slate-900/90",
-                            ]
-                              .filter(Boolean)
-                              .join(" ")}
-                            onClick={() => setSelectedProvider(option.value)}
-                          >
-                            <span
-                              className={`text-base font-semibold ${
-                                isSelected
-                                  ? "text-cyan-100"
-                                  : "text-slate-100 group-hover:text-white"
-                              }`}
-                            >
+                    <div className="space-y-2">
+                      <label
+                        htmlFor="ai-provider-select"
+                        className="block text-sm font-semibold text-slate-100"
+                      >
+                        Provider
+                      </label>
+                      <div className="relative">
+                        <select
+                          id="ai-provider-select"
+                          data-testid="ai-provider-select"
+                          value={selectedProvider}
+                          onChange={(event) =>
+                            setSelectedProvider(event.target.value as AiProvider)
+                          }
+                          className="w-full rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 pr-10 text-white outline-none transition hover:border-white/20 hover:bg-slate-900/90 focus:border-cyan-300/70 focus:ring-2 focus:ring-cyan-500/20"
+                        >
+                          {providerOptions.map((option) => (
+                            <option key={option.value} value={option.value}>
                               {option.label}
-                            </span>
-                            <span
-                              className={`mt-1 text-xs leading-5 ${isSelected ? "text-cyan-100/80" : "text-slate-400"}`}
-                            >
-                              {option.description}
-                            </span>
-                          </button>
-                        );
-                      })}
+                            </option>
+                          ))}
+                        </select>
+                        <span className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-slate-400">
+                          ▾
+                        </span>
+                      </div>
+                      <p className="text-xs leading-5 text-slate-400">
+                        {
+                          providerOptions.find((option) => option.value === selectedProvider)
+                            ?.description
+                        }
+                      </p>
                     </div>
 
                     <div className="rounded-2xl border border-white/10 bg-slate-950/55 px-4 py-3">

@@ -2,6 +2,7 @@ import { createGeminiFailureAnalyzer } from "./gemini-provider";
 import { createGroqFailureAnalyzer } from "./groq-provider";
 import { createOpenAiFailureAnalyzer } from "./openai-provider";
 import { createOpenRouterFailureAnalyzer } from "./openrouter-provider";
+import { createDeepseekFailureAnalyzer } from "./deepseek-provider";
 import type { AiProviderName, FailureAnalysis, FailureAnalysisInput } from "./types";
 
 type FetchLike = typeof fetch;
@@ -20,6 +21,9 @@ type AiProviderOptions = {
   openRouterApiKey?: string;
   openRouterModel?: string;
   openRouterMaxOutputTokens?: number;
+  deepseekApiKey?: string;
+  deepseekModel?: string;
+  deepseekMaxCompletionTokens?: number;
 };
 
 export type FailureAnalyzer = {
@@ -48,6 +52,10 @@ export function parseAiProviderName(value: string | undefined | null): AiProvide
 
   if (value === "openrouter") {
     return "openrouter";
+  }
+
+  if (value === "deepseek") {
+    return "deepseek";
   }
 
   return "openai";
@@ -86,6 +94,17 @@ export function createAiProvider(
       maxOutputTokens:
         options.openRouterMaxOutputTokens ??
         parsePositiveInteger(process.env.OPENROUTER_MAX_OUTPUT_TOKENS),
+      fetchImpl,
+    });
+  }
+
+  if (providerName === "deepseek") {
+    return createDeepseekFailureAnalyzer({
+      apiKey: options.deepseekApiKey ?? process.env.DEEPSEEK_API_KEY ?? "",
+      model: options.deepseekModel ?? process.env.DEEPSEEK_MODEL,
+      maxCompletionTokens:
+        options.deepseekMaxCompletionTokens ??
+        parsePositiveInteger(process.env.DEEPSEEK_MAX_COMPLETION_TOKENS),
       fetchImpl,
     });
   }
