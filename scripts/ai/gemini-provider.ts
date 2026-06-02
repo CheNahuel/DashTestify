@@ -11,6 +11,7 @@ type FetchLike = typeof fetch;
 type GeminiFailureAnalyzerOptions = {
   apiKey: string;
   model?: string;
+  maxOutputTokens?: number;
   fetchImpl?: FetchLike;
 };
 
@@ -40,7 +41,8 @@ function extractGeminiText(payload: GeminiGenerateContentResponse) {
 export function createGeminiFailureAnalyzer(options: GeminiFailureAnalyzerOptions) {
   const fetchImpl = options.fetchImpl ?? fetch;
   const apiKey = options.apiKey.trim();
-  const model = options.model?.trim() || "gemini-2.5-flash";
+  const model = options.model?.trim() || "gemini-2.5-flash-lite";
+  const maxOutputTokens = options.maxOutputTokens ?? 1024;
 
   if (!apiKey) {
     throw new Error("GEMINI_API_KEY is required to use the Gemini provider.");
@@ -69,6 +71,7 @@ export function createGeminiFailureAnalyzer(options: GeminiFailureAnalyzerOption
             ],
             generationConfig: {
               temperature: 0.2,
+              maxOutputTokens,
               responseMimeType: "application/json",
               responseJsonSchema: FAILURE_ANALYSIS_JSON_SCHEMA,
             },
@@ -92,4 +95,3 @@ export function createGeminiFailureAnalyzer(options: GeminiFailureAnalyzerOption
     },
   };
 }
-

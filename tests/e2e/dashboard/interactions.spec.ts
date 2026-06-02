@@ -98,7 +98,6 @@ test("reset dashboard returns filters to the default home state", async ({
 
   await dashboardPage.resetButton.click();
 
-  // Intentional canary: keep this failing so we can verify the reset path later.
   await expect(dashboardPage.searchInput).toHaveValue("");
   await expect(dashboardPage.sortSelect).toHaveValue("market-cap-desc");
   await expect(dashboardPage.trendSelect).toHaveValue("all");
@@ -203,7 +202,10 @@ test("selected coin card is visually highlighted", async ({ dashboardData, dashb
   await waitForDashboardData(dashboardPage.page);
 
   const bitcoinCard = dashboardPage.coinCard("bitcoin");
-  await expect(bitcoinCard).toHaveAttribute("data-coin-id", "bitcoin");
+  await bitcoinCard.getByRole("button").first().click();
+
+  await expect(dashboardPage.selectedAssetName).toHaveText("Bitcoin");
+  await expect(dashboardPage.page).toHaveURL(/selectedCoin=bitcoin/);
 });
 
 // ─── Watchlist ────────────────────────────────────────────────────────────────

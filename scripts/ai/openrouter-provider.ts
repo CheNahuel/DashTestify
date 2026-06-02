@@ -1,16 +1,21 @@
-import { buildFailureAnalysisPrompt, FAILURE_ANALYSIS_JSON_SCHEMA, FAILURE_ANALYSIS_SYSTEM_PROMPT, parseFailureAnalysisResponse } from "./schema";
+import {
+  buildFailureAnalysisPrompt,
+  FAILURE_ANALYSIS_JSON_SCHEMA,
+  FAILURE_ANALYSIS_SYSTEM_PROMPT,
+  parseFailureAnalysisResponse,
+} from "./schema";
 import type { FailureAnalysis, FailureAnalysisInput, AiProviderName } from "./types";
 
 type FetchLike = typeof fetch;
 
-type OpenAiFailureAnalyzerOptions = {
+type OpenRouterFailureAnalyzerOptions = {
   apiKey: string;
   model?: string;
-  maxCompletionTokens?: number;
+  maxOutputTokens?: number;
   fetchImpl?: FetchLike;
 };
 
-type OpenAiChatCompletionResponse = {
+type OpenRouterChatCompletionResponse = {
   choices?: Array<{
     message?: {
       content?: string | null;
@@ -22,21 +27,21 @@ type OpenAiChatCompletionResponse = {
   };
 };
 
-export function createOpenAiFailureAnalyzer(options: OpenAiFailureAnalyzerOptions) {
+export function createOpenRouterFailureAnalyzer(options: OpenRouterFailureAnalyzerOptions) {
   const fetchImpl = options.fetchImpl ?? fetch;
   const apiKey = options.apiKey.trim();
-  const model = options.model?.trim() || "gpt-4.1-nano";
-  const maxCompletionTokens = options.maxCompletionTokens ?? 1024;
+  const model = options.model?.trim() || "gpt-4o-mini";
+  const maxOutputTokens = options.maxOutputTokens ?? 1024;
 
   if (!apiKey) {
-    throw new Error("OPENAI_API_KEY is required to use the OpenAI provider.");
+    throw new Error("OPENROUTER_API_KEY is required to use the OpenRouter provider.");
   }
 
   return {
-    provider: "openai" as AiProviderName,
+    provider: "openrouter" as AiProviderName,
 
     async analyzeFailure(failure: FailureAnalysisInput): Promise<FailureAnalysis> {
-      const response = await fetchImpl("https://api.openai.com/v1/chat/completions", {
+      const response = await fetchImpl("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${apiKey}`,
@@ -45,7 +50,7 @@ export function createOpenAiFailureAnalyzer(options: OpenAiFailureAnalyzerOption
         body: JSON.stringify({
           model,
           temperature: 0.2,
-          max_completion_tokens: maxCompletionTokens,
+          max_tokens: maxOutputTokens,
           response_format: {
             type: "json_schema",
             json_schema: {
@@ -67,20 +72,22 @@ export function createOpenAiFailureAnalyzer(options: OpenAiFailureAnalyzerOption
         }),
       });
 
-      const payload = (await response.json()) as OpenAiChatCompletionResponse;
+      const payload = (await response.json()) as OpenRouterChatCompletionResponse;
 
       if (!response.ok) {
-        throw new Error(payload.error?.message || `OpenAI request failed with status ${response.status}`);
+        throw new Error(
+          payload.error?.message || `OpenRouter request failed with status ${response.status}`,
+        );
       }
 
       const completion = payload.choices?.[0]?.message;
 
       if (!completion) {
-        throw new Error("OpenAI returned an empty completion.");
+        throw new Error("OpenRouter returned an empty completion.");
       }
 
       if (completion.refusal) {
-        throw new Error(`OpenAI refused to analyze the failure: ${completion.refusal}`);
+        throw new Error(`OpenRouter refused to analyze the failure: ${completion.refusal}`);
       }
 
       return parseFailureAnalysisResponse(completion.content ?? "{}");

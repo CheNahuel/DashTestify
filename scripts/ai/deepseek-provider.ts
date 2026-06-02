@@ -1,16 +1,21 @@
-import { buildFailureAnalysisPrompt, FAILURE_ANALYSIS_JSON_SCHEMA, FAILURE_ANALYSIS_SYSTEM_PROMPT, parseFailureAnalysisResponse } from "./schema";
+import {
+  buildFailureAnalysisPrompt,
+  FAILURE_ANALYSIS_JSON_SCHEMA,
+  FAILURE_ANALYSIS_SYSTEM_PROMPT,
+  parseFailureAnalysisResponse,
+} from "./schema";
 import type { FailureAnalysis, FailureAnalysisInput, AiProviderName } from "./types";
 
 type FetchLike = typeof fetch;
 
-type OpenAiFailureAnalyzerOptions = {
+type DeepseekFailureAnalyzerOptions = {
   apiKey: string;
   model?: string;
   maxCompletionTokens?: number;
   fetchImpl?: FetchLike;
 };
 
-type OpenAiChatCompletionResponse = {
+type DeepseekChatCompletionResponse = {
   choices?: Array<{
     message?: {
       content?: string | null;
@@ -22,21 +27,21 @@ type OpenAiChatCompletionResponse = {
   };
 };
 
-export function createOpenAiFailureAnalyzer(options: OpenAiFailureAnalyzerOptions) {
+export function createDeepseekFailureAnalyzer(options: DeepseekFailureAnalyzerOptions) {
   const fetchImpl = options.fetchImpl ?? fetch;
   const apiKey = options.apiKey.trim();
-  const model = options.model?.trim() || "gpt-4.1-nano";
+  const model = options.model?.trim() || "deepseek-v4";
   const maxCompletionTokens = options.maxCompletionTokens ?? 1024;
 
   if (!apiKey) {
-    throw new Error("OPENAI_API_KEY is required to use the OpenAI provider.");
+    throw new Error("DEEPSEEK_API_KEY is required to use the Deepseek provider.");
   }
 
   return {
-    provider: "openai" as AiProviderName,
+    provider: "deepseek" as AiProviderName,
 
     async analyzeFailure(failure: FailureAnalysisInput): Promise<FailureAnalysis> {
-      const response = await fetchImpl("https://api.openai.com/v1/chat/completions", {
+      const response = await fetchImpl("https://api.deepseek.com/v1/chat/completions", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${apiKey}`,
@@ -67,20 +72,22 @@ export function createOpenAiFailureAnalyzer(options: OpenAiFailureAnalyzerOption
         }),
       });
 
-      const payload = (await response.json()) as OpenAiChatCompletionResponse;
+      const payload = (await response.json()) as DeepseekChatCompletionResponse;
 
       if (!response.ok) {
-        throw new Error(payload.error?.message || `OpenAI request failed with status ${response.status}`);
+        throw new Error(
+          payload.error?.message || `Deepseek request failed with status ${response.status}`,
+        );
       }
 
       const completion = payload.choices?.[0]?.message;
 
       if (!completion) {
-        throw new Error("OpenAI returned an empty completion.");
+        throw new Error("Deepseek returned an empty completion.");
       }
 
       if (completion.refusal) {
-        throw new Error(`OpenAI refused to analyze the failure: ${completion.refusal}`);
+        throw new Error(`Deepseek refused to analyze the failure: ${completion.refusal}`);
       }
 
       return parseFailureAnalysisResponse(completion.content ?? "{}");

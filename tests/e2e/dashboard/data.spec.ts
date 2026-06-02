@@ -3,7 +3,6 @@ import { expect, test, waitForDashboardData } from "@tests/fixtures/testSetup";
 test("selected coin shows price and percentage change", async ({ dashboardData, dashboardPage }) => {
   await dashboardPage.goto(dashboardData.urls.bitcoinDefault);
   await waitForDashboardData(dashboardPage.page);
-
   await dashboardPage.expectSelectedAsset("Bitcoin");
   await expect(dashboardPage.selectedAssetPrice).toContainText("$");
   await expect(dashboardPage.selectedAssetChange).toContainText("%");
