@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -68,7 +67,7 @@ export function FlakyTestsWidget() {
         {!loading && error && <p className="text-sm text-rose-200">{error}</p>}
 
         {!loading && !error && items.length === 0 && (
-          <p className="text-sm text-slate-300">No hay datos suficientes</p>
+          <p className="text-sm text-slate-300">No flaky tests in the last 30 days.</p>
         )}
 
         {!loading && !error && items.length > 0 && (
@@ -78,16 +77,12 @@ export function FlakyTestsWidget() {
                 key={`${item.test_name}-${item.suite}`}
                 className="rounded-2xl border border-white/10 bg-white/5 p-4"
               >
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div className="min-w-0 space-y-1">
-                    <p className="break-words text-base font-semibold text-white">{item.test_name}</p>
-                    <p className="text-xs uppercase tracking-[0.2em] text-slate-400">{item.suite}</p>
-                  </div>
-
-                  <Badge variant="destructive">FLAKY</Badge>
+                <div className="min-w-0 space-y-1">
+                  <p className="break-words text-base font-semibold text-white">{item.test_name}</p>
+                  <p className="text-xs uppercase tracking-[0.2em] text-slate-400">{item.suite}</p>
                 </div>
 
-                <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                <div className="mt-4 grid grid-cols-3 gap-4">
                   <div>
                     <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Failures</p>
                     <p className="mt-2 text-lg font-semibold text-rose-200">{item.total_failures}</p>
