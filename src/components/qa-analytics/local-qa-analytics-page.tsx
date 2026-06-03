@@ -621,7 +621,28 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
       });
 
       // Remove the applied analysis from the list (visual feedback that fix was applied)
-      setAiAnalysis((current) => current.filter((analysis) => analysis.id !== analysisId));
+      setAiAnalysis((current) => {
+        const appliedAnalysis = current.find((a) => a.id === analysisId);
+        const filtered = current.filter((analysis) => analysis.id !== analysisId);
+
+        // Also remove the corresponding failure from latestFailures
+        if (appliedAnalysis) {
+          setLatestFailures((failures) =>
+            failures.filter(
+              (failure) =>
+                !(
+                  failure.test_name === appliedAnalysis.test_name &&
+                  failure.error_message === appliedAnalysis.error_message
+                ),
+            ),
+          );
+        }
+
+        return filtered;
+      });
+
+      setActionStatus("Fix was successfully applied.");
+      setSelectedFailureIds(new Set());
     } catch (error) {
       setActionStatus(error instanceof Error ? error.message : "Applying the AI fix failed.");
     }
@@ -694,6 +715,7 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
     try {
       const appliedFiles = new Set<string>();
       const appliedIds = new Set<string>();
+      const appliedAnalyses: LocalAiAnalysis[] = [];
 
       for (const analysis of actionableAiAnalyses) {
         const result = (await sendAiAction({
@@ -709,10 +731,26 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
           appliedFiles.add(result.filePath);
         }
         appliedIds.add(analysis.id);
+        appliedAnalyses.push(analysis);
       }
 
       // Remove the applied analyses from the list (visual feedback that fixes were applied)
       setAiAnalysis((current) => current.filter((analysis) => !appliedIds.has(analysis.id)));
+
+      // Also remove the corresponding failures from latestFailures
+      setLatestFailures((failures) =>
+        failures.filter(
+          (failure) =>
+            !appliedAnalyses.some(
+              (analysis) =>
+                failure.test_name === analysis.test_name &&
+                failure.error_message === analysis.error_message,
+            ),
+        ),
+      );
+
+      setActionStatus(`${appliedAnalyses.length} fix${appliedAnalyses.length === 1 ? "" : "es"} successfully applied.`);
+      setSelectedFailureIds(new Set());
     } catch (error) {
       setActionStatus(error instanceof Error ? error.message : "Applying the AI fixes failed.");
     } finally {
@@ -916,9 +954,11 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
                         className={`mt-3 rounded-2xl px-4 py-3 text-sm ${
                           runState.status === "success"
                             ? "border border-emerald-300/20 bg-emerald-400/10 text-emerald-100"
-                            : runState.status === "failed"
-                              ? "border border-rose-300/20 bg-rose-400/10 text-rose-100"
-                              : "border border-white/10 bg-white/5 text-slate-200"
+                            : runState.status === "failed" && !runState.isStale && (latestRunSummary?.failed ?? 0) === 0
+                              ? "border border-emerald-300/20 bg-emerald-400/10 text-emerald-100"
+                              : runState.status === "failed"
+                                ? "border border-rose-300/20 bg-rose-400/10 text-rose-100"
+                                : "border border-white/10 bg-white/5 text-slate-200"
                         }`}
                         data-testid="run-status-message"
                       >
@@ -1124,9 +1164,6 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
                             </option>
                           ))}
                         </select>
-                        <span className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-slate-400">
-                          ▾
-                        </span>
                       </div>
                       <p className="text-xs leading-5 text-slate-400">
                         {
