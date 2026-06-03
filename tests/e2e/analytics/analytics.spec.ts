@@ -418,6 +418,96 @@ test("local qa analytics requires a run, shows the branch and only reveals AI an
   await page.getByTestId("ai-apply-all").click();
   // Verify the analysis was applied (it should be removed from the list)
   await expect(page.getByTestId("ai-analysis-card-42")).toBeHidden();
+  // Verify the failure cards are also removed when fixes are applied
+  await expect(page.getByTestId("failing-test-search-by-symbol-finds-the-coin")).toBeHidden();
+  // Verify success message appears
+  await expect(page.getByTestId("ai-status-message")).toContainText("successfully applied");
+});
+
+test("local qa analytics removes failure cards when fixes are applied", async ({ page }) => {
+  const fixtures = createQaAnalyticsFixtures();
+
+  await mockLocalSnapshot(page, fixtures);
+  await mockQaAnalyticsApi(page, fixtures);
+
+  await page.route("**/api/qa-analytics/local-ai", async (route) => {
+    const body = route.request().postDataJSON() as {
+      action: string;
+      provider?: string;
+      failures?: Array<{ testName: string }>;
+      analysisId?: string;
+    };
+
+    if (body.action === "analyze") {
+      const firstFailure = body.failures?.[0];
+      const analyses = [
+        {
+          id: "fix-test-1",
+          test_name: firstFailure?.testName || "Search by symbol finds the coin",
+          error_message: "Latest flaky selector broke again.",
+          created_at: "2026-05-25T10:05:00.000Z",
+          ai_summary: "Found a fragile selector in the failing test.",
+          suggested_fix: "Switch the test to a stable data-testid selector.",
+          severity: "high",
+          classification: "test_issue",
+          confidence: 96,
+          target_file: "tests/e2e/dashboard/search.spec.ts",
+          generated_patch: "diff --git a/tests/e2e/dashboard/search.spec.ts",
+        },
+      ];
+
+      await route.fulfill({
+        json: {
+          provider: body.provider,
+          skipped: [],
+          analyses,
+        },
+      });
+      return;
+    }
+
+    if (body.action === "apply") {
+      await route.fulfill({
+        json: {
+          branchName: "feature/source",
+          applyMode: "local",
+          committed: false,
+          filePath: "tests/e2e/dashboard/search.spec.ts",
+        },
+      });
+      return;
+    }
+
+    await route.fulfill({ json: { error: "Unsupported action." }, status: 400 });
+  });
+
+  await page.goto("/qa-analytics");
+
+  // Verify both failure cards are visible initially
+  await expect(page.getByTestId("failing-test-search-by-symbol-finds-the-coin")).toBeVisible();
+  await expect(page.getByTestId("failing-test-checkout-flow-completes-with-coupon")).toBeVisible();
+
+  // Select and analyze the first failure
+  await page.getByTestId("failure-checkbox-search-by-symbol-finds-the-coin").check();
+  await page.getByTestId("ai-analyze-all").click();
+
+  // Wait for analysis to appear
+  await expect(page.getByTestId("ai-analysis-card-fix-test-1")).toBeVisible();
+
+  // Apply the fix
+  await page.getByTestId("ai-apply-fix-test-1").click();
+
+  // Verify the analysis card is removed
+  await expect(page.getByTestId("ai-analysis-card-fix-test-1")).toBeHidden();
+
+  // Verify the corresponding failure card is also removed
+  await expect(page.getByTestId("failing-test-search-by-symbol-finds-the-coin")).toBeHidden();
+
+  // Verify the other failure card is still visible
+  await expect(page.getByTestId("failing-test-checkout-flow-completes-with-coupon")).toBeVisible();
+
+  // Verify success message appears
+  await expect(page.getByTestId("ai-status-message")).toContainText("successfully applied");
 });
 
 test("local qa analytics prompts to run Playwright when no local run is available", async ({
@@ -481,6 +571,33 @@ test("local qa analytics recovers from a stale background run and keeps run test
   try {
     await mockLocalSnapshot(page, fixtures);
     await mockQaAnalyticsApi(page, fixtures);
+
+    // Mock the run-tests endpoint to return the stale status
+    await page.route("**/api/qa-analytics/run-tests", async (route) => {
+      if (route.request().method() === "GET") {
+        await route.fulfill({
+          json: {
+            run: {
+              jobId: "stale-run",
+              mode: "mock",
+              status: "failed",
+              pid: null,
+              isStale: true,
+              progress: 100,
+              currentStep: null,
+              totalSteps: null,
+              currentTestLabel: null,
+              message: "Previous test run appears to have been interrupted. You can start a new run.",
+              finishedAt: new Date().toISOString(),
+              exitCode: null,
+            },
+          },
+        });
+        return;
+      }
+
+      await route.continue();
+    });
 
     await page.goto("/qa-analytics");
 
