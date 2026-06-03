@@ -40,7 +40,7 @@ function extractGroqText(payload: GroqChatCompletionResponse) {
 export function createGroqFailureAnalyzer(options: GroqFailureAnalyzerOptions) {
   const fetchImpl = options.fetchImpl ?? fetch;
   const apiKey = options.apiKey.trim();
-  const model = options.model?.trim() || "mixtral-8x7b-32768";
+  const model = options.model?.trim() || "llama-3.3-70b-versatile";
   const maxOutputTokens = options.maxOutputTokens ?? 1024;
 
   if (!apiKey) {
@@ -61,18 +61,17 @@ export function createGroqFailureAnalyzer(options: GroqFailureAnalyzerOptions) {
           model,
           temperature: 0.2,
           max_tokens: maxOutputTokens,
-          response_format: {
-            type: "json_schema",
-            json_schema: {
-              name: "playwright_failure_analysis",
-              strict: true,
-              schema: FAILURE_ANALYSIS_JSON_SCHEMA,
-            },
-          },
           messages: [
             {
               role: "system",
-              content: FAILURE_ANALYSIS_SYSTEM_PROMPT,
+              content: `${FAILURE_ANALYSIS_SYSTEM_PROMPT}
+
+You must return ONLY valid JSON.
+Do not include markdown fences.
+Do not include explanations outside the JSON.
+The response must match this JSON schema:
+
+${JSON.stringify(FAILURE_ANALYSIS_JSON_SCHEMA, null, 2)}`,
             },
             {
               role: "user",
@@ -85,7 +84,9 @@ export function createGroqFailureAnalyzer(options: GroqFailureAnalyzerOptions) {
       const payload = (await response.json()) as GroqChatCompletionResponse;
 
       if (!response.ok) {
-        throw new Error(payload.error?.message || `Groq request failed with status ${response.status}`);
+        throw new Error(
+          payload.error?.message || `Groq request failed with status ${response.status}`,
+        );
       }
 
       const content = extractGroqText(payload);
