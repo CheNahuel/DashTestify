@@ -298,6 +298,9 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
   const [actionStatus, setActionStatus] = useState<string | null>(null);
   const [busyAction, setBusyAction] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [promptDialogOpen, setPromptDialogOpen] = useState(false);
+  const [promptAnalysisId, setPromptAnalysisId] = useState<string | null>(null);
+  const [promptInput, setPromptInput] = useState("");
 
   const loadLocalSnapshot = useCallback(
     async (options?: { showLoading?: boolean; cacheBust?: boolean }) => {
@@ -645,6 +648,54 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
       setSelectedFailureIds(new Set());
     } catch (error) {
       setActionStatus(error instanceof Error ? error.message : "Applying the AI fix failed.");
+    }
+  }
+
+  function openPromptDialog(analysisId: string) {
+    setPromptAnalysisId(analysisId);
+    setPromptInput("");
+    setPromptDialogOpen(true);
+  }
+
+  async function submitPrompt() {
+    if (!promptAnalysisId || !promptInput.trim()) {
+      return;
+    }
+
+    const analysis = aiAnalysis.find((a) => a.id === promptAnalysisId);
+    if (!analysis) {
+      return;
+    }
+
+    setBusyAction("ai-action");
+    setActionStatus(null);
+
+    try {
+      const result = (await sendAiAction({
+        action: "refactor" as const,
+        analysisId: analysis.id,
+        baseFix: analysis.suggested_fix,
+        alternativeFix: analysis.suggested_fix,
+        userSuggestion: promptInput,
+        provider: selectedProvider,
+      })) as { analysis?: LocalAiAnalysis } | null;
+
+      const revisedAnalysis = result?.analysis;
+
+      if (revisedAnalysis) {
+        setAiAnalysis((current) => [revisedAnalysis, ...current]);
+        setActionStatus("New patch created from AI revision.");
+      }
+
+      setPromptDialogOpen(false);
+      setPromptInput("");
+      setPromptAnalysisId(null);
+    } catch (error) {
+      setActionStatus(
+        error instanceof Error ? error.message : "Prompting AI failed.",
+      );
+    } finally {
+      setBusyAction(null);
     }
   }
 
@@ -1342,6 +1393,15 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
                                     ? "Apply AI fix"
                                     : "Not actionable"}
                                 </Button>
+                                <Button
+                                  variant="outline"
+                                  data-testid={`ai-prompt-${primary.id}`}
+                                  className="shrink-0"
+                                  disabled={busyAction !== null}
+                                  onClick={() => openPromptDialog(primary.id)}
+                                >
+                                  {busyAction ? "Working..." : "Prompt AI"}
+                                </Button>
                               </div>
                             </div>
                           </article>
@@ -1373,6 +1433,53 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
           </>
         )}
       </div>
+
+      {promptDialogOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+          onClick={() => setPromptDialogOpen(false)}
+        >
+          <div
+            className="relative max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-3xl border border-white/10 bg-slate-950 p-6 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-4">
+              <h2 className="text-2xl font-semibold text-white">Rebuild patch with AI</h2>
+              <p className="mt-2 text-sm text-slate-400">
+                Describe how you'd like to modify the fix. For example: "Add this assertion",
+                "Use a different approach", or "Include error handling".
+              </p>
+            </div>
+
+            <textarea
+              data-testid="ai-prompt-input"
+              value={promptInput}
+              onChange={(e) => setPromptInput(e.target.value)}
+              placeholder="e.g., keep this fix but add an assertion for empty state, or instead of updating that way do this..."
+              className="w-full rounded-2xl border border-white/10 bg-slate-900/80 px-4 py-3 text-sm text-white placeholder-slate-500 outline-none transition focus:border-cyan-300/70 focus:ring-2 focus:ring-cyan-500/20"
+              rows={6}
+            />
+
+            <div className="mt-6 flex gap-3">
+              <Button
+                variant="secondary"
+                className="flex-1"
+                disabled={busyAction !== null}
+                onClick={() => setPromptDialogOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                className="flex-1"
+                disabled={!promptInput.trim() || busyAction !== null}
+                onClick={() => void submitPrompt()}
+              >
+                {busyAction ? "Processing..." : "Rebuild patch"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
