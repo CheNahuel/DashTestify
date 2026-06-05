@@ -538,7 +538,7 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
     }
 
     setCurrentInsightIndex(Math.floor(Math.random() * Math.max(1, insights.length)));
-  }, [latestRun?.id, insights.length]);
+  }, [latestRun, insights.length]);
 
   async function sendAiAction(payload: unknown) {
     setBusyAction("ai-action");
@@ -751,14 +751,6 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
   const aiPanelMuted = !isAnalysisAvailable;
   const showAiAnalysisSection = analysisRequested;
   const visibleAiAnalyses = collapseAiAnalyses(aiAnalysis);
-  const actionableAiAnalyses = visibleAiAnalyses
-    .map(({ primary }) => primary)
-    .filter(isActionableAnalysis);
-  const canApplyAll =
-    latestRun !== null &&
-    actionableAiAnalyses.length > 0 &&
-    busyAction === null &&
-    !isRunInProgress;
   const latestRunPassRate =
     latestRunSummary && latestRunSummary.total_tests > 0
       ? Math.round((latestRunSummary.passed / latestRunSummary.total_tests) * 1000) / 10
@@ -790,70 +782,6 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
     : [];
   const panelShellClass =
     "rounded-3xl border border-white/10 bg-slate-950/70 p-6 shadow-2xl shadow-cyan-950/10 backdrop-blur";
-
-  async function applyAllAnalysisFixes() {
-    if (latestRun === null) {
-      setActionStatus(
-        "No local run is available yet. Run Playwright locally to populate this view.",
-      );
-      return;
-    }
-
-    if (actionableAiAnalyses.length === 0) {
-      setActionStatus("No actionable fixes are available yet. Analyze one or more failures first.");
-      return;
-    }
-
-    setBusyAction("ai-action");
-    setActionStatus(null);
-
-    try {
-      const appliedFiles = new Set<string>();
-      const appliedIds = new Set<string>();
-      const appliedAnalyses: LocalAiAnalysis[] = [];
-
-      for (const analysis of actionableAiAnalyses) {
-        const result = (await sendAiAction({
-          action: "apply" as const,
-          analysisId: analysis.id,
-        })) as {
-          applyMode?: "local" | "branch";
-          branchName?: string;
-          filePath?: string;
-        } | null;
-
-        if (result?.filePath) {
-          appliedFiles.add(result.filePath);
-        }
-        appliedIds.add(analysis.id);
-        appliedAnalyses.push(analysis);
-      }
-
-      // Remove the applied analyses from the list (visual feedback that fixes were applied)
-      setAiAnalysis((current) => current.filter((analysis) => !appliedIds.has(analysis.id)));
-
-      // Also remove the corresponding failures from latestFailures
-      setLatestFailures((failures) =>
-        failures.filter(
-          (failure) =>
-            !appliedAnalyses.some(
-              (analysis) =>
-                failure.test_name === analysis.test_name &&
-                failure.error_message === analysis.error_message,
-            ),
-        ),
-      );
-
-      setActionStatus(
-        `${appliedAnalyses.length} fix${appliedAnalyses.length === 1 ? "" : "es"} successfully applied.`,
-      );
-      setSelectedFailureIds(new Set());
-    } catch (error) {
-      setActionStatus(error instanceof Error ? error.message : "Applying the AI fixes failed.");
-    } finally {
-      setBusyAction(null);
-    }
-  }
 
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.16),_transparent_40%),linear-gradient(180deg,_#020617_0%,_#0f172a_45%,_#111827_100%)] px-4 py-6 text-slate-100 sm:px-6 lg:px-8">
@@ -1596,8 +1524,8 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
             <div className="mb-4">
               <h2 className="text-2xl font-semibold text-white">Rebuild patch with AI</h2>
               <p className="mt-2 text-sm text-slate-400">
-                Describe how you'd like to modify the fix. For example: "Add this assertion", "Use a
-                different approach", or "Include error handling".
+                Describe how you&apos;d like to modify the fix. For example: &quot;Add this assertion&quot;, &quot;Use a
+                different approach&quot;, or &quot;Include error handling&quot;.
               </p>
             </div>
 

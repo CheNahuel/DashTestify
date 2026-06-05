@@ -17,7 +17,14 @@ type CachedFeed = {
 const CACHE_DURATION_MS = 1000 * 60 * 60; // 1 hour
 const feedCache = new Map<string, CachedFeed>();
 
-const FEED_SOURCES = [
+type FeedSource = {
+  url: string;
+  source: string;
+  categoryMap: Record<string, string>;
+  isJson: boolean;
+};
+
+const FEED_SOURCES: FeedSource[] = [
   {
     url: "https://dev.to/api/articles?tag=ai&per_page=10",
     source: "Dev.to (AI)",
@@ -189,7 +196,7 @@ export async function fetchAndCacheFeeds(): Promise<FeedItem[]> {
 
   const allItems: FeedItem[] = [];
 
-  for (const source of FEED_SOURCES as any[]) {
+  for (const source of FEED_SOURCES) {
     const content = await fetchFeed(source.url);
     if (content) {
       let items: FeedItem[] = [];
