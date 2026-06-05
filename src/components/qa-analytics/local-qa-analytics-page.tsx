@@ -265,6 +265,15 @@ type LocalSnapshot = {
   error?: string;
 };
 
+type QaInsight = {
+  id: string;
+  type: "tip" | "news";
+  title: string;
+  summary: string;
+  category: string;
+  link: string | null;
+};
+
 type QaAnalyticsRunMode = "mock" | "live";
 
 type QaAnalyticsRunState = {
@@ -301,6 +310,8 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
   const [promptDialogOpen, setPromptDialogOpen] = useState(false);
   const [promptAnalysisId, setPromptAnalysisId] = useState<string | null>(null);
   const [promptInput, setPromptInput] = useState("");
+  const [insights, setInsights] = useState<QaInsight[]>([]);
+  const [currentInsightIndex, setCurrentInsightIndex] = useState(0);
 
   const loadLocalSnapshot = useCallback(
     async (options?: { showLoading?: boolean; cacheBust?: boolean }) => {
@@ -451,8 +462,23 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
   useEffect(() => {
     mountedRef.current = true;
 
+    async function loadInsights() {
+      try {
+        const response = await fetch("/api/qa-insights");
+        if (response.ok) {
+          const data = (await response.json()) as { insights?: QaInsight[] };
+          if (data.insights && mountedRef.current) {
+            setInsights(data.insights.slice(0, 10));
+          }
+        }
+      } catch {
+        // Insights failed to load; that's ok, just show empty state
+      }
+    }
+
     void loadLocalSnapshot({ showLoading: true });
     void loadRunState();
+    void loadInsights();
 
     return () => {
       mountedRef.current = false;
@@ -493,6 +519,26 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
 
     void refreshLatestRunAfterCompletion(runState);
   }, [refreshLatestRunAfterCompletion, runState]);
+
+  useEffect(() => {
+    if (insights.length === 0) {
+      return;
+    }
+
+    const timer = window.setInterval(() => {
+      setCurrentInsightIndex((prev) => (prev + 1) % insights.length);
+    }, 6000);
+
+    return () => window.clearInterval(timer);
+  }, [insights.length]);
+
+  useEffect(() => {
+    if (!latestRun) {
+      return;
+    }
+
+    setCurrentInsightIndex(Math.floor(Math.random() * Math.max(1, insights.length)));
+  }, [latestRun?.id, insights.length]);
 
   async function sendAiAction(payload: unknown) {
     setBusyAction("ai-action");
@@ -691,9 +737,7 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
       setPromptInput("");
       setPromptAnalysisId(null);
     } catch (error) {
-      setActionStatus(
-        error instanceof Error ? error.message : "Prompting AI failed.",
-      );
+      setActionStatus(error instanceof Error ? error.message : "Prompting AI failed.");
     } finally {
       setBusyAction(null);
     }
@@ -800,7 +844,9 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
         ),
       );
 
-      setActionStatus(`${appliedAnalyses.length} fix${appliedAnalyses.length === 1 ? "" : "es"} successfully applied.`);
+      setActionStatus(
+        `${appliedAnalyses.length} fix${appliedAnalyses.length === 1 ? "" : "es"} successfully applied.`,
+      );
       setSelectedFailureIds(new Set());
     } catch (error) {
       setActionStatus(error instanceof Error ? error.message : "Applying the AI fixes failed.");
@@ -890,6 +936,73 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
                     </a>
                   </div>
                 )}
+
+                {localRunMissing && insights.length > 0 && (
+                  <div className="mt-6">
+                    <div
+                      key={insights[currentInsightIndex]?.id}
+                      className="relative min-h-[220px] overflow-hidden rounded-3xl border border-cyan-300/20 bg-gradient-to-br from-cyan-400/10 to-blue-500/5 p-6 shadow-lg transition-opacity duration-500"
+                      data-testid={`qa-insight-card-${insights[currentInsightIndex]?.id}`}
+                    >
+                      <div className="space-y-4">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1">
+                            <div className="mb-2 inline-block rounded-full bg-cyan-400/20 px-3 py-1">
+                              <p className="text-xs font-semibold uppercase tracking-[0.15em] text-cyan-300">
+                                {insights[currentInsightIndex]?.category}
+                              </p>
+                            </div>
+                            {insights[currentInsightIndex]?.type === "news" && (
+                              <div className="ml-2 inline-block">
+                                <span className="inline-flex items-center rounded-full bg-amber-400/20 px-2 py-1 text-xs font-semibold text-amber-200">
+                                  📰 News
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        <div>
+                          <h3 className="text-xl font-bold leading-tight text-white sm:text-2xl">
+                            {insights[currentInsightIndex]?.title}
+                          </h3>
+                          <p className="mt-4 text-sm leading-6 text-slate-300">
+                            {insights[currentInsightIndex]?.summary}
+                          </p>
+                        </div>
+
+                        {insights[currentInsightIndex]?.link && (
+                          <div className="pt-2">
+                            <a
+                              href={insights[currentInsightIndex]?.link || ""}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex items-center gap-1 text-sm font-semibold text-cyan-300 transition-colors hover:text-cyan-200"
+                            >
+                              Read more →
+                            </a>
+                          </div>
+                        )}
+
+                        <div className="flex gap-1 pt-2">
+                          {insights.map((_, index) => (
+                            <button
+                              key={index}
+                              onClick={() => setCurrentInsightIndex(index)}
+                              className={`h-1 rounded-full transition-all ${
+                                index === currentInsightIndex
+                                  ? "w-6 bg-cyan-400"
+                                  : "w-1.5 bg-slate-600 hover:bg-slate-500"
+                              }`}
+                              data-testid={`insight-nav-${index}`}
+                              type="button"
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </section>
 
               <section
@@ -911,6 +1024,7 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
                   <div className="grid gap-2 sm:grid-cols-2">
                     {runModeOptions.map((option) => {
                       const isSelected = selectedRunMode === option.value;
+                      const isDisabled = runState?.status === "running";
 
                       return (
                         <button
@@ -918,23 +1032,34 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
                           type="button"
                           data-testid={`run-mode-${option.value}`}
                           aria-pressed={isSelected}
+                          disabled={isDisabled}
                           className={[
                             "flex min-w-0 flex-col rounded-2xl border px-4 py-3 text-left transition-all",
-                            isSelected
-                              ? "border-emerald-300/40 bg-emerald-400/10 shadow-[0_0_0_1px_rgba(16,185,129,0.14)]"
-                              : "border-white/10 bg-slate-950/50 hover:border-white/20 hover:bg-slate-900/80",
+                            isDisabled
+                              ? "border-slate-600/30 bg-slate-950/30 opacity-50 cursor-not-allowed"
+                              : isSelected
+                                ? "border-emerald-300/40 bg-emerald-400/10 shadow-[0_0_0_1px_rgba(16,185,129,0.14)]"
+                                : "border-white/10 bg-slate-950/50 hover:border-white/20 hover:bg-slate-900/80",
                           ]
                             .filter(Boolean)
                             .join(" ")}
-                          onClick={() => setSelectedRunMode(option.value)}
+                          onClick={() => !isDisabled && setSelectedRunMode(option.value)}
                         >
                           <span
-                            className={`text-sm font-semibold ${isSelected ? "text-emerald-100" : "text-slate-100"}`}
+                            className={`text-sm font-semibold ${
+                              isDisabled ? "text-slate-500" : isSelected ? "text-emerald-100" : "text-slate-100"
+                            }`}
                           >
                             {option.label}
                           </span>
                           <span
-                            className={`mt-1 text-xs leading-5 ${isSelected ? "text-emerald-100/75" : "text-slate-400"}`}
+                            className={`mt-1 text-xs leading-5 ${
+                              isDisabled
+                                ? "text-slate-600"
+                                : isSelected
+                                  ? "text-emerald-100/75"
+                                  : "text-slate-400"
+                            }`}
                           >
                             {option.description}
                           </span>
@@ -1005,7 +1130,9 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
                         className={`mt-3 rounded-2xl px-4 py-3 text-sm ${
                           runState.status === "success"
                             ? "border border-emerald-300/20 bg-emerald-400/10 text-emerald-100"
-                            : runState.status === "failed" && !runState.isStale && (latestRunSummary?.failed ?? 0) === 0
+                            : runState.status === "failed" &&
+                                !runState.isStale &&
+                                (latestRunSummary?.failed ?? 0) === 0
                               ? "border border-emerald-300/20 bg-emerald-400/10 text-emerald-100"
                               : runState.status === "failed"
                                 ? "border border-rose-300/20 bg-rose-400/10 text-rose-100"
@@ -1052,7 +1179,9 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
 
             {!localRunMissing && (latestRunSummary || isRunInProgress) ? (
               (latestRunSummary && latestRunSummary.failed > 0) || isRunInProgress ? (
-                <section className={`grid gap-6 xl:grid-cols-2 ${isRunInProgress ? "opacity-60 grayscale" : ""}`}>
+                <section
+                  className={`grid gap-6 xl:grid-cols-2 ${isRunInProgress ? "opacity-60 grayscale" : ""}`}
+                >
                   <div className={panelShellClass}>
                     <div className="mb-6 flex items-start justify-between gap-4">
                       <div>
@@ -1242,8 +1371,8 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
                             ? "Working..."
                             : `Analyze selected failures${selectedFailureIds.size > 0 ? ` (${selectedFailureIds.size})` : ""}`}
                         </Button>
-
-                        <Button
+                       {/*  Disable for now. Applying fixes in bulk without individual review is risky.
+                       <Button
                           variant="secondary"
                           data-testid="ai-apply-all"
                           className={`w-full sm:w-auto ${busyAction ? "invisible" : ""}`}
@@ -1251,7 +1380,8 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
                           onClick={() => void applyAllAnalysisFixes()}
                         >
                           {busyAction ? "Apply fix to all" : "Apply fix to all"}
-                        </Button>
+                        </Button> 
+                        */}
 
                         <p className="text-xs leading-5 text-slate-400">
                           {isRunInProgress
@@ -1385,7 +1515,12 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
                                 <Button
                                   variant="secondary"
                                   data-testid={`ai-apply-${primary.id}`}
-                                  className="shrink-0"
+                                  className="
+                                    bg-emerald-500/15
+                                    border border-emerald-500/30
+                                    text-emerald-200
+                                    hover:bg-emerald-500/25
+                                      "
                                   disabled={!isActionableAnalysis(primary) || busyAction !== null}
                                   onClick={() => void applyAnalysisFix(primary.id)}
                                 >
@@ -1394,13 +1529,27 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
                                     : "Not actionable"}
                                 </Button>
                                 <Button
-                                  variant="outline"
                                   data-testid={`ai-prompt-${primary.id}`}
-                                  className="shrink-0"
                                   disabled={busyAction !== null}
                                   onClick={() => openPromptDialog(primary.id)}
+                                  className="
+                                    shrink-0
+                                    border-0
+                                    bg-gradient-to-r
+                                    from-fuchsia-500
+                                    via-violet-500
+                                    to-cyan-500
+                                    text-white
+                                    font-semibold
+                                    shadow-lg
+                                    shadow-violet-500/30
+                                    hover:scale-105
+                                    hover:shadow-xl
+                                    hover:shadow-violet-500/50
+                                    transition-all
+                                  "
                                 >
-                                  {busyAction ? "Working..." : "Prompt AI"}
+                                  {busyAction ? "🧠 Thinking..." : "💬 Ask AI"}
                                 </Button>
                               </div>
                             </div>
@@ -1425,7 +1574,8 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
                 >
                   <h2 className="text-2xl font-semibold text-emerald-100">All tests passed</h2>
                   <p className="mt-3 max-w-2xl text-sm text-emerald-50/80">
-                    No failures to analyze. Run the test suite again to get results that the AI can help diagnose and fix.
+                    No failures to analyze. Run the test suite again to get results that the AI can
+                    help diagnose and fix.
                   </p>
                 </section>
               )
@@ -1446,8 +1596,8 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
             <div className="mb-4">
               <h2 className="text-2xl font-semibold text-white">Rebuild patch with AI</h2>
               <p className="mt-2 text-sm text-slate-400">
-                Describe how you'd like to modify the fix. For example: "Add this assertion",
-                "Use a different approach", or "Include error handling".
+                Describe how you'd like to modify the fix. For example: "Add this assertion", "Use a
+                different approach", or "Include error handling".
               </p>
             </div>
 
