@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { fetchAndCacheFeeds, type FeedItem } from "@/lib/feed-aggregator";
+import { fetchAndCacheFeeds } from "@/lib/feed-aggregator";
 
 export const runtime = "nodejs";
 

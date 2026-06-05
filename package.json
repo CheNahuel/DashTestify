@@ -11,6 +11,7 @@
     "test:e2e:live": "playwright test",
     "test:e2e:ui": "COINCAP_API_KEY= playwright test --ui",
     "test:e2e:report": "playwright show-report",
+    "setup:db": "tsx scripts/setup-db.ts",
     "upload:test-results": "tsx scripts/upload-results.ts",
     "analyze:failures": "tsx scripts/analyze-failures.ts",
     "lint": "npm run typecheck && eslint .",
