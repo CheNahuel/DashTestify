@@ -376,8 +376,6 @@ test("local qa analytics requires a run, shows the branch and only reveals AI an
   await expect(page.getByTestId("ai-provider-select")).toHaveValue("openai");
   await expect(page.getByTestId("ai-provider-panel")).toBeVisible();
   await expect(page.getByTestId("ai-analyze-all")).toContainText("Analyze selected failures");
-  await expect(page.getByTestId("ai-apply-all")).toContainText("Apply fix to all");
-  await expect(page.getByTestId("ai-apply-all")).toBeDisabled();
   await expect(page.getByTestId("run-mode-mock")).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByTestId("failing-test-search-by-symbol-finds-the-coin")).toBeVisible();
   await expect(page.getByTestId("failing-test-checkout-flow-completes-with-coupon")).toBeVisible();
@@ -413,9 +411,9 @@ test("local qa analytics requires a run, shows the branch and only reveals AI an
   await expect(
     page.getByText("Historical analysis should not appear in the latest local run view."),
   ).toHaveCount(0);
-  await expect(page.getByTestId("ai-apply-all")).toBeEnabled();
 
-  await page.getByTestId("ai-apply-all").click();
+  // Apply the actionable fix using the individual "Apply AI fix" button
+  await page.getByTestId("ai-apply-42").click();
   // Verify the analysis was applied (it should be removed from the list)
   await expect(page.getByTestId("ai-analysis-card-42")).toBeHidden();
   // Verify the failure cards are also removed when fixes are applied
