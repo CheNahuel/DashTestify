@@ -22,11 +22,14 @@ type AiFailureInput = {
 };
 
 type AnalyzeRequestBody = {
-  action?: "analyze" | "apply";
+  action?: "analyze" | "apply" | "refactor";
   provider?: string;
   failures?: AiFailureInput[];
   failure?: AiFailureInput;
   analysisId?: string | number;
+  baseFix?: string;
+  alternativeFix?: string;
+  userSuggestion?: string;
 };
 
 const repoRoot = process.cwd();
@@ -233,6 +236,92 @@ export async function POST(request: Request) {
         analysisId: analysis.id,
         filePath,
       });
+    }
+
+    if (body.action === "refactor") {
+      const supabase = getSupabaseClient();
+      if (!body.analysisId) {
+        return NextResponse.json({ error: "Missing analysisId." }, { status: 400 });
+      }
+
+      if (!body.baseFix) {
+        return NextResponse.json(
+          { error: "Missing baseFix." },
+          { status: 400 },
+        );
+      }
+
+      const baseAnalysis = supabase
+        ? await supabase
+            .from("ai_analysis")
+            .select("*")
+            .eq("id", body.analysisId)
+            .maybeSingle()
+            .then(({ data, error }) => {
+              if (error) {
+                throw new Error(error.message);
+              }
+
+              return data;
+            })
+        : await loadLocalAnalysisById(body.analysisId);
+
+      if (!baseAnalysis) {
+        return NextResponse.json({ error: "Base analysis not found." }, { status: 404 });
+      }
+
+      const provider = parseAiProviderName(body.provider);
+      const analyzer = createAiProvider(provider);
+
+      const userDirection = body.userSuggestion
+        ? `\n\nUser suggestion for improvement: ${body.userSuggestion}`
+        : "";
+
+      const sourceContext = await readSourceFileContext(repoRoot, baseAnalysis.suite);
+      const refactoredAnalysis = await analyzer.analyzeFailure({
+        testName: baseAnalysis.test_name,
+        errorMessage: `${baseAnalysis.error_message || ""}\n\nCurrent fix:\n${body.baseFix}${userDirection}`,
+        suite: baseAnalysis.suite,
+        runId: baseAnalysis.run_id,
+        sourceFilePath: sourceContext?.path,
+        sourceFileContent: sourceContext?.content,
+        sourceFileTruncated: sourceContext?.truncated,
+      });
+
+      const refactoredResult = {
+        id:
+          globalThis.crypto?.randomUUID?.() ||
+          `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+        provider,
+        run_id: baseAnalysis.run_id,
+        test_name: baseAnalysis.test_name,
+        error_message: baseAnalysis.error_message,
+        created_at: new Date().toISOString(),
+        ai_summary: refactoredAnalysis.summary,
+        suggested_fix: refactoredAnalysis.suggested_fix,
+        severity: refactoredAnalysis.severity,
+        classification: refactoredAnalysis.classification,
+        confidence: refactoredAnalysis.confidence,
+        target_file: refactoredAnalysis.target_file,
+        generated_patch: refactoredAnalysis.generated_patch,
+      };
+
+      if (supabase) {
+        const { data: inserted, error } = await supabase
+          .from("ai_analysis")
+          .insert(refactoredResult)
+          .select("*")
+          .single();
+
+        if (error) {
+          return NextResponse.json({ error: error.message }, { status: 500 });
+        }
+
+        return NextResponse.json({ analysis: inserted });
+      }
+
+      await appendLocalAnalyses([refactoredResult]);
+      return NextResponse.json({ analysis: refactoredResult });
     }
 
     return NextResponse.json({ error: "Unsupported action." }, { status: 400 });
