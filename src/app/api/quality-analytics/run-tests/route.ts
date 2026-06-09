@@ -1,11 +1,10 @@
 import { NextResponse } from "next/server";
 
 import {
-  abortQaAnalyticsRun,
   readQaAnalyticsRunState,
   startQaAnalyticsRun,
   type QaAnalyticsRunMode,
-} from "@/lib/qa-analytics/run-tests";
+} from "@/lib/quality-analytics/run-tests";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -21,11 +20,14 @@ function parseMode(value: unknown): QaAnalyticsRunMode | null {
 export async function GET() {
   const state = await readQaAnalyticsRunState();
 
-  return NextResponse.json({ run: state }, {
-    headers: {
-      "Cache-Control": "no-store, max-age=0",
+  return NextResponse.json(
+    { run: state },
+    {
+      headers: {
+        "Cache-Control": "no-store, max-age=0",
+      },
     },
-  });
+  );
 }
 
 export async function POST(request: Request) {
@@ -54,11 +56,14 @@ export async function POST(request: Request) {
       );
     }
 
-    return NextResponse.json({ run: result.state }, {
-      headers: {
-        "Cache-Control": "no-store, max-age=0",
+    return NextResponse.json(
+      { run: result.state },
+      {
+        headers: {
+          "Cache-Control": "no-store, max-age=0",
+        },
       },
-    });
+    );
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Unable to start the test run." },
@@ -68,21 +73,5 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE() {
-  try {
-    const result = await abortQaAnalyticsRun();
-
-    return NextResponse.json(
-      { aborted: result.aborted },
-      {
-        headers: {
-          "Cache-Control": "no-store, max-age=0",
-        },
-      },
-    );
-  } catch (error) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Unable to stop the test run." },
-      { status: 500 },
-    );
-  }
+  return NextResponse.json({ error: "Stop functionality is disabled." }, { status: 405 });
 }

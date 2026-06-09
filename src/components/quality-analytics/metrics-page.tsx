@@ -4,10 +4,9 @@ import { useEffect, useMemo, useState } from "react";
 import type { TooltipProps } from "recharts";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
-import { BranchHealthWidget } from "@/components/qa-analytics/branch-health-widget";
-import { FlakyTestsWidget } from "@/components/qa-analytics/flaky-tests-widget";
-import { TopFailuresWidget } from "@/components/qa-analytics/top-failures-widget";
-import { Badge } from "@/components/ui/badge";
+import { BranchHealthWidget } from "@/components/quality-analytics/branch-health-widget";
+import { FlakyTestsWidget } from "@/components/quality-analytics/flaky-tests-widget";
+import { TopFailuresWidget } from "@/components/quality-analytics/top-failures-widget";
 import { getSupabaseClient } from "@/lib/supabase";
 
 type TestRun = {
@@ -31,6 +30,7 @@ type TestTrendsResponse = {
   data?: TrendPoint[];
   error?: string;
 };
+
 
 const trendTooltipFormatter: NonNullable<TooltipProps["formatter"]> = (value, name) => {
   if (name === "pass_rate" && typeof value === "number") {
@@ -59,7 +59,7 @@ function formatDateOnly(value: string) {
   }).format(new Date(value));
 }
 
-export function LiveQaAnalyticsPage() {
+export function MetricsPage() {
   const [runs, setRuns] = useState<TestRun[]>([]);
   const [trendData, setTrendData] = useState<TrendPoint[]>([]);
 
@@ -85,7 +85,7 @@ export function LiveQaAnalyticsPage() {
 
     async function loadTrends() {
       try {
-        const response = await fetch("/api/qa-analytics/test-trends?days=30");
+        const response = await fetch("/api/quality-analytics/test-trends?days=30");
         const payload = (await response.json()) as TestTrendsResponse;
 
         if (!response.ok) {
@@ -131,11 +131,11 @@ export function LiveQaAnalyticsPage() {
       <div className="mx-auto flex max-w-7xl flex-col gap-6">
         <header className="rounded-3xl border border-white/10 bg-slate-950/70 p-6 shadow-2xl shadow-cyan-950/20 backdrop-blur">
           <div className="space-y-3">
-            <p className="text-xs uppercase tracking-[0.35em] text-cyan-300">QA Analytics Live</p>
+            <p className="text-xs uppercase tracking-[0.35em] text-cyan-300">Quality Analytics</p>
+            <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">Metrics overview</h1>
             <div>
-              <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">Metrics overview</h1>
               <p className="mt-3 max-w-2xl text-sm text-slate-300 sm:text-base">
-                Live metrics only. This page shows the aggregate health of test runs and the historical trend chart.
+                Metrics and analytics across all test runs. View trends, failures, and branch health.
               </p>
             </div>
           </div>
@@ -210,11 +210,6 @@ export function LiveQaAnalyticsPage() {
           <FlakyTestsWidget />
           <BranchHealthWidget />
         </section>
-
-        <div className="flex items-center gap-2 rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-sm text-slate-300">
-          <Badge variant="secondary">Live</Badge>
-          AI provider, latest run failures, AI analysis, and run detail cards are intentionally hidden here.
-        </div>
       </div>
     </main>
   );

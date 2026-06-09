@@ -10,7 +10,7 @@ import type {
   LatestLocalFailure,
   LocalAiAnalysis,
   LocalTestRun,
-} from "@/components/qa-analytics/types";
+} from "@/components/quality-analytics/types";
 
 const providerOptions: Array<{
   value: AiProvider;
@@ -56,13 +56,13 @@ const runModeOptions: Array<{
 }> = [
   {
     value: "mock",
-    label: "Mock Mode",
-    description: "Fast tests with mocked API data (recommended)",
+    label: "Mock Data",
+    description: "Fast deterministic run (recommended)",
   },
   {
     value: "live",
-    label: "Live Mode",
-    description: "Integration tests against live CoinCap API",
+    label: "Live Data",
+    description: "Integration run against CoinCap",
   },
 ];
 
@@ -110,30 +110,38 @@ function isActionableAnalysis(analysis: LocalAiAnalysis) {
 }
 
 function getRunStatusMessage(
-  runState: QaAnalyticsRunState,
+  runState: QaAnalyticsRunState | null,
   latestRunSummary: LocalRunSummary | null,
 ) {
+  if (!runState) {
+    return "No execution started yet";
+  }
+
   if (runState.isStale) {
     return runState.message;
   }
 
   if (runState.status === "success") {
-    return "Report success. Latest results refreshed.";
+    return "Last run completed successfully";
   }
 
   if (runState.status === "failed") {
     const failedCount = latestRunSummary?.failed;
 
     if (typeof failedCount === "number" && failedCount === 0) {
-      return "Tests completed. Latest results refreshed.";
+      return "Last run completed";
     }
 
     return typeof failedCount === "number"
-      ? `Report failed (${failedCount} failures). Latest results refreshed.`
-      : "Report failed. Latest results refreshed.";
+      ? `Last run failed (${failedCount} failures)`
+      : "Last run failed";
   }
 
-  return runState.message;
+  if (runState.status === "running") {
+    return "Playwright run in progress";
+  }
+
+  return "No execution started yet";
 }
 
 function toTimestamp(value: string | null | undefined) {
@@ -243,7 +251,7 @@ function collapseAiAnalyses(analyses: LocalAiAnalysis[]) {
     });
 }
 
-type LocalQaAnalyticsPageProps = {
+type AiFailureAnalysisPageProps = {
   currentBranch: string;
 };
 
@@ -290,7 +298,7 @@ type QaAnalyticsRunState = {
   isStale?: boolean;
 };
 
-export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProps) {
+export function AiFailureAnalysisPage({ currentBranch }: AiFailureAnalysisPageProps) {
   const mountedRef = useRef(true);
   const refreshedJobIdRef = useRef<string | null>(null);
   const abortRequestedRef = useRef(false);
@@ -324,7 +332,7 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
 
       try {
         const response = await fetch(
-          `/api/qa-analytics/local-snapshot${cacheBust ? `?t=${Date.now()}` : ""}`,
+          `/api/quality-analytics/local-snapshot${cacheBust ? `?t=${Date.now()}` : ""}`,
           {
             cache: "no-store",
           },
@@ -370,7 +378,7 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
 
   async function loadRunState() {
     try {
-      const response = await fetch("/api/qa-analytics/run-tests");
+      const response = await fetch("/api/quality-analytics/run-tests");
       const data = (await response.json()) as { run: QaAnalyticsRunState | null };
 
       if (!response.ok) {
@@ -395,23 +403,7 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
     }
   }
 
-  async function requestRunAbort() {
-    if (abortRequestedRef.current) {
-      return;
-    }
-
-    abortRequestedRef.current = true;
-
-    try {
-      await fetch("/api/qa-analytics/run-tests", {
-        method: "DELETE",
-        cache: "no-store",
-        keepalive: true,
-      });
-    } catch {
-      // Best effort only.
-    }
-  }
+  // Stop functionality removed: runs are start-only from the UI.
 
   const refreshLatestRunAfterCompletion = useCallback(
     async (run: QaAnalyticsRunState) => {
@@ -477,7 +469,20 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
     }
 
     void loadLocalSnapshot({ showLoading: true });
-    void loadRunState();
+
+    // Load run state and ensure we recover after page refresh
+    async function loadInitialRunState() {
+      await loadRunState();
+
+      // If a run was in progress but we don't see it after refresh, poll briefly to ensure state is recovered
+      setTimeout(() => {
+        if (mountedRef.current) {
+          void loadRunState();
+        }
+      }, 500);
+    }
+
+    void loadInitialRunState();
     void loadInsights();
 
     return () => {
@@ -490,21 +495,19 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
       return undefined;
     }
 
-    const handleLifecycleEvent = () => {
-      void requestRunAbort();
-    };
-
-    window.addEventListener("beforeunload", handleLifecycleEvent);
-    window.addEventListener("pagehide", handleLifecycleEvent);
-
-    const timer = window.setInterval(() => {
+    // Poll for run state updates while running
+    const runStateTimer = window.setInterval(() => {
       void loadRunState();
     }, 1500);
 
+    // Also poll for test snapshot updates while running to show specs immediately
+    const snapshotTimer = window.setInterval(() => {
+      void loadLocalSnapshot({ cacheBust: true });
+    }, 2000);
+
     return () => {
-      window.clearInterval(timer);
-      window.removeEventListener("beforeunload", handleLifecycleEvent);
-      window.removeEventListener("pagehide", handleLifecycleEvent);
+      window.clearInterval(runStateTimer);
+      window.clearInterval(snapshotTimer);
     };
   }, [runState?.status]);
 
@@ -545,7 +548,7 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
     setActionStatus(null);
 
     try {
-      const response = await fetch("/api/qa-analytics/local-ai", {
+      const response = await fetch("/api/quality-analytics/local-ai", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -588,7 +591,7 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
     setActionStatus(null);
 
     try {
-      const response = await fetch("/api/qa-analytics/run-tests", {
+      const response = await fetch("/api/quality-analytics/run-tests", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -786,294 +789,280 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.16),_transparent_40%),linear-gradient(180deg,_#020617_0%,_#0f172a_45%,_#111827_100%)] px-4 py-6 text-slate-100 sm:px-6 lg:px-8">
       <div className="mx-auto flex max-w-6xl flex-col gap-6">
+        <header>
+          <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">AI Failure Analysis</h1>
+          <p className="mt-2 max-w-2xl text-sm text-slate-300 sm:text-base">
+            Analyze Playwright failures, identify root causes, and generate AI-powered fixes.
+          </p>
+        </header>
+
         {isLoading ? (
           <section className="rounded-3xl border border-white/10 bg-slate-950/70 p-6 shadow-2xl shadow-cyan-950/10">
-            <h2 className="text-2xl font-semibold text-slate-100">Loading latest local run</h2>
+            <h2 className="text-2xl font-semibold text-slate-100">Loading latest results</h2>
             <p className="mt-3 max-w-2xl text-sm text-slate-300">
-              Reading the latest Playwright results from test-results/results.json.
+              Reading the latest test results from test-results/results.json.
             </p>
           </section>
         ) : (
           <>
-            <header className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
-              <section className={panelShellClass}>
-                <div className="flex flex-wrap items-start justify-between gap-4">
-                  <div className="space-y-3">
-                    <p className="text-xs uppercase tracking-[0.35em] text-cyan-300">
-                      QA Analytics Local
+            {/* Run Controls - Merged with Execution Status */}
+            <section
+              className={`${panelShellClass} flex min-w-0 flex-col gap-3`}
+              data-testid="run-controls-panel"
+            >
+              <div>
+                <p className="text-xs uppercase tracking-[0.28em] text-cyan-300/90 mb-2">
+                  Run Controls
+                </p>
+                <p className="text-sm text-slate-300 sm:text-base">
+                  Choose data source and launch Playwright.
+                </p>
+              </div>
+
+              {/* Mode Selection */}
+              <div className="grid gap-2 sm:grid-cols-2">
+                {runModeOptions.map((option) => {
+                  const isSelected = selectedRunMode === option.value;
+                  const isDisabled = runState?.status === "running";
+
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      data-testid={`run-mode-${option.value}`}
+                      aria-pressed={isSelected}
+                      disabled={isDisabled}
+                      className={[
+                        "flex min-w-0 flex-col rounded-2xl border px-3 py-2.5 text-left transition-all",
+                        isDisabled
+                          ? "border-slate-600/30 bg-slate-950/30 opacity-50 cursor-not-allowed"
+                          : isSelected
+                            ? "border-emerald-300/40 bg-emerald-400/10 shadow-[0_0_0_1px_rgba(16,185,129,0.14)]"
+                            : "border-white/10 bg-slate-950/50 hover:border-white/20 hover:bg-slate-900/80",
+                      ]
+                        .filter(Boolean)
+                        .join(" ")}
+                      onClick={() => !isDisabled && setSelectedRunMode(option.value)}
+                    >
+                      <span
+                        className={`text-sm font-semibold ${
+                          isDisabled
+                            ? "text-slate-500"
+                            : isSelected
+                              ? "text-emerald-100"
+                              : "text-slate-100"
+                        }`}
+                      >
+                        {option.label}
+                      </span>
+                      <span
+                        className={`mt-0.5 text-xs leading-4 ${
+                          isDisabled
+                            ? "text-slate-600"
+                            : isSelected
+                              ? "text-emerald-100/75"
+                              : "text-slate-400"
+                        }`}
+                      >
+                        {option.description}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Execution State - Inline */}
+              {(isStartingRun || runState?.status !== "idle") && (
+                <div className="space-y-2 rounded-2xl border border-white/10 bg-slate-950/50 px-3 py-2.5">
+                  {isStartingRun ? (
+                    <p className="text-xs uppercase tracking-[0.2em] text-slate-400">
+                      Starting tests...
                     </p>
-                    {localRunMissing ? (
-                      <>
-                        <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">
-                          No local runs yet
-                        </h1>
-                        <p className="max-w-2xl text-sm text-slate-300 sm:text-base">
-                          Run Playwright locally to generate a test execution for analysis.
-                        </p>
-                      </>
-                    ) : (
-                      <>
-                        <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">
-                          Latest local run
-                        </h1>
-                        <p className="max-w-2xl text-sm text-slate-300 sm:text-base">
-                          This view is focused on the newest local Playwright run only. It does not
-                          use historical runs for the main dashboard.
-                        </p>
-                      </>
-                    )}
-                  </div>
+                  ) : runState?.status === "running" ? (
+                    <>
+                      <Progress value={runState.progress || 8} />
+                      <p className="text-xs uppercase tracking-[0.2em] text-slate-400 mt-2">
+                        {runState.currentTestLabel
+                          ? `Now running: ${runState.currentTestLabel}`
+                          : "Loading tests..."}
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        {runState.currentStep && runState.totalSteps
+                          ? `Progress ${runState.currentStep}/${runState.totalSteps}`
+                          : ""}
+                      </p>
+                    </>
+                  ) : (
+                    <p
+                      className={`text-xs font-medium ${
+                        runState?.status === "success"
+                          ? "text-emerald-100"
+                          : runState?.status === "failed" &&
+                              !runState?.isStale &&
+                              (latestRunSummary?.failed ?? 0) === 0
+                            ? "text-emerald-100"
+                            : "text-rose-100"
+                      }`}
+                      data-testid="run-status-message"
+                    >
+                      {getRunStatusMessage(runState, latestRunSummary)}
+                      {runState?.finishedAt && (
+                        <span className="block text-slate-400 mt-1">
+                          {formatShortDate(runState.finishedAt)}
+                        </span>
+                      )}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Run Button */}
+              <Button
+                data-testid="run-tests-button"
+                className="min-h-[48px] w-full"
+                disabled={isStartingRun || runState?.status === "running"}
+                onClick={() => void startTestRun(selectedRunMode)}
+              >
+                {isStartingRun || runState?.status === "running"
+                  ? `Running tests...`
+                  : "Run tests"}
+              </Button>
+            </section>
+
+            {/* Latest Run - Compact */}
+            {!localRunMissing && latestRun && (
+              <section className={panelShellClass}>
+                <p className="text-xs uppercase tracking-[0.28em] text-slate-500 mb-3">
+                  Latest Run
+                </p>
+                <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4 mb-3">
+                  {heroMetadata.map((item) => (
+                    <div
+                      key={item.label}
+                      data-testid={`hero-metadata-${normalizeTestId(item.label, "meta")}`}
+                      className="rounded-2xl border border-white/10 bg-white/5 px-3 py-2"
+                    >
+                      <p className="text-xs uppercase tracking-[0.15em] text-slate-500">
+                        {item.label}
+                      </p>
+                      <p className="mt-1 break-words text-sm font-medium text-slate-100">
+                        {item.value}
+                      </p>
+                    </div>
+                  ))}
                 </div>
 
-                {!localRunMissing && latestRun && (
-                  <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                    {heroMetadata.map((item) => (
-                      <div
-                        key={item.label}
-                        data-testid={`hero-metadata-${normalizeTestId(item.label, "meta")}`}
-                        className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3"
+                {latestRunSummary && (
+                  <div
+                    className={`flex items-start justify-between gap-3 rounded-2xl border px-3 py-2 ${
+                      latestRunSummary.failed > 0
+                        ? "border-rose-300/20 bg-rose-400/10"
+                        : "border-emerald-300/20 bg-emerald-400/10"
+                    }`}
+                  >
+                    <p
+                      className={`text-sm font-medium ${
+                        latestRunSummary.failed > 0 ? "text-rose-100" : "text-emerald-100"
+                      }`}
+                    >
+                      {latestRunSummary.failed > 0
+                        ? "Failures detected. AI-powered analysis and fix suggestions are available below."
+                        : "All tests passed. No issues were detected."}
+                    </p>
+                    {latestRunSummary?.report_path && (
+                      <a
+                        href={latestRunSummary.report_path}
+                        target="_blank"
+                        rel="noreferrer"
+                        className={`inline-flex items-center justify-center shrink-0 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors whitespace-nowrap ${
+                          latestRunSummary.failed > 0
+                            ? "border-rose-300/30 bg-rose-400/10 text-rose-100 hover:bg-rose-400/15"
+                            : "border-emerald-300/30 bg-emerald-400/10 text-emerald-100 hover:bg-emerald-400/15"
+                        }`}
                       >
-                        <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
-                          {item.label}
-                        </p>
-                        <p className="mt-2 break-words text-sm font-medium text-slate-100">
-                          {item.value}
-                        </p>
-                      </div>
-                    ))}
+                        View report
+                      </a>
+                    )}
                   </div>
                 )}
+              </section>
+            )}
 
-                {!localRunMissing && latestRunSummary && (
-                  <p className="mt-6 rounded-2xl border border-cyan-300/15 bg-cyan-300/10 px-4 py-3 text-sm text-cyan-100">
-                    {latestRunSummary.failed > 0
-                      ? "Tests failed. Use the AI analysis tools below to diagnose failures and generate fixes."
-                      : "All tests passed. Run the test suite again to generate new results for analysis."}
-                  </p>
-                )}
-
-                {!localRunMissing && latestRunSummary?.report_path && (
-                  <div className="mt-4 flex justify-end">
-                    <a
-                      href={latestRunSummary.report_path}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center justify-center rounded-full border border-cyan-300/30 bg-cyan-400/10 px-4 py-2 text-sm font-medium text-cyan-100 transition-colors hover:bg-cyan-400/15"
-                    >
-                      Open Playwright report
-                    </a>
+            {/* AI News section - show while running or when no run exists */}
+            {(localRunMissing || isRunInProgress) && insights.length > 0 && (
+              <section className={panelShellClass}>
+                {isRunInProgress && (
+                  <div className="mb-4">
+                    <p className="mt-2 text-sm text-slate-300">
+                      While results are being generated, stay up to date with the latest AI news,
+                      model releases, and prompt engineering tips below.
+                    </p>
                   </div>
                 )}
-
-                {localRunMissing && insights.length > 0 && (
-                  <div className="mt-6">
-                    <div
-                      key={insights[currentInsightIndex]?.id}
-                      className="relative min-h-[220px] overflow-hidden rounded-3xl border border-cyan-300/20 bg-gradient-to-br from-cyan-400/10 to-blue-500/5 p-6 shadow-lg transition-opacity duration-500"
-                      data-testid={`qa-insight-card-${insights[currentInsightIndex]?.id}`}
-                    >
-                      <div className="space-y-4">
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="flex-1">
-                            <div className="mb-2 inline-block rounded-full bg-cyan-400/20 px-3 py-1">
-                              <p className="text-xs font-semibold uppercase tracking-[0.15em] text-cyan-300">
-                                {insights[currentInsightIndex]?.category}
-                              </p>
-                            </div>
-                            {insights[currentInsightIndex]?.type === "news" && (
-                              <div className="ml-2 inline-block">
-                                <span className="inline-flex items-center rounded-full bg-amber-400/20 px-2 py-1 text-xs font-semibold text-amber-200">
-                                  📰 News
-                                </span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        <div>
-                          <h3 className="text-xl font-bold leading-tight text-white sm:text-2xl">
-                            {insights[currentInsightIndex]?.title}
-                          </h3>
-                          <p className="mt-4 text-sm leading-6 text-slate-300">
-                            {insights[currentInsightIndex]?.summary}
+                <div
+                  key={insights[currentInsightIndex]?.id}
+                  className="relative min-h-[220px] overflow-hidden rounded-3xl border border-cyan-300/20 bg-gradient-to-br from-cyan-400/10 to-blue-500/5 p-6 shadow-lg transition-opacity duration-500"
+                  data-testid={`qa-insight-card-${insights[currentInsightIndex]?.id}`}
+                >
+                  <div className="space-y-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1">
+                        <div className="mb-2 inline-block rounded-full bg-cyan-400/20 px-3 py-1">
+                          <p className="text-xs font-semibold uppercase tracking-[0.15em] text-cyan-300">
+                            {insights[currentInsightIndex]?.category}
                           </p>
                         </div>
-
-                        {insights[currentInsightIndex]?.link && (
-                          <div className="pt-2">
-                            <a
-                              href={insights[currentInsightIndex]?.link || ""}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="inline-flex items-center gap-1 text-sm font-semibold text-cyan-300 transition-colors hover:text-cyan-200"
-                            >
-                              Read more →
-                            </a>
+                        {insights[currentInsightIndex]?.type === "news" && (
+                          <div className="ml-2 inline-block">
+                            <span className="inline-flex items-center rounded-full bg-amber-400/20 px-2 py-1 text-xs font-semibold text-amber-200">
+                              📰 News
+                            </span>
                           </div>
                         )}
-
-                        <div className="flex gap-1 pt-2">
-                          {insights.map((_, index) => (
-                            <button
-                              key={index}
-                              onClick={() => setCurrentInsightIndex(index)}
-                              className={`h-1 rounded-full transition-all ${
-                                index === currentInsightIndex
-                                  ? "w-6 bg-cyan-400"
-                                  : "w-1.5 bg-slate-600 hover:bg-slate-500"
-                              }`}
-                              data-testid={`insight-nav-${index}`}
-                              type="button"
-                            />
-                          ))}
-                        </div>
                       </div>
                     </div>
-                  </div>
-                )}
-              </section>
 
-              <section
-                className={`${panelShellClass} flex min-w-0 flex-col gap-4`}
-                data-testid="run-controls-panel"
-              >
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div className="space-y-1">
-                    <p className="text-xs uppercase tracking-[0.28em] text-cyan-300/90">
-                      Run Controls
-                    </p>
-                    <p className="text-sm text-slate-300">
-                      Pick the mode and launch Playwright locally.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <div className="grid gap-2 sm:grid-cols-2">
-                    {runModeOptions.map((option) => {
-                      const isSelected = selectedRunMode === option.value;
-                      const isDisabled = runState?.status === "running";
-
-                      return (
-                        <button
-                          key={option.value}
-                          type="button"
-                          data-testid={`run-mode-${option.value}`}
-                          aria-pressed={isSelected}
-                          disabled={isDisabled}
-                          className={[
-                            "flex min-w-0 flex-col rounded-2xl border px-4 py-3 text-left transition-all",
-                            isDisabled
-                              ? "border-slate-600/30 bg-slate-950/30 opacity-50 cursor-not-allowed"
-                              : isSelected
-                                ? "border-emerald-300/40 bg-emerald-400/10 shadow-[0_0_0_1px_rgba(16,185,129,0.14)]"
-                                : "border-white/10 bg-slate-950/50 hover:border-white/20 hover:bg-slate-900/80",
-                          ]
-                            .filter(Boolean)
-                            .join(" ")}
-                          onClick={() => !isDisabled && setSelectedRunMode(option.value)}
-                        >
-                          <span
-                            className={`text-sm font-semibold ${
-                              isDisabled ? "text-slate-500" : isSelected ? "text-emerald-100" : "text-slate-100"
-                            }`}
-                          >
-                            {option.label}
-                          </span>
-                          <span
-                            className={`mt-1 text-xs leading-5 ${
-                              isDisabled
-                                ? "text-slate-600"
-                                : isSelected
-                                  ? "text-emerald-100/75"
-                                  : "text-slate-400"
-                            }`}
-                          >
-                            {option.description}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  <Button
-                    data-testid="run-tests-button"
-                    className="min-h-[56px] w-full"
-                    disabled={isStartingRun || runState?.status === "running"}
-                    onClick={() => void startTestRun(selectedRunMode)}
-                  >
-                    {isStartingRun || runState?.status === "running"
-                      ? `Running ${selectedRunMode} tests...`
-                      : "Run tests"}
-                  </Button>
-                </div>
-
-                <div className="rounded-2xl border border-white/10 bg-slate-950/55 px-4 py-3">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <p className="text-xs uppercase tracking-[0.25em] text-slate-500">
-                      Execution status
-                    </p>
-                    {runState?.status &&
-                      runState.status !== "idle" &&
-                      runState.status !== "running" && (
-                        <Badge
-                          variant="outline"
-                          data-testid="run-status-badge"
-                          className={
-                            runState.status === "success"
-                              ? "border-emerald-300/30 bg-emerald-400/10 text-emerald-100"
-                              : "border-rose-300/30 bg-rose-400/10 text-rose-100"
-                          }
-                        >
-                          {runState.status}
-                        </Badge>
-                      )}
-                  </div>
-
-                  {runState?.status === "running" && (
-                    <div className="mt-3 space-y-2">
-                      <Progress value={runState.progress || 8} />
-                      <div className="space-y-2 rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3">
-                        <p className="text-xs uppercase tracking-[0.24em] text-slate-500">
-                          {runState.mode === "live" ? "E2E live mode" : "E2E mock mode"}
-                        </p>
-                        <p className="text-sm font-medium text-slate-100">
-                          {runState.currentTestLabel
-                            ? `Now running: ${runState.currentTestLabel}`
-                            : "Running the next test..."}
-                        </p>
-                        <p className="text-xs text-slate-400">
-                          {runState.currentStep && runState.totalSteps
-                            ? `Progress ${runState.currentStep}/${runState.totalSteps}`
-                            : "Waiting for test progress..."}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-
-                  {runState?.status &&
-                    runState.status !== "idle" &&
-                    runState.status !== "running" && (
-                      <p
-                        className={`mt-3 rounded-2xl px-4 py-3 text-sm ${
-                          runState.status === "success"
-                            ? "border border-emerald-300/20 bg-emerald-400/10 text-emerald-100"
-                            : runState.status === "failed" &&
-                                !runState.isStale &&
-                                (latestRunSummary?.failed ?? 0) === 0
-                              ? "border border-emerald-300/20 bg-emerald-400/10 text-emerald-100"
-                              : runState.status === "failed"
-                                ? "border border-rose-300/20 bg-rose-400/10 text-rose-100"
-                                : "border border-white/10 bg-white/5 text-slate-200"
-                        }`}
-                        data-testid="run-status-message"
-                      >
-                        {getRunStatusMessage(runState, latestRunSummary)}
+                    <div>
+                      <h3 className="text-xl font-bold leading-tight text-white sm:text-2xl">
+                        {insights[currentInsightIndex]?.title}
+                      </h3>
+                      <p className="mt-4 text-sm leading-6 text-slate-300">
+                        {insights[currentInsightIndex]?.summary}
                       </p>
+                    </div>
+
+                    {insights[currentInsightIndex]?.link && (
+                      <div className="pt-2">
+                        <a
+                          href={insights[currentInsightIndex]?.link || ""}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-1 text-sm font-semibold text-cyan-300 transition-colors hover:text-cyan-200"
+                        >
+                          Read more →
+                        </a>
+                      </div>
                     )}
+
+                    <div className="flex gap-1 pt-2">
+                      {insights.map((_, index) => (
+                        <button
+                          key={index}
+                          onClick={() => setCurrentInsightIndex(index)}
+                          className={`h-1 rounded-full transition-all ${
+                            index === currentInsightIndex
+                              ? "w-6 bg-cyan-400"
+                              : "w-1.5 bg-slate-600 hover:bg-slate-500"
+                          }`}
+                          data-testid={`insight-nav-${index}`}
+                          type="button"
+                        />
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </section>
-            </header>
+            )}
 
             {!localRunMissing && latestRunSummary && (
               <section className={panelShellClass}>
@@ -1299,17 +1288,6 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
                             ? "Working..."
                             : `Analyze selected failures${selectedFailureIds.size > 0 ? ` (${selectedFailureIds.size})` : ""}`}
                         </Button>
-                       {/*  Disable for now. Applying fixes in bulk without individual review is risky.
-                       <Button
-                          variant="secondary"
-                          data-testid="ai-apply-all"
-                          className={`w-full sm:w-auto ${busyAction ? "invisible" : ""}`}
-                          disabled={!canApplyAll}
-                          onClick={() => void applyAllAnalysisFixes()}
-                        >
-                          {busyAction ? "Apply fix to all" : "Apply fix to all"}
-                        </Button> 
-                        */}
 
                         <p className="text-xs leading-5 text-slate-400">
                           {isRunInProgress
@@ -1488,7 +1466,7 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
 
                     {actionStatus && (
                       <p
-                        className="rounded-2xl border border-cyan-300/20 bg-cyan-300/10 px-4 py-3 text-sm text-cyan-100"
+                        className="rounded-2xl border border-cyan-300/20 bg-cyan-300/10 px-4 py-3 text-sm text-cyan-100 break-words"
                         data-testid="ai-status-message"
                       >
                         {actionStatus}
@@ -1524,8 +1502,9 @@ export function LocalQaAnalyticsPage({ currentBranch }: LocalQaAnalyticsPageProp
             <div className="mb-4">
               <h2 className="text-2xl font-semibold text-white">Rebuild patch with AI</h2>
               <p className="mt-2 text-sm text-slate-400">
-                Describe how you&apos;d like to modify the fix. For example: &quot;Add this assertion&quot;, &quot;Use a
-                different approach&quot;, or &quot;Include error handling&quot;.
+                Describe how you&apos;d like to modify the fix. For example: &quot;Add this
+                assertion&quot;, &quot;Use a different approach&quot;, or &quot;Include error
+                handling&quot;.
               </p>
             </div>
 
