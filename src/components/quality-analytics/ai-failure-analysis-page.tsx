@@ -469,7 +469,20 @@ export function AiFailureAnalysisPage({ currentBranch }: AiFailureAnalysisPagePr
     }
 
     void loadLocalSnapshot({ showLoading: true });
-    void loadRunState();
+
+    // Load run state and ensure we recover after page refresh
+    async function loadInitialRunState() {
+      await loadRunState();
+
+      // If a run was in progress but we don't see it after refresh, poll briefly to ensure state is recovered
+      setTimeout(() => {
+        if (mountedRef.current) {
+          void loadRunState();
+        }
+      }, 500);
+    }
+
+    void loadInitialRunState();
     void loadInsights();
 
     return () => {
@@ -483,12 +496,18 @@ export function AiFailureAnalysisPage({ currentBranch }: AiFailureAnalysisPagePr
     }
 
     // Poll for run state updates while running
-    const timer = window.setInterval(() => {
+    const runStateTimer = window.setInterval(() => {
       void loadRunState();
     }, 1500);
 
+    // Also poll for test snapshot updates while running to show specs immediately
+    const snapshotTimer = window.setInterval(() => {
+      void loadLocalSnapshot({ cacheBust: true });
+    }, 2000);
+
     return () => {
-      window.clearInterval(timer);
+      window.clearInterval(runStateTimer);
+      window.clearInterval(snapshotTimer);
     };
   }, [runState?.status]);
 
@@ -901,12 +920,12 @@ export function AiFailureAnalysisPage({ currentBranch }: AiFailureAnalysisPagePr
               <Button
                 data-testid="run-tests-button"
                 className="min-h-[48px] w-full"
-                disabled={isStartingRun}
-                onClick={() => {
-                  void startTestRun(selectedRunMode);
-                }}
+                disabled={isStartingRun || runState?.status === "running"}
+                onClick={() => void startTestRun(selectedRunMode)}
               >
-                {isStartingRun ? "Starting..." : "Start test run"}
+                {isStartingRun || runState?.status === "running"
+                  ? `Running tests...`
+                  : "Run tests"}
               </Button>
             </section>
 
