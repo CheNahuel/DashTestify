@@ -134,4 +134,4 @@ Make sure your `SUPABASE_KEY` has the appropriate permissions. Use an **anon** o
 
 - `scripts/migrations/001_create_test_runs.sql` - Table creation SQL
 - `scripts/setup-db.ts` - Automated setup script
-- `src/lib/qa-analytics/` - QA Analytics query functions
+- `src/lib/quality-analytics/` - QA Analytics query functions
