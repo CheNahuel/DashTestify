@@ -44,7 +44,7 @@ export function BranchHealthWidget() {
     setError(null);
 
     try {
-      const response = await fetch("/api/qa-analytics/failures-by-branch");
+      const response = await fetch("/api/quality-analytics/failures-by-branch");
       const payload = (await response.json()) as BranchHealthResponse;
 
       if (!response.ok) {
