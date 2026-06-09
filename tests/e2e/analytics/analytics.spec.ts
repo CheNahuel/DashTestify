@@ -1199,12 +1199,14 @@ test("local qa analytics continues running execution when page is reloaded", asy
 }) => {
   const fixtures = createQaAnalyticsFixtures();
   let requestCount = 0;
+  let runStarted = false;
 
   await mockLocalSnapshot(page, fixtures);
   await mockQaAnalyticsApi(page, fixtures);
 
   await page.route("**/api/quality-analytics/run-tests**", async (route) => {
     if (route.request().method() === "POST") {
+      runStarted = true;
       await route.fulfill({
         json: {
           run: {
@@ -1224,7 +1226,16 @@ test("local qa analytics continues running execution when page is reloaded", asy
       return;
     }
 
-    // GET requests return current running state
+    // GET requests return current running state only after POST
+    if (!runStarted) {
+      await route.fulfill({
+        json: {
+          run: null,
+        },
+      });
+      return;
+    }
+
     requestCount += 1;
     await route.fulfill({
       json: {
