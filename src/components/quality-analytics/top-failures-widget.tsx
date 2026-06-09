@@ -48,7 +48,7 @@ export function TopFailuresWidget() {
     setError(null);
 
     try {
-      const response = await fetch("/api/qa-analytics/top-failures");
+      const response = await fetch("/api/quality-analytics/top-failures");
       const payload = (await response.json()) as TopFailuresResponse;
 
       if (!response.ok) {

@@ -12,21 +12,27 @@ A modern cryptocurrency dashboard built with Next.js, showcasing real-time data 
 
 👉 https://chenahuel.github.io/DashTestify/
 
-## 📊 Metrics
+## 📊 QA Analytics
 
-👉 https://dash-testify.vercel.app/qa-analytics
+👉 https://dash-testify.vercel.app/quality-analytics
 
 ## 🚀 Features
 
-- Real-time crypto data from CoinCap API v3
-- Mock data mode for offline use and deployments without an API key
-- Interactive historical charts (H1, H2, H6, H12, D1, M1, M5, M15, M30)
-- Smart search and filtering (by name or symbol)
-- Sort by market cap, price, or 24H change
-- Trade journal with per-coin notes
-- Price alerts with email and persistence
-- Watchlist with localStorage persistence
-- Responsive dark UI
+### Crypto Dashboard
+- 🔗 Real-time data from CoinCap API v3 (or mock mode for offline)
+- 📊 Interactive historical charts (H1, H2, H6, H12, D1, M1, M5, M15, M30)
+- 🔍 Smart search & filtering by name or symbol
+- 📈 Sort by market cap, price, or 24H change
+- 📔 Trade journal with per-coin notes
+- 🔔 Price alerts with email and localStorage persistence
+- ⭐ Watchlist with localStorage persistence
+
+### QA Analytics Dashboard
+- 🤖 AI-powered failure analysis & fix suggestions (local development)
+- 📈 Historical test metrics & trends (production)
+- 🐛 Flaky test detection & analysis
+- 🔴 Top failures tracking & aggregation
+- 🌿 Branch health metrics (production with Supabase)
 
 ## 📡 Data Sources
 
@@ -104,113 +110,237 @@ AI tools were used to support test case generation, code review, and test valida
 ```
 src/
 ├── app/
-│   ├── api/coins/
-│   │   ├── markets/            # CoinCap proxy — GET /api/coins/markets[?mock=1]
-│   │   └── [coinId]/history/   # History proxy  — GET /api/coins/:id/history
-│   ├── actions.ts              # Price alert server action
+│   ├── page.tsx                       # Main crypto dashboard
+│   ├── quality-analytics/             # Main QA dashboard (local & live modes)
+│   ├── ai-failure-analysis/           # AI analysis page (dev-only, redirects in prod)
+│   ├── api/
+│   │   ├── coins/markets/             # CoinCap proxy — GET /api/coins/markets[?mock=1]
+│   │   ├── coins/[coinId]/history/    # History proxy — GET /api/coins/:id/history
+│   │   └── quality-analytics/         # QA analytics API routes
+│   ├── actions.ts                     # Price alert server action
 │   ├── globals.css
 │   ├── layout.tsx
-│   └── page.tsx
+│   └── layout.tsx
 ├── components/
-│   └── Container.tsx
+│   ├── Container.tsx
+│   └── quality-analytics/
+│       ├── metrics-page.tsx           # Main QA dashboard view
+│       ├── ai-failure-analysis-page.tsx # AI analysis & fixes UI
+│       ├── branch-health-widget.tsx   # Branch health metrics
+│       ├── flaky-tests-widget.tsx     # Flaky test detection
+│       ├── top-failures-widget.tsx    # Top failures list
+│       └── types.ts
+├── lib/
+│   └── quality-analytics/             # QA analytics utilities
 └── features/crypto/
-    ├── api/                    # Client-side fetch helpers (getCoins, getCoinHistory)
-    ├── components/             # CryptoDashboard, CoinCard, CoinChart, …
-    ├── hooks/                  # useCoins, useCoinHistory (TanStack Query)
+    ├── api/                           # Client-side fetch helpers
+    ├── components/                    # CryptoDashboard, CoinCard, CoinChart, etc.
+    ├── hooks/                         # useCoins, useCoinHistory (TanStack Query)
     ├── server/
-    │   ├── getCoinsFromCoinCap.ts      # Live asset fetcher + in-memory cache
-    │   ├── getCoinHistoryFromCoinCap.ts # Live history fetcher + in-memory cache
-    │   └── mockCryptoData.ts           # Offline mock for all 20 CoinCap top coins
-    └── types/                  # Coin, CoinHistory, PriceAlertFormState
+    │   ├── getCoinsFromCoinCap.ts     # Live CoinCap API fetcher
+    │   ├── getCoinHistoryFromCoinCap.ts # Live history fetcher
+    │   └── mockCryptoData.ts          # Offline mock data (20 top coins)
+    └── types/
 
 tests/
-├── e2e/dashboard/
-│   ├── data.spec.ts        # Price, chart, stat-card rendering
-│   ├── data-source.spec.ts # Mock ↔ Live toggle behavior
-│   ├── error.spec.ts       # API error and unavailable states
-│   ├── interactions.spec.ts# Sort, trend, watchlist, journal, alerts, ranges
-│   └── smoke.spec.ts       # Basic render smoke tests
-│   └── search.spec.ts      # Search by name/symbol, URL params, visibility
-├── fixtures/testSetup.ts   # Playwright fixture with route interception
-├── pages/DashboardPage.ts  # Page Object Model
-├── data/testData.json      # Stable mock data for tests
-└── utils/
-    ├── commonUtils.ts
-    └── dateUtils.ts
+├── e2e/
+│   ├── dashboard/
+│   │   ├── data.spec.ts               # Price, chart, stat rendering
+│   │   ├── data-source.spec.ts        # Mock ↔ Live toggle
+│   │   ├── error.spec.ts              # Error & unavailable states
+│   │   ├── interactions.spec.ts       # Sorting, alerts, watchlist
+│   │   ├── search.spec.ts             # Search & filtering
+│   │   └── smoke.spec.ts              # Basic render tests
+│   ├── analytics/
+│   │   └── analytics.spec.ts          # QA dashboard tests
+│   ├── fixtures/testSetup.ts          # Playwright setup & route mocking
+│   ├── pages/DashboardPage.ts         # Page Object Model
+│   ├── data/testData.json             # Mock test data
+│   └── utils/
+│       ├── commonUtils.ts
+│       └── dateUtils.ts
 ```
 
-### ▶️ Run Application
+## 🚀 Quick Start
+
+### 1. Clone & Install
 
 ```bash
+git clone https://github.com/CheNahuel/DashTestify.git
+cd DashTestify
 npm install
+```
+
+### 2. Run the Application
+
+```bash
 npm run dev
 ```
 
-### 🤖 AI-Powered Failure Analysis (Optional)
+Open [http://localhost:3000](http://localhost:3000) in your browser. The app works with **mock data by default** — no API keys needed.
 
-The QA Analytics Dashboard can use AI to analyze test failures and generate fixes. Configure your preferred AI provider:
+### 3. Explore the App
 
-#### API Keys
+| URL | Purpose |
+|-----|---------|
+| `/` | Main cryptocurrency dashboard |
+| `/quality-analytics` | QA dashboard (test results, AI analysis, metrics) |
+| `/ai-failure-analysis` | Direct link to AI failure analysis (dev-only) |
 
-Add one or more API keys to your `.env` file:
+---
 
-```bash
-CLAUDE_API_KEY=your_api_key
-OPENAI_API_KEY=your_api_key
-GEMINI_API_KEY=your_api_key
-GROQ_API_KEY=your_api_key
-DEEPSEEK_API_KEY=your_api_key
-OPENROUTER_API_KEY=your_api_key
-```
+## ⚙️ Environment Variables
 
-#### Model Selection (Optional)
+Create a `.env` file in the project root. All variables are optional unless noted:
 
-Each provider has a sensible default. Override by adding to `.env`:
+### Crypto Dashboard
 
 ```bash
-CLAUDE_MODEL=claude-haiku-4-5              # Default: claude-haiku-4-5
-OPENAI_MODEL=gpt-4o-mini                   # Default: gpt-4o-mini
-GEMINI_MODEL=gemini-2.0-flash-lite         # Default: gemini-2.0-flash-lite
-GROQ_MODEL=llama-3.3-70b-versatile         # Default: llama-3.3-70b-versatile
-DEEPSEEK_MODEL=deepseek-chat               # Default: deepseek-chat
-OPENROUTER_MODEL=                          # Default: auto-select free model
+# (Optional) CoinCap API key for live data
+# Get from: https://rest.coincap.io
+COINCAP_API_KEY=your_api_key_here
 ```
 
-> **Tip:** OpenRouter can auto-select a free model if left empty. Claude (Haiku) and Groq are also excellent free/cheap options.
+### QA Analytics (AI-Powered Failure Analysis)
 
-### 📊 QA Analytics Dashboard
+```bash
+# Add one or more for failure analysis (all optional)
+CLAUDE_API_KEY=your_key           # Recommended: fast & free tier
+OPENAI_API_KEY=your_key
+GEMINI_API_KEY=your_key
+GROQ_API_KEY=your_key
+DEEPSEEK_API_KEY=your_key
+OPENROUTER_API_KEY=your_key       # Auto-selects free models if left empty
 
-The project includes a QA Analytics Dashboard for test execution analysis, failure investigation, and AI-assisted troubleshooting.
+# (Optional) Override default models
+CLAUDE_MODEL=claude-haiku-4-5
+OPENAI_MODEL=gpt-4o-mini
+GEMINI_MODEL=gemini-2.0-flash-lite
+GROQ_MODEL=llama-3.3-70b-versatile
+DEEPSEEK_MODEL=deepseek-chat
+```
 
-#### Local Analytics (Default)
-**URL:** `http://localhost:3000/qa-analytics`
+### Live Metrics (Production with Supabase)
 
-Displays the **most recent local Playwright test run** on your machine:
-- Run test results (pass/fail/duration)
-- Latest test failures with error details
-- AI-powered failure analysis and auto-generated fixes
-- Apply fixes directly to your code
-- Real-time test execution monitoring
+```bash
+# (Optional) Supabase config for production deployments only
+SUPABASE_URL=your_supabase_url
+SUPABASE_KEY=your_supabase_key
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_KEY=your_supabase_key
+```
 
-**Use this for:** Local development, debugging failures, and testing fixes before pushing.
+---
 
-#### Live Metrics View
-**URL:** `http://localhost:3000/qa-analytics?view=live`
+## 🔗 Using Live CoinCap Data
 
-Displays **aggregate historical data** from Supabase (production deployments):
-- Total test runs over time
-- Historical trend chart
-- Top failures across all runs
-- Flaky test detection
-- Branch health metrics
+To fetch **real cryptocurrency data** instead of mock data:
 
-**Use this for:** Monitoring overall test health, identifying recurring issues, and tracking trends.
+1. Visit [rest.coincap.io](https://rest.coincap.io) and create a free account
+2. Generate an API key from your dashboard
+3. Add it to your `.env` file:
 
-> **Note:** Live metrics require Supabase configuration (see below). Local analytics work without any configuration and show your latest run results immediately.
+```bash
+COINCAP_API_KEY=your_api_key_here
+```
 
-#### Supabase Configuration (Optional)
+4. Restart the dev server. The app now fetches live data.
 
-To enable live metrics and historical analytics on Vercel deployments, configure these environment variables:
+**Toggle between modes:** Once configured, a "Mock data / Live data" toggle button appears in the dashboard's filter bar.
+
+---
+
+## 🧪 Testing
+
+### Run Tests
+
+```bash
+# Mock mode (default) — no API key needed, works offline and in CI
+npm run test:e2e
+
+# Live mode — requires COINCAP_API_KEY to be set
+npm run test:e2e:live
+
+# Interactive Playwright UI
+npm run test:e2e:ui
+
+# View HTML test report
+npm run test:e2e:report
+```
+
+Tests use the **Page Object Model (POM)** pattern and are located in `tests/e2e/`. Each test suite focuses on a specific behavior (data, search, sorting, alerts, etc.).
+
+---
+
+## 📊 QA Analytics Dashboard
+
+The project includes a **QA Analytics Dashboard** for analyzing test results, investigating failures, and monitoring test health.
+
+### Access Routes
+
+| URL | Mode | Purpose |
+|-----|------|---------|
+| `/quality-analytics` | Auto-detected | Main dashboard (local dev / live production) |
+| `/ai-failure-analysis` | Local dev only | AI-powered failure analysis (redirects in production) |
+
+### Local Mode (Development)
+
+**Available at:** [http://localhost:3000/quality-analytics](http://localhost:3000/quality-analytics)
+
+Shows AI-powered analysis of your **most recent local test run**:
+
+- ✅ Test results (pass/fail/duration)
+- ❌ Latest test failures with error details and stack traces
+- 🤖 AI-generated analysis of each failure
+- 🔧 AI-suggested fixes with code patches
+- ⚡ Real-time test execution monitoring
+- 📋 Structured breakdown of failures by test file
+
+**Requirements:** None — works immediately after running `npm run test:e2e`
+
+**AI Analysis Setup (Optional):**
+
+To enable AI-powered failure analysis, add an API key from your preferred provider to `.env`:
+
+```bash
+# Choose one or more:
+CLAUDE_API_KEY=your_key           # (Recommended) Fast & free tier available
+OPENAI_API_KEY=your_key
+GEMINI_API_KEY=your_key
+GROQ_API_KEY=your_key
+DEEPSEEK_API_KEY=your_key
+OPENROUTER_API_KEY=your_key       # (Tip) Auto-selects free models if left empty
+```
+
+Each provider has sensible defaults. Optionally override the model:
+
+```bash
+CLAUDE_MODEL=claude-haiku-4-5
+OPENAI_MODEL=gpt-4o-mini
+GEMINI_MODEL=gemini-2.0-flash-lite
+GROQ_MODEL=llama-3.3-70b-versatile
+DEEPSEEK_MODEL=deepseek-chat
+```
+
+> **Tip:** Claude (Haiku) and Groq offer free/cheap tiers and are excellent for local testing.
+
+### Live Mode (Production)
+
+**Available at:** [https://dash-testify.vercel.app/quality-analytics](https://dash-testify.vercel.app/quality-analytics) (Vercel deployment only)
+
+Shows **historical aggregate metrics** from all test runs:
+
+- 📈 Total test runs over time
+- 📊 Historical trend chart
+- 🔴 Top failures across all runs
+- 🐛 Flaky test detection
+- 🌿 Branch health metrics
+
+**Requirements:** Supabase configuration (see below)
+
+### Supabase Configuration (Optional — Production Only)
+
+To enable live metrics and historical tracking on production deployments, set these environment variables:
 
 ```bash
 SUPABASE_URL=your_supabase_url
@@ -219,26 +349,7 @@ NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_KEY=your_supabase_key
 ```
 
-Without Supabase, local analytics still work perfectly for development. Live metrics will only be available on production deployments with Supabase configured.
-
-### 🧪 Run Tests
-
-```bash
-# Mock mode (default) — no API key needed, works offline and in CI
-npm run test:e2e
-
-# Live mode — requires COINCAP_API_KEY to be set in the environment
-npm run test:e2e:live
-
-# Interactive Playwright UI — mock mode
-npm run test:e2e:ui
-```
-
-### 📊 Open Report
-
-```bash
-npm run test:e2e:report
-```
+> **Note:** Without Supabase, local analytics still work perfectly. Live metrics are only available on production with Supabase configured.
 
 ## ⚙️ CI/CD
 

@@ -28,7 +28,7 @@ export function FlakyTestsWidget() {
     setError(null);
 
     try {
-      const response = await fetch("/api/qa-analytics/flaky-tests");
+      const response = await fetch("/api/quality-analytics/flaky-tests");
       const payload = (await response.json()) as FlakyTestsResponse;
 
       if (!response.ok) {

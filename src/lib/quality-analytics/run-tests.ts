@@ -1,7 +1,7 @@
 import fs from "fs/promises";
 import os from "os";
 import path from "path";
-import { spawn } from "child_process";
+import { spawn, spawnSync } from "child_process";
 
 export type QaAnalyticsRunMode = "mock" | "live";
 export type QaAnalyticsRunStatus = "idle" | "running" | "success" | "failed";
@@ -25,7 +25,7 @@ export type QaAnalyticsRunState = {
 };
 
 const repoRoot = process.cwd();
-const runStatePath = path.join(os.tmpdir(), "dash-testify-qa-analytics", "run-tests-state.json");
+const runStatePath = path.join(os.tmpdir(), "dash-testify-quality-analytics", "run-tests-state.json");
 const staleRunningGraceMs = 30_000;
 
 async function readJsonFile<T>(filePath: string): Promise<T | null> {
@@ -119,6 +119,39 @@ function isProcessAlive(pid: number) {
   }
 }
 
+function killProcessTree(pid: number, signal: NodeJS.Signals) {
+  if (process.platform === "win32") {
+    try {
+      spawnSync("taskkill", ["/PID", String(pid), "/T", "/F"], {
+        stdio: "ignore",
+      });
+    } catch {
+      // Ignore failures on Windows.
+    }
+    return;
+  }
+
+  try {
+    process.kill(-pid, signal);
+  } catch {
+    // Ignore if process group kill fails.
+  }
+
+  try {
+    spawnSync("pkill", ["-" + signal, "-P", String(pid)], {
+      stdio: "ignore",
+    });
+  } catch {
+    // Ignore pkill failures.
+  }
+
+  try {
+    process.kill(pid, signal);
+  } catch {
+    // Ignore if the process already exited.
+  }
+}
+
 function createInitialState(mode: QaAnalyticsRunMode): QaAnalyticsRunState {
   return {
     jobId:
@@ -184,41 +217,6 @@ export async function readQaAnalyticsRunState() {
   return state;
 }
 
-export async function abortQaAnalyticsRun() {
-  const state = await readRunStateFile();
-
-  if (!state) {
-    return { aborted: false as const };
-  }
-
-  if (state.status === "running") {
-    const pid = typeof state.pid === "number" ? state.pid : null;
-    const ownerPid = typeof state.ownerPid === "number" ? state.ownerPid : null;
-
-    if (pid && ownerPid === process.pid && isProcessAlive(pid) && pid !== process.pid) {
-      try {
-        process.kill(pid, "SIGTERM");
-      } catch {
-        // Ignore process races during shutdown.
-      }
-
-      await new Promise((resolve) => setTimeout(resolve, 200));
-
-      if (isProcessAlive(pid)) {
-        try {
-          process.kill(pid, "SIGKILL");
-        } catch {
-          // Ignore if the process already exited.
-        }
-      }
-    }
-  }
-
-  await deleteJsonFile(runStatePath);
-
-  return { aborted: true as const };
-}
-
 export async function startQaAnalyticsRun(mode: QaAnalyticsRunMode) {
   const currentState = await readQaAnalyticsRunState();
 
@@ -229,15 +227,25 @@ export async function startQaAnalyticsRun(mode: QaAnalyticsRunMode) {
   const state = createInitialState(mode);
   await persistState(state);
 
-  const script = mode === "live" ? "test:e2e:live" : "test:e2e";
-  const child = spawn("npm", ["run", script], {
+  const playwrightExecutable = path.join(
+    repoRoot,
+    "node_modules",
+    ".bin",
+    process.platform === "win32" ? "playwright.cmd" : "playwright",
+  );
+
+  const child = spawn(playwrightExecutable, ["test"], {
     cwd: repoRoot,
     env: {
       ...process.env,
+      ...(mode === "mock" ? { COINCAP_API_KEY: "" } : {}),
       FORCE_COLOR: "1",
     },
     stdio: ["ignore", "pipe", "pipe"],
+    detached: true,
   });
+
+  child.unref();
 
   state.pid = child.pid ?? null;
   await persistState(state);
