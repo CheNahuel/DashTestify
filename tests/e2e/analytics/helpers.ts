@@ -23,11 +23,11 @@ export type QaAnalyticsFixtures = {
   latestFailures?: SupabaseRow[];
 };
 
-const runStatePath = path.join(os.tmpdir(), "dash-testify-qa-analytics", "run-tests-state.json");
+const runStatePath = path.join(os.tmpdir(), "dash-testify-quality-analytics", "run-tests-state.json");
 const localAnalysesPath = path.join(
   os.tmpdir(),
-  "dash-testify-qa-analytics",
-  "qa-analytics-ai.json",
+  "dash-testify-quality-analytics",
+  "quality-analytics-ai.json",
 );
 
 export async function cleanupAnalysesPath() {
@@ -104,13 +104,13 @@ export function createQaAnalyticsFixtures(options?: {
 }
 
 export async function mockQaAnalyticsApi(page: Page, fixtures: QaAnalyticsFixtures) {
-  await page.route("**/api/qa-analytics/test-trends**", async (route) => {
+  await page.route("**/api/quality-analytics/test-trends**", async (route) => {
     await route.fulfill({ json: { data: fixtures.trends, days: 30 } });
   });
 }
 
 export async function mockLocalSnapshot(page: Page, fixtures: QaAnalyticsFixtures) {
-  await page.route("**/api/qa-analytics/local-snapshot**", async (route) => {
+  await page.route("**/api/quality-analytics/local-snapshot**", async (route) => {
     const latestRun = fixtures.latestRun ?? fixtures.runs[0] ?? null;
 
     if (!latestRun) {
