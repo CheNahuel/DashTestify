@@ -374,7 +374,7 @@ export const Dashboard = ({
   return (
     <Container>
       <section className="relative mb-6 overflow-hidden rounded-3xl border border-white/10 bg-slate-950/70 p-4 shadow-2xl shadow-slate-950/40 backdrop-blur sm:mb-8 sm:rounded-[2rem] sm:p-6 lg:p-8">
-        <div className="mb-6 flex flex-col-reverse gap-4 md:flex-row md:items-start md:justify-between">
+        <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div className="min-w-0 flex-1 md:max-w-3xl xl:max-w-5xl">
             <p className="mb-3 text-xs uppercase tracking-wider text-cyan-300 sm:text-sm">
               Crypto Intelligence
@@ -391,39 +391,50 @@ export const Dashboard = ({
             </p>
           </div>
 
-          <button
-            type="button"
-            data-testid="data-source-toggle"
-            aria-pressed={useMock}
-            onClick={isLiveAvailable ? toggleDataSource : undefined}
-            disabled={!isLiveAvailable}
-            title={
-              !isLiveAvailable
-                ? "Set COINCAP_API_KEY to enable live data"
-                : useMock
-                  ? "Switch to live data"
-                  : "Switch to mock data"
-            }
-            className={`inline-flex shrink-0 items-center gap-2 self-start rounded-full border px-4 py-2 text-xs font-bold uppercase tracking-widest transition sm:px-5 sm:py-3 sm:text-[13px] ${
-              !isLiveAvailable
-                ? "border-slate-700/40 bg-slate-900/60 text-slate-600 cursor-not-allowed"
-                : useMock
-                  ? "border-slate-600/40 bg-slate-800/60 text-slate-400 hover:border-slate-500/60 hover:text-slate-300"
-                  : "border-emerald-500/30 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20"
-            }`}
-          >
-            <span className="relative flex h-2 w-2 shrink-0">
-              {!useMock && isLiveAvailable && (
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-              )}
-              <span
-                className={`relative inline-flex h-2 w-2 rounded-full ${
-                  !useMock && isLiveAvailable ? "bg-emerald-400" : "bg-slate-600"
-                }`}
-              />
-            </span>
-            {useMock ? "Mock" : "Live"}
-          </button>
+          <div className="flex w-full gap-2 md:w-auto md:flex-col">
+            <button
+              type="button"
+              data-testid="metrics-button"
+              onClick={() => router.push("/quality-analytics")}
+              className="flex-1 md:flex-none inline-flex items-center justify-center gap-2 rounded-full border border-purple-500/30 bg-purple-500/10 px-3 py-2 text-xs font-bold uppercase tracking-widest text-purple-300 transition hover:border-purple-500/60 hover:bg-purple-500/20 md:px-5 md:py-3 md:text-[13px]"
+            >
+              Metrics
+            </button>
+
+            <button
+              type="button"
+              data-testid="data-source-toggle"
+              aria-pressed={useMock}
+              onClick={isLiveAvailable ? toggleDataSource : undefined}
+              disabled={!isLiveAvailable}
+              title={
+                !isLiveAvailable
+                  ? "Set COINCAP_API_KEY to enable live data"
+                  : useMock
+                    ? "Switch to live data"
+                    : "Switch to mock data"
+              }
+              className={`flex-1 md:flex-none inline-flex items-center justify-center gap-2 rounded-full border px-3 py-2 text-xs font-bold uppercase tracking-widest transition md:px-5 md:py-3 md:text-[13px] ${
+                !isLiveAvailable
+                  ? "border-slate-700/40 bg-slate-900/60 text-slate-600 cursor-not-allowed"
+                  : useMock
+                    ? "border-slate-600/40 bg-slate-800/60 text-slate-400 hover:border-slate-500/60 hover:text-slate-300"
+                    : "border-emerald-500/30 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20"
+              }`}
+            >
+              <span className="relative flex h-2 w-2 shrink-0">
+                {!useMock && isLiveAvailable && (
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                )}
+                <span
+                  className={`relative inline-flex h-2 w-2 rounded-full ${
+                    !useMock && isLiveAvailable ? "bg-emerald-400" : "bg-slate-600"
+                  }`}
+                />
+              </span>
+              {useMock ? "Mock" : "Live"}
+            </button>
+          </div>
         </div>
 
         <div className="mb-6 grid min-w-0 gap-4 sm:gap-6 xl:grid-cols-[1.35fr_0.95fr] xl:items-start">
