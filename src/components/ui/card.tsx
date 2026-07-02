@@ -10,7 +10,7 @@ function Card({ className, children, ...props }: CardProps) {
   return (
     <div
       className={[
-        "rounded-3xl border border-white/10 bg-slate-950/70 shadow-2xl shadow-cyan-950/10",
+        "min-w-0 rounded-3xl border border-white/10 bg-slate-950/70 shadow-2xl shadow-cyan-950/10",
         className,
       ]
         .filter(Boolean)
@@ -24,7 +24,7 @@ function Card({ className, children, ...props }: CardProps) {
 
 function CardHeader({ className, children, ...props }: CardProps) {
   return (
-    <div className={["flex flex-col gap-2 p-6 pb-4", className].filter(Boolean).join(" ")} {...props}>
+    <div className={["flex flex-col gap-2 p-4 pb-3 sm:p-6 sm:pb-4", className].filter(Boolean).join(" ")} {...props}>
       {children}
     </div>
   );
@@ -48,7 +48,7 @@ function CardDescription({ className, children, ...props }: CardProps) {
 
 function CardContent({ className, children, ...props }: CardProps) {
   return (
-    <div className={["px-6 pb-6", className].filter(Boolean).join(" ")} {...props}>
+    <div className={["px-4 pb-4 sm:px-6 sm:pb-6", className].filter(Boolean).join(" ")} {...props}>
       {children}
     </div>
   );
