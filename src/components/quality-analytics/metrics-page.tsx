@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import type { TooltipProps } from "recharts";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
@@ -60,12 +61,13 @@ function formatDateOnly(value: string) {
 }
 
 export function MetricsPage() {
+  const router = useRouter();
   const [runs, setRuns] = useState<TestRun[]>([]);
   const [trendData, setTrendData] = useState<TrendPoint[]>([]);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  useEffect(() => {
+  const loadData = async () => {
     const supabase = getSupabaseClient();
-    let mounted = true;
 
     async function loadRuns() {
       const { data, error } = await supabase
@@ -78,9 +80,7 @@ export function MetricsPage() {
         return;
       }
 
-      if (mounted) {
-        setRuns((data || []) as TestRun[]);
-      }
+      setRuns((data || []) as TestRun[]);
     }
 
     async function loadTrends() {
@@ -92,24 +92,41 @@ export function MetricsPage() {
           throw new Error(payload.error || "Unable to load test trends.");
         }
 
-        if (mounted) {
-          setTrendData(payload.data || []);
-        }
+        setTrendData(payload.data || []);
       } catch (error) {
         console.error(error);
-        if (mounted) {
-          setTrendData([]);
-        }
+        setTrendData([]);
       }
     }
 
-    void loadRuns();
-    void loadTrends();
+    await loadRuns();
+    await loadTrends();
+  };
+
+  useEffect(() => {
+    let mounted = true;
+
+    const initializeData = async () => {
+      if (mounted) {
+        await loadData();
+      }
+    };
+
+    void initializeData();
 
     return () => {
       mounted = false;
     };
   }, []);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await loadData();
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   const totalRuns = runs.length;
   const totalPassed = runs.reduce((acc, run) => acc + (run.passed || 0), 0);
@@ -130,13 +147,45 @@ export function MetricsPage() {
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.16),_transparent_40%),linear-gradient(180deg,_#020617_0%,_#0f172a_45%,_#111827_100%)] px-4 py-6 text-slate-100 sm:px-6 lg:px-8">
       <div className="mx-auto flex min-w-0 max-w-7xl flex-col gap-6">
         <header className="rounded-3xl border border-white/10 bg-slate-950/70 p-4 shadow-2xl shadow-cyan-950/20 backdrop-blur sm:p-6">
-          <div className="space-y-3">
-            <p className="text-xs uppercase tracking-[0.35em] text-cyan-300">Quality Analytics</p>
-            <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">Metrics overview</h1>
-            <div>
-              <p className="mt-3 max-w-2xl text-sm text-slate-300 sm:text-base">
-                Metrics and analytics across all test runs. View trends, failures, and branch health.
-              </p>
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div className="space-y-3 flex-1 min-w-0">
+              <p className="text-xs uppercase tracking-[0.35em] text-cyan-300">Quality Analytics</p>
+              <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">Metrics overview</h1>
+              <div>
+                <p className="mt-3 max-w-2xl text-sm text-slate-300 sm:text-base">
+                  Metrics and analytics across all test runs. View trends, failures, and branch health.
+                </p>
+              </div>
+            </div>
+            <div className="flex w-full gap-2 sm:w-auto sm:flex-col">
+              <button
+                type="button"
+                data-testid="refresh-button"
+                onClick={handleRefresh}
+                disabled={isRefreshing}
+                className={`flex-1 sm:flex-none inline-flex items-center justify-center gap-2 rounded-full border px-3 py-2 text-xs font-bold uppercase tracking-widest transition sm:px-5 sm:py-3 sm:text-[13px] ${
+                  isRefreshing
+                    ? "border-slate-700/40 bg-slate-900/60 text-slate-600 cursor-not-allowed"
+                    : "border-cyan-500/30 bg-cyan-500/10 text-cyan-300 hover:border-cyan-500/60 hover:bg-cyan-500/20"
+                }`}
+              >
+                {isRefreshing ? (
+                  <>
+                    <span className="inline-flex h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                    <span className="hidden sm:inline">Loading</span>
+                  </>
+                ) : (
+                  "Refresh"
+                )}
+              </button>
+              <button
+                type="button"
+                data-testid="back-to-home-button"
+                onClick={() => router.push("/")}
+                className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 rounded-full border border-slate-600/40 bg-slate-800/60 px-3 py-2 text-xs font-bold uppercase tracking-widest text-slate-400 transition hover:border-slate-500/60 hover:text-slate-300 sm:px-5 sm:py-3 sm:text-[13px]"
+              >
+                <span className="hidden sm:inline">Back to</span> Home
+              </button>
             </div>
           </div>
         </header>
