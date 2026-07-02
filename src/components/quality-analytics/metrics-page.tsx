@@ -128,8 +128,8 @@ export function MetricsPage() {
 
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.16),_transparent_40%),linear-gradient(180deg,_#020617_0%,_#0f172a_45%,_#111827_100%)] px-4 py-6 text-slate-100 sm:px-6 lg:px-8">
-      <div className="mx-auto flex max-w-7xl flex-col gap-6">
-        <header className="rounded-3xl border border-white/10 bg-slate-950/70 p-6 shadow-2xl shadow-cyan-950/20 backdrop-blur">
+      <div className="mx-auto flex min-w-0 max-w-7xl flex-col gap-6">
+        <header className="rounded-3xl border border-white/10 bg-slate-950/70 p-4 shadow-2xl shadow-cyan-950/20 backdrop-blur sm:p-6">
           <div className="space-y-3">
             <p className="text-xs uppercase tracking-[0.35em] text-cyan-300">Quality Analytics</p>
             <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">Metrics overview</h1>
@@ -169,7 +169,7 @@ export function MetricsPage() {
           </div>
         </section>
 
-        <section className="rounded-3xl border border-white/10 bg-slate-950/70 p-6 shadow-2xl shadow-cyan-950/10">
+        <section className="rounded-3xl border border-white/10 bg-slate-950/70 p-4 shadow-2xl shadow-cyan-950/10 sm:p-6">
           <div className="mb-6 flex items-center justify-between gap-3">
             <div>
               <h2 className="text-2xl font-semibold">Test trends</h2>
@@ -177,17 +177,31 @@ export function MetricsPage() {
             </div>
           </div>
 
-          <div className="h-[320px] w-full min-w-0" data-testid="test-trends-chart">
+          <div
+            className="h-[240px] w-full min-w-0 overflow-hidden sm:h-[320px]"
+            data-testid="test-trends-chart"
+          >
             {trendChartData.length === 0 ? (
               <p className="rounded-2xl border border-white/10 bg-slate-900/50 p-4 text-sm text-slate-300">
                 Insufficient data to display trends.
               </p>
             ) : (
-              <ResponsiveContainer width="100%" height={320} minWidth={0}>
-                <LineChart data={trendChartData}>
+              <ResponsiveContainer
+                width="100%"
+                height="100%"
+                minWidth={0}
+                initialDimension={{ width: 1, height: 1 }}
+              >
+                <LineChart data={trendChartData} margin={{ top: 8, right: 8, left: 0, bottom: 8 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.15)" />
-                  <XAxis dataKey="label" stroke="#94a3b8" />
-                  <YAxis stroke="#94a3b8" />
+                  <XAxis
+                    dataKey="label"
+                    stroke="#94a3b8"
+                    minTickGap={32}
+                    tickLine={false}
+                    tick={{ fontSize: 11 }}
+                  />
+                  <YAxis stroke="#94a3b8" width={40} tickLine={false} />
                   <Tooltip
                     contentStyle={{
                       background: "rgba(15, 23, 42, 0.95)",

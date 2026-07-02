@@ -66,7 +66,7 @@ export function BranchHealthWidget() {
 
   return (
     <Card data-testid="branch-health-widget">
-      <CardHeader className="flex flex-row items-start justify-between gap-4">
+      <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="space-y-1">
           <CardTitle>Branch health</CardTitle>
           <CardDescription>
@@ -74,7 +74,13 @@ export function BranchHealthWidget() {
           </CardDescription>
         </div>
 
-        <Button variant="outline" size="sm" onClick={() => void loadData()} disabled={loading}>
+        <Button
+          variant="outline"
+          size="sm"
+          className="shrink-0 self-start sm:self-auto"
+          onClick={() => void loadData()}
+          disabled={loading}
+        >
           Refresh
         </Button>
       </CardHeader>
@@ -112,33 +118,25 @@ export function BranchHealthWidget() {
                   <Progress value={item.pass_rate} />
                 </div>
 
-                <div className="mt-5 grid gap-3 sm:grid-cols-4">
-                  <div>
-                    <p className="flex min-h-10 items-end text-xs uppercase tracking-[0.2em] text-slate-400">
-                      Runs
-                    </p>
-                    <p className="mt-2 text-lg font-semibold text-white">{item.total_runs}</p>
+                <div className="mt-5 grid gap-2 grid-cols-2 sm:grid-cols-4 sm:gap-3">
+                  <div className="flex items-center justify-between sm:flex-col sm:items-start sm:gap-1">
+                    <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Runs</p>
+                    <p className="text-lg font-semibold text-white">{item.total_runs}</p>
                   </div>
 
-                  <div>
-                    <p className="flex min-h-10 items-end text-xs uppercase tracking-[0.2em] text-slate-400">
-                      Failed
-                    </p>
-                    <p className="mt-2 text-lg font-semibold text-rose-200">{item.failed_runs}</p>
+                  <div className="flex items-center justify-between sm:flex-col sm:items-start sm:gap-1">
+                    <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Failed</p>
+                    <p className="text-lg font-semibold text-rose-200">{item.failed_runs}</p>
                   </div>
 
-                  <div>
-                    <p className="flex min-h-10 items-end text-xs uppercase tracking-[0.2em] text-slate-400">
-                      Passed
-                    </p>
-                    <p className="mt-2 text-lg font-semibold text-emerald-200">{item.passed_runs}</p>
+                  <div className="flex items-center justify-between sm:flex-col sm:items-start sm:gap-1">
+                    <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Passed</p>
+                    <p className="text-lg font-semibold text-emerald-200">{item.passed_runs}</p>
                   </div>
 
-                  <div>
-                    <p className="flex min-h-10 items-end text-xs uppercase tracking-[0.2em] text-slate-400">
-                      Failed tests
-                    </p>
-                    <p className="mt-2 text-lg font-semibold text-cyan-200">
+                  <div className="flex items-center justify-between sm:flex-col sm:items-start sm:gap-1">
+                    <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Failed tests</p>
+                    <p className="text-lg font-semibold text-cyan-200">
                       {item.unique_tests_failed}
                     </p>
                   </div>
