@@ -109,40 +109,42 @@ export function TopFailuresWidget() {
                     <p className="text-xs uppercase tracking-[0.2em] text-slate-400">{item.suite}</p>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-4">
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-4">
                     <div className="flex items-center justify-between sm:flex-col sm:items-start sm:gap-1">
                       <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Failures</p>
-                      <p className="text-lg font-semibold text-rose-200">{item.total_failures}</p>
+                      <p className="text-sm sm:text-lg font-semibold text-rose-200">{item.total_failures}</p>
                     </div>
 
                     <div className="flex items-center justify-between sm:flex-col sm:items-start sm:gap-1">
                       <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Passes</p>
-                      <p className="text-lg font-semibold text-emerald-200">{item.total_passes}</p>
+                      <p className="text-sm sm:text-lg font-semibold text-emerald-200">{item.total_passes}</p>
                     </div>
 
                     <div className="flex items-center justify-between sm:flex-col sm:items-start sm:gap-1">
                       <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Pass rate</p>
-                      <p className="text-lg font-semibold text-cyan-200">{item.pass_rate}%</p>
-                    </div>
-
-                    <div className="col-span-2 sm:col-span-1 flex items-center justify-between sm:flex-col sm:items-start sm:gap-1">
-                      <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Last failed</p>
-                      <p className="text-sm text-slate-300">{formatDate(item.last_failed_at)}</p>
+                      <p className="text-sm sm:text-lg font-semibold text-cyan-200">{item.pass_rate}%</p>
                     </div>
                   </div>
 
-                  {item.branches_affected.length > 0 && (
-                    <div>
-                      <p className="mb-2 text-xs uppercase tracking-[0.2em] text-slate-400">Affected branches</p>
-                      <div className="flex flex-wrap gap-2">
-                        {item.branches_affected.map((branch) => (
-                          <Badge key={branch} variant="outline">
-                            {branch}
-                          </Badge>
-                        ))}
-                      </div>
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+                    <div className="flex items-center justify-between sm:flex-col sm:items-start sm:gap-1">
+                      <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Last failed</p>
+                      <p className="text-xs sm:text-sm text-slate-300">{formatDate(item.last_failed_at)}</p>
                     </div>
-                  )}
+
+                    {item.branches_affected.length > 0 && (
+                      <div>
+                        <p className="mb-2 sm:mb-1 text-xs uppercase tracking-[0.2em] text-slate-400">Affected branches</p>
+                        <div className="flex flex-wrap gap-2">
+                          {item.branches_affected.map((branch) => (
+                            <Badge key={branch} variant="outline">
+                              {branch}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
 
                   {item.latest_error && (
                     <div className="max-h-32 overflow-y-auto rounded-lg bg-white/5 p-3 sm:max-h-24 sm:p-2">

@@ -91,17 +91,17 @@ export function FlakyTestsWidget() {
                 <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-4">
                   <div className="flex items-center justify-between sm:flex-col sm:items-start sm:gap-1">
                     <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Failures</p>
-                    <p className="text-lg font-semibold text-rose-200">{item.total_failures}</p>
+                    <p className="text-sm sm:text-lg font-semibold text-rose-200">{item.total_failures}</p>
                   </div>
 
                   <div className="flex items-center justify-between sm:flex-col sm:items-start sm:gap-1">
                     <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Passes</p>
-                    <p className="text-lg font-semibold text-emerald-200">{item.total_passes}</p>
+                    <p className="text-sm sm:text-lg font-semibold text-emerald-200">{item.total_passes}</p>
                   </div>
 
                   <div className="flex items-center justify-between sm:flex-col sm:items-start sm:gap-1">
                     <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Pass rate</p>
-                    <p className="text-lg font-semibold text-cyan-200">{item.pass_rate}%</p>
+                    <p className="text-sm sm:text-lg font-semibold text-cyan-200">{item.pass_rate}%</p>
                   </div>
                 </div>
               </article>
