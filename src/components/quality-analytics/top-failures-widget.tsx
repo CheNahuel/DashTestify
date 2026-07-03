@@ -48,7 +48,7 @@ export function TopFailuresWidget() {
     setError(null);
 
     try {
-      const response = await fetch("/api/qa-analytics/top-failures");
+      const response = await fetch("/api/quality-analytics/top-failures");
       const payload = (await response.json()) as TopFailuresResponse;
 
       if (!response.ok) {
@@ -70,13 +70,19 @@ export function TopFailuresWidget() {
 
   return (
     <Card data-testid="top-failures-widget">
-      <CardHeader className="flex flex-row items-start justify-between gap-4">
+      <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="space-y-1">
           <CardTitle>Top failures</CardTitle>
           <CardDescription>Most failing tests from the last 30 days.</CardDescription>
         </div>
 
-        <Button variant="outline" size="sm" onClick={() => void loadData()} disabled={loading}>
+        <Button
+          variant="outline"
+          size="sm"
+          className="shrink-0 self-start sm:self-auto"
+          onClick={() => void loadData()}
+          disabled={loading}
+        >
           Refresh
         </Button>
       </CardHeader>
@@ -103,25 +109,25 @@ export function TopFailuresWidget() {
                     <p className="text-xs uppercase tracking-[0.2em] text-slate-400">{item.suite}</p>
                   </div>
 
-                  <div className="grid grid-cols-4 gap-4">
-                    <div>
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-4">
+                    <div className="flex items-center justify-between sm:flex-col sm:items-start sm:gap-1">
                       <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Failures</p>
-                      <p className="mt-2 text-lg font-semibold text-rose-200">{item.total_failures}</p>
+                      <p className="text-lg font-semibold text-rose-200">{item.total_failures}</p>
                     </div>
 
-                    <div>
+                    <div className="flex items-center justify-between sm:flex-col sm:items-start sm:gap-1">
                       <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Passes</p>
-                      <p className="mt-2 text-lg font-semibold text-emerald-200">{item.total_passes}</p>
+                      <p className="text-lg font-semibold text-emerald-200">{item.total_passes}</p>
                     </div>
 
-                    <div>
+                    <div className="flex items-center justify-between sm:flex-col sm:items-start sm:gap-1">
                       <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Pass rate</p>
-                      <p className="mt-2 text-lg font-semibold text-cyan-200">{item.pass_rate}%</p>
+                      <p className="text-lg font-semibold text-cyan-200">{item.pass_rate}%</p>
                     </div>
 
-                    <div>
+                    <div className="col-span-2 sm:col-span-1 flex items-center justify-between sm:flex-col sm:items-start sm:gap-1">
                       <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Last failed</p>
-                      <p className="mt-2 text-sm text-slate-300">{formatDate(item.last_failed_at)}</p>
+                      <p className="text-sm text-slate-300">{formatDate(item.last_failed_at)}</p>
                     </div>
                   </div>
 
@@ -139,8 +145,8 @@ export function TopFailuresWidget() {
                   )}
 
                   {item.latest_error && (
-                    <div className="max-h-24 overflow-y-auto rounded-lg bg-white/5 p-2">
-                      <p className="whitespace-pre-wrap text-sm text-slate-300">
+                    <div className="max-h-32 overflow-y-auto rounded-lg bg-white/5 p-3 sm:max-h-24 sm:p-2">
+                      <p className="break-words whitespace-pre-wrap text-xs sm:text-sm text-slate-300">
                         {item.latest_error}
                       </p>
                     </div>

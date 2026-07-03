@@ -8,11 +8,11 @@ import {
   buildLocalQaAnalyticsSnapshot,
   type PlaywrightJsonFile,
   type StoredAiAnalysis,
-} from "@/lib/qa-analytics/local-results";
+} from "@/lib/quality-analytics/local-results";
 
 const repoRoot = process.cwd();
 const localResultsPath = path.join(repoRoot, "test-results", "results.json");
-const localAnalysesPath = path.join(os.tmpdir(), "dash-testify-qa-analytics", "qa-analytics-ai.json");
+const localAnalysesPath = path.join(os.tmpdir(), "dash-testify-quality-analytics", "quality-analytics-ai.json");
 
 async function readJsonFile<T>(filePath: string): Promise<T | null> {
   try {

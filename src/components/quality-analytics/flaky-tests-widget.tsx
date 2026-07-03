@@ -28,7 +28,7 @@ export function FlakyTestsWidget() {
     setError(null);
 
     try {
-      const response = await fetch("/api/qa-analytics/flaky-tests");
+      const response = await fetch("/api/quality-analytics/flaky-tests");
       const payload = (await response.json()) as FlakyTestsResponse;
 
       if (!response.ok) {
@@ -50,13 +50,19 @@ export function FlakyTestsWidget() {
 
   return (
     <Card data-testid="flaky-tests-widget">
-      <CardHeader className="flex flex-row items-start justify-between gap-4">
+      <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="space-y-1">
           <CardTitle>Flaky tests</CardTitle>
           <CardDescription>Tests that have both passes and failures in the last 30 days.</CardDescription>
         </div>
 
-        <Button variant="outline" size="sm" onClick={() => void loadData()} disabled={loading}>
+        <Button
+          variant="outline"
+          size="sm"
+          className="shrink-0 self-start sm:self-auto"
+          onClick={() => void loadData()}
+          disabled={loading}
+        >
           Refresh
         </Button>
       </CardHeader>
@@ -82,20 +88,20 @@ export function FlakyTestsWidget() {
                   <p className="text-xs uppercase tracking-[0.2em] text-slate-400">{item.suite}</p>
                 </div>
 
-                <div className="mt-4 grid grid-cols-3 gap-4">
-                  <div>
+                <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-4">
+                  <div className="flex items-center justify-between sm:flex-col sm:items-start sm:gap-1">
                     <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Failures</p>
-                    <p className="mt-2 text-lg font-semibold text-rose-200">{item.total_failures}</p>
+                    <p className="text-lg font-semibold text-rose-200">{item.total_failures}</p>
                   </div>
 
-                  <div>
+                  <div className="flex items-center justify-between sm:flex-col sm:items-start sm:gap-1">
                     <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Passes</p>
-                    <p className="mt-2 text-lg font-semibold text-emerald-200">{item.total_passes}</p>
+                    <p className="text-lg font-semibold text-emerald-200">{item.total_passes}</p>
                   </div>
 
-                  <div>
+                  <div className="flex items-center justify-between sm:flex-col sm:items-start sm:gap-1">
                     <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Pass rate</p>
-                    <p className="mt-2 text-lg font-semibold text-cyan-200">{item.pass_rate}%</p>
+                    <p className="text-lg font-semibold text-cyan-200">{item.pass_rate}%</p>
                   </div>
                 </div>
               </article>

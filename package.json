@@ -16,7 +16,8 @@
     "analyze:failures": "tsx scripts/analyze-failures.ts",
     "lint": "npm run typecheck && eslint .",
     "lint:fix": "eslint . --fix",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "postinstall": "playwright install chromium"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.106.1",
@@ -32,7 +33,6 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.59.1",
-    "playwright": "^1.59.1",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",

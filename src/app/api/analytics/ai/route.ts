@@ -7,7 +7,7 @@ import {
   appendLocalAnalyses,
   loadLocalAnalysesForRun,
   loadLocalAnalysisById,
-} from "../../qa-analytics/_local-store";
+} from "../../quality-analytics/_local-store";
 import { createAiProvider, parseAiProviderName } from "../../../../../scripts/ai/factory";
 import { applyGeneratedPatch } from "../../../../../scripts/ai/patch";
 import { readSourceFileContext } from "../../../../../scripts/ai/source-context";
