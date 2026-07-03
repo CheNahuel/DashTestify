@@ -1,7 +1,7 @@
 import fs from "fs/promises";
 import os from "os";
 import path from "path";
-import { spawn, spawnSync } from "child_process";
+import { spawn } from "child_process";
 
 export type QaAnalyticsRunMode = "mock" | "live";
 export type QaAnalyticsRunStatus = "idle" | "running" | "success" | "failed";
@@ -116,39 +116,6 @@ function isProcessAlive(pid: number) {
     return true;
   } catch {
     return false;
-  }
-}
-
-function killProcessTree(pid: number, signal: NodeJS.Signals) {
-  if (process.platform === "win32") {
-    try {
-      spawnSync("taskkill", ["/PID", String(pid), "/T", "/F"], {
-        stdio: "ignore",
-      });
-    } catch {
-      // Ignore failures on Windows.
-    }
-    return;
-  }
-
-  try {
-    process.kill(-pid, signal);
-  } catch {
-    // Ignore if process group kill fails.
-  }
-
-  try {
-    spawnSync("pkill", ["-" + signal, "-P", String(pid)], {
-      stdio: "ignore",
-    });
-  } catch {
-    // Ignore pkill failures.
-  }
-
-  try {
-    process.kill(pid, signal);
-  } catch {
-    // Ignore if the process already exited.
   }
 }
 

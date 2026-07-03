@@ -43,6 +43,7 @@ test.describe("Navigation between Home and Metrics", () => {
     await metricsPage.goto("/quality-analytics");
 
     await metricsPage.expectBackToHomeButtonVisible();
+    await expect(metricsPage.backToHomeButton).toBeVisible();
   });
 
   test("Clicking Back to Home navigates to home page", async ({ page }) => {
@@ -59,6 +60,7 @@ test.describe("Navigation between Home and Metrics", () => {
     await metricsPage.goto("/quality-analytics");
 
     await metricsPage.expectRefreshButtonVisible();
+    await expect(metricsPage.refreshButton).toBeVisible();
   });
 
   test("Full navigation flow: Home -> Metrics -> Home", async ({ page }) => {
@@ -102,12 +104,12 @@ test.describe("Refresh functionality on Metrics page", () => {
     await metricsPage.goto("/quality-analytics");
 
     const refreshButton = metricsPage.refreshButton;
-    expect(await refreshButton.isEnabled()).toBe(true);
+    await expect(refreshButton).toBeEnabled();
 
     await refreshButton.click();
     await metricsPage.expectRefreshButtonDisabled();
 
     await metricsPage.waitForRefreshToComplete();
-    expect(await refreshButton.isEnabled()).toBe(true);
+    await expect(refreshButton).toBeEnabled();
   });
 });
