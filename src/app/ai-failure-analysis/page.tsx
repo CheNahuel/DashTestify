@@ -1,6 +1,7 @@
+import { redirect } from "next/navigation";
 import simpleGit from "simple-git";
 
-import { QaAnalyticsPage } from "@/components/qa-analytics/qa-analytics-page";
+import { AiFailureAnalysisPage } from "@/components/quality-analytics/ai-failure-analysis-page";
 
 export const dynamic = "force-dynamic";
 
@@ -19,17 +20,14 @@ async function getCurrentBranchName() {
   }
 }
 
-export default async function Page({
-  searchParams,
-}: {
-  searchParams: Promise<{
-    view?: string;
-  }>;
-}) {
-  const params = await searchParams;
-  const currentBranch = await getCurrentBranchName();
+export default async function Page() {
   const isDeployedProduction = process.env.NODE_ENV === "production" || process.env.VERCEL === "1";
-  const mode = params.view === "live" || isDeployedProduction ? "live" : "local";
 
-  return <QaAnalyticsPage mode={mode} currentBranch={currentBranch} />;
+  if (isDeployedProduction) {
+    redirect("/quality-analytics");
+  }
+
+  const currentBranch = await getCurrentBranchName();
+
+  return <AiFailureAnalysisPage currentBranch={currentBranch} />;
 }
