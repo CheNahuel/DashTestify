@@ -509,7 +509,7 @@ export function AiFailureAnalysisPage({ currentBranch }: AiFailureAnalysisPagePr
       window.clearInterval(runStateTimer);
       window.clearInterval(snapshotTimer);
     };
-  }, [runState?.status]);
+  }, [runState?.status, loadLocalSnapshot]);
 
   useEffect(() => {
     if (runState?.status !== "success" && runState?.status !== "failed") {
