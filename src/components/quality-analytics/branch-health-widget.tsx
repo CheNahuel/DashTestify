@@ -112,7 +112,7 @@ export function BranchHealthWidget() {
                 <div className="mt-5 space-y-2">
                   <div className="flex items-center justify-between">
                     <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Pass rate</p>
-                    <p className="text-xs sm:text-sm font-medium text-slate-300">{item.pass_rate}%</p>
+                    <p className="text-sm font-medium text-slate-300">{item.pass_rate}%</p>
                   </div>
 
                   <Progress value={item.pass_rate} />
@@ -121,22 +121,22 @@ export function BranchHealthWidget() {
                 <div className="mt-5 grid gap-2 grid-cols-2 sm:grid-cols-4 sm:gap-3">
                   <div className="flex items-center justify-between sm:flex-col sm:items-start sm:gap-1">
                     <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Runs</p>
-                    <p className="text-sm sm:text-lg font-semibold text-white">{item.total_runs}</p>
+                    <p className="text-lg font-semibold text-white">{item.total_runs}</p>
                   </div>
 
                   <div className="flex items-center justify-between sm:flex-col sm:items-start sm:gap-1">
                     <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Failed</p>
-                    <p className="text-sm sm:text-lg font-semibold text-rose-200">{item.failed_runs}</p>
+                    <p className="text-lg font-semibold text-rose-200">{item.failed_runs}</p>
                   </div>
 
                   <div className="flex items-center justify-between sm:flex-col sm:items-start sm:gap-1">
                     <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Passed</p>
-                    <p className="text-sm sm:text-lg font-semibold text-emerald-200">{item.passed_runs}</p>
+                    <p className="text-lg font-semibold text-emerald-200">{item.passed_runs}</p>
                   </div>
 
                   <div className="flex items-center justify-between sm:flex-col sm:items-start sm:gap-1">
                     <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Failed tests</p>
-                    <p className="text-sm sm:text-lg font-semibold text-cyan-200">
+                    <p className="text-lg font-semibold text-cyan-200">
                       {item.unique_tests_failed}
                     </p>
                   </div>
