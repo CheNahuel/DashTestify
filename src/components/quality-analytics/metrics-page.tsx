@@ -144,15 +144,15 @@ export function MetricsPage() {
   );
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.16),_transparent_40%),linear-gradient(180deg,_#020617_0%,_#0f172a_45%,_#111827_100%)] px-4 py-6 text-slate-100 sm:px-6 lg:px-8">
-      <div className="mx-auto flex min-w-0 max-w-7xl flex-col gap-6">
-        <header className="rounded-3xl border border-white/10 bg-slate-950/70 p-4 shadow-2xl shadow-cyan-950/20 backdrop-blur sm:p-6">
-          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-            <div className="space-y-3 flex-1 min-w-0">
-              <p className="text-xs uppercase tracking-[0.35em] text-cyan-300">Quality Analytics</p>
-              <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">Metrics overview</h1>
+    <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.16),_transparent_40%),linear-gradient(180deg,_#020617_0%,_#0f172a_45%,_#111827_100%)] px-3 py-4 text-slate-100 sm:px-6 lg:px-8">
+      <div className="mx-auto flex min-w-0 max-w-7xl flex-col gap-3 sm:gap-6">
+        <header className="rounded-2xl sm:rounded-3xl border border-white/10 bg-slate-950/70 p-3 sm:p-4 md:p-6 shadow-2xl shadow-cyan-950/20 backdrop-blur">
+          <div className="mb-3 sm:mb-4 flex flex-col gap-2 sm:gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div className="space-y-1 sm:space-y-3 flex-1 min-w-0">
+              <p className="text-[10px] uppercase tracking-[0.35em] text-cyan-300">Quality Analytics</p>
+              <h1 className="text-xl sm:text-3xl md:text-4xl font-semibold tracking-tight">Metrics overview</h1>
               <div>
-                <p className="mt-3 max-w-2xl text-sm text-slate-300 sm:text-base">
+                <p className="mt-1 sm:mt-3 max-w-2xl text-[11px] sm:text-sm md:text-base text-slate-300">
                   Metrics and analytics across all test runs. View trends, failures, and branch health.
                 </p>
               </div>
@@ -190,39 +190,39 @@ export function MetricsPage() {
           </div>
         </header>
 
-        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <div className="rounded-3xl border border-white/10 bg-slate-950/75 p-6 shadow-lg" data-testid="stats-total-runs">
-            <p className="text-sm text-slate-400">Total Runs</p>
-            <p className="mt-3 text-4xl font-semibold">{totalRuns}</p>
+        <section className="grid gap-2 sm:gap-3 md:gap-4 grid-cols-2 sm:grid-cols-4">
+          <div className="rounded-2xl sm:rounded-3xl border border-white/10 bg-slate-950/75 p-2 sm:p-4 md:p-6 shadow-lg" data-testid="stats-total-runs">
+            <p className="text-[10px] sm:text-xs md:text-sm text-slate-400">Total Runs</p>
+            <p className="mt-1 sm:mt-3 text-lg sm:text-3xl md:text-4xl font-semibold">{totalRuns}</p>
           </div>
 
-          <div className="rounded-3xl border border-white/10 bg-slate-950/75 p-6 shadow-lg" data-testid="stats-pass-rate">
-            <p className="text-sm text-slate-400">Pass Rate</p>
-            <p className="mt-3 text-4xl font-semibold">{passRate}%</p>
+          <div className="rounded-2xl sm:rounded-3xl border border-white/10 bg-slate-950/75 p-2 sm:p-4 md:p-6 shadow-lg" data-testid="stats-pass-rate">
+            <p className="text-[10px] sm:text-xs md:text-sm text-slate-400">Pass Rate</p>
+            <p className="mt-1 sm:mt-3 text-lg sm:text-3xl md:text-4xl font-semibold">{passRate}%</p>
           </div>
 
           <div
-            className="rounded-3xl border border-white/10 bg-slate-950/75 p-6 shadow-lg"
+            className="rounded-2xl sm:rounded-3xl border border-white/10 bg-slate-950/75 p-2 sm:p-4 md:p-6 shadow-lg"
             data-testid="stats-passed-tests"
           >
-            <p className="text-sm text-slate-400">Passed Tests</p>
-            <p className="mt-3 text-4xl font-semibold text-emerald-300">{totalPassed}</p>
+            <p className="text-[10px] sm:text-xs md:text-sm text-slate-400">Passed Tests</p>
+            <p className="mt-1 sm:mt-3 text-lg sm:text-3xl md:text-4xl font-semibold text-emerald-300">{totalPassed}</p>
           </div>
 
           <div
-            className="rounded-3xl border border-white/10 bg-slate-950/75 p-6 shadow-lg"
+            className="rounded-2xl sm:rounded-3xl border border-white/10 bg-slate-950/75 p-2 sm:p-4 md:p-6 shadow-lg"
             data-testid="stats-failed-tests"
           >
-            <p className="text-sm text-slate-400">Failed Tests</p>
-            <p className="mt-3 text-4xl font-semibold text-rose-300">{totalFailed}</p>
+            <p className="text-[10px] sm:text-xs md:text-sm text-slate-400">Failed Tests</p>
+            <p className="mt-1 sm:mt-3 text-lg sm:text-3xl md:text-4xl font-semibold text-rose-300">{totalFailed}</p>
           </div>
         </section>
 
-        <section className="rounded-3xl border border-white/10 bg-slate-950/70 p-4 shadow-2xl shadow-cyan-950/10 sm:p-6">
-          <div className="mb-6 flex items-center justify-between gap-3">
+        <section className="rounded-2xl sm:rounded-3xl border border-white/10 bg-slate-950/70 p-3 sm:p-4 md:p-6 shadow-2xl shadow-cyan-950/10">
+          <div className="mb-3 sm:mb-6 flex items-center justify-between gap-3">
             <div>
-              <h2 className="text-2xl font-semibold">Test trends</h2>
-              <p className="text-sm text-slate-400">Daily passed vs failed runs over the last 30 days.</p>
+              <h2 className="text-lg sm:text-2xl font-semibold">Test trends</h2>
+              <p className="text-[10px] sm:text-sm text-slate-400">Daily passed vs failed runs over the last 30 days.</p>
             </div>
           </div>
 
