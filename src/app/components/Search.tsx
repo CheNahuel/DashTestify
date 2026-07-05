@@ -3,12 +3,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import Image from "next/image";
 import type { Coin } from "@/features/crypto/types/coin";
-
-const currencyFormatter = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "USD",
-  maximumFractionDigits: 2,
-});
+import { currencyFormatter } from "@/lib/formatters";
 
 const getFallbackCoinImage = (symbol: string) =>
   `data:image/svg+xml;base64,${btoa(

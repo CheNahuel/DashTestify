@@ -70,6 +70,16 @@ function extractText(xml: string, tag: string): string {
   return match ? match[1].trim() : "";
 }
 
+function determineCategory(text: string, categoryMap: Record<string, string>): string {
+  const textLower = text.toLowerCase();
+  for (const [keyword, category] of Object.entries(categoryMap)) {
+    if (textLower.includes(keyword.toLowerCase())) {
+      return category;
+    }
+  }
+  return "AI Updates";
+}
+
 function parseRssXml(xml: string, sourceInfo: (typeof FEED_SOURCES)[0]): FeedItem[] {
   try {
     const items: FeedItem[] = [];
@@ -98,14 +108,7 @@ function parseRssXml(xml: string, sourceInfo: (typeof FEED_SOURCES)[0]): FeedIte
         continue;
       }
 
-      // Determine category based on content
-      let category = "AI Updates";
-      for (const [keyword, cat] of Object.entries(sourceInfo.categoryMap)) {
-        if (title.toLowerCase().includes(keyword.toLowerCase())) {
-          category = cat;
-          break;
-        }
-      }
+      const category = determineCategory(title, sourceInfo.categoryMap);
 
       // Clean up summary (remove HTML tags and entities)
       const cleanSummary = summary
@@ -157,15 +160,7 @@ function parseDevToJson(json: string, source: (typeof FEED_SOURCES)[0]): FeedIte
         continue;
       }
 
-      // Determine category based on content
-      let category = "Testing";
-      const fullText = `${title} ${summary}`.toLowerCase();
-      for (const [keyword, cat] of Object.entries(source.categoryMap)) {
-        if (fullText.includes(keyword.toLowerCase())) {
-          category = cat;
-          break;
-        }
-      }
+      const category = determineCategory(`${title} ${summary}`, source.categoryMap);
 
       items.push({
         id: `${source.source}-${article.id}`,

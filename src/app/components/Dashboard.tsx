@@ -16,6 +16,7 @@ import {
   Timeframe,
   TIMEFRAMES,
 } from "@/features/crypto/types/coin";
+import { compactFormatter, currencyFormatter } from "@/lib/formatters";
 import { Search } from "./Search";
 import { TopCoins } from "./TopCoins";
 
@@ -46,17 +47,6 @@ const JOURNAL_STORAGE_KEY = "dashtestify.journal";
 type SortOption = (typeof SORT_OPTIONS)[number]["value"];
 type TrendOption = (typeof TREND_OPTIONS)[number]["value"];
 type JournalByCoin = Record<string, CoinJournalEntry[]>;
-
-const currencyFormatter = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "USD",
-  maximumFractionDigits: 2,
-});
-
-const compactFormatter = new Intl.NumberFormat("en-US", {
-  notation: "compact",
-  maximumFractionDigits: 2,
-});
 
 const safeParseJson = <T,>(value: string | null, fallback: T): T => {
   if (!value) {
