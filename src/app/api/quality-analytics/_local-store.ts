@@ -82,10 +82,3 @@ export async function appendLocalAnalyses(analyses: StoredAiAnalysis[]) {
 
   await writeJsonFile(localAnalysesPath, [...existing, ...newAnalyses]);
 }
-
-export async function overwriteLocalAnalysis(analysis: StoredAiAnalysis) {
-  const existing = (await readJsonFile<StoredAiAnalysis[]>(localAnalysesPath)) || [];
-  const next = existing.filter((item) => String(item.id) !== String(analysis.id));
-  next.push(analysis);
-  await writeJsonFile(localAnalysesPath, next);
-}
