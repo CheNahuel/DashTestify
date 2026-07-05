@@ -30,7 +30,8 @@ function readProviderName() {
 }
 
 async function main() {
-  const analyzer = createAiProvider(readProviderName());
+  const provider = readProviderName();
+  const analyzer = createAiProvider(provider);
 
   const { data: failures, error } = await supabase
     .from("test_results")
@@ -42,8 +43,6 @@ async function main() {
     console.error(error);
     return;
   }
-
-  const provider = readProviderName();
 
   for (const failure of (failures || []) as FailureRow[]) {
     const { data: existing } = await supabase
