@@ -1,13 +1,8 @@
 "use client";
 
 import { LineChart, Line, XAxis, Tooltip, ResponsiveContainer, YAxis } from "recharts";
+import { currencyFormatter } from "@/lib/formatters";
 import { CoinHistory } from "../types/coin";
-
-const currencyFormatter = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "USD",
-  maximumFractionDigits: 2,
-});
 
 const formatSmallCurrency = (value: number) => {
   if (!Number.isFinite(value)) return "";

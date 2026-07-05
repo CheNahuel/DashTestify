@@ -8,6 +8,7 @@ create table if not exists public.test_runs (
   passed bigint null,
   failed bigint null,
   duration_ms bigint null,
+  run_type text default 'ci',
   constraint test_runs_pkey primary key (id)
 ) TABLESPACE pg_default;
 
@@ -15,3 +16,4 @@ create table if not exists public.test_runs (
 create index if not exists test_runs_branch_created_at_idx on public.test_runs(branch, created_at desc);
 create index if not exists test_runs_created_at_idx on public.test_runs(created_at desc);
 create index if not exists test_runs_commit_sha_idx on public.test_runs(commit_sha);
+create index if not exists test_runs_run_type_idx on public.test_runs(run_type);

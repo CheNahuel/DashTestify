@@ -77,24 +77,8 @@ export async function loadLocalAnalysesForRun(runId: string | number) {
 
 export async function appendLocalAnalyses(analyses: StoredAiAnalysis[]) {
   const existing = (await readJsonFile<StoredAiAnalysis[]>(localAnalysesPath)) || [];
-  const seen = new Set(existing.map((analysis) => String(analysis.id)));
-  const next = [...existing];
+  const existingIds = new Set(existing.map((a) => String(a.id)));
+  const newAnalyses = analyses.filter((a) => !existingIds.has(String(a.id)));
 
-  for (const analysis of analyses) {
-    if (seen.has(String(analysis.id))) {
-      continue;
-    }
-
-    seen.add(String(analysis.id));
-    next.push(analysis);
-  }
-
-  await writeJsonFile(localAnalysesPath, next);
-}
-
-export async function overwriteLocalAnalysis(analysis: StoredAiAnalysis) {
-  const existing = (await readJsonFile<StoredAiAnalysis[]>(localAnalysesPath)) || [];
-  const next = existing.filter((item) => String(item.id) !== String(analysis.id));
-  next.push(analysis);
-  await writeJsonFile(localAnalysesPath, next);
+  await writeJsonFile(localAnalysesPath, [...existing, ...newAnalyses]);
 }

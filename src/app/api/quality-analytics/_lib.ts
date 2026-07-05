@@ -114,20 +114,12 @@ export async function loadAnalyticsWindow(days: number): Promise<AnalyticsWindow
   }
 
   const runById = new Map(runs.map((run) => [String(run.id), run]));
-  const results = ((resultsData || []) as AnalyticsResultRow[])
+  const results = (resultsData || [])
     .map((result) => {
       const run = runById.get(String(result.run_id));
-
-      if (!run) {
-        return null;
-      }
-
-      return {
-        ...result,
-        run,
-      } satisfies JoinedAnalyticsResultRow;
+      return run ? ({ ...result, run } as JoinedAnalyticsResultRow) : null;
     })
-    .filter((result): result is JoinedAnalyticsResultRow => Boolean(result));
+    .filter(Boolean) as JoinedAnalyticsResultRow[];
 
   return {
     runs,
