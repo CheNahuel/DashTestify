@@ -64,8 +64,6 @@ async function main() {
 
   console.log(`Uploaded run ${run.id}`);
   console.log(`Processed ${total} tests`);
-  console.log("Looking for results at:", resultsPath);
-  console.log("Exists:", fs.existsSync(resultsPath));
 }
 
 main();
