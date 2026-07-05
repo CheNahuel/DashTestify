@@ -28,6 +28,7 @@ async function main() {
   const total = snapshot.latestRunSummary?.total_tests || results.stats.expected;
   const failed = snapshot.latestRunSummary?.failed || results.stats.unexpected;
   const passed = snapshot.latestRunSummary?.passed || total - failed;
+  const runType = process.env.RUN_TYPE || "ci";
 
   const { data: run, error } = await supabase
     .from("test_runs")
@@ -37,6 +38,7 @@ async function main() {
       total_tests: total,
       passed,
       failed,
+      run_type: runType,
     })
     .select()
     .single();
