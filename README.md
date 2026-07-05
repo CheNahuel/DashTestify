@@ -1,38 +1,41 @@
-# Crypto Intelligence Dashboard (Next.js + Playwright E2E Testing)
+# DashTestify — Crypto Dashboard + Playwright E2E Testing
 
-A modern cryptocurrency dashboard built with Next.js, showcasing real-time data visualization and a production-like end-to-end testing setup using Playwright.
+A modern cryptocurrency dashboard built with **Next.js** and **TypeScript**, featuring real-time data visualization, comprehensive **Playwright E2E testing**, and an AI-powered QA analytics dashboard for failure analysis.
+
+Perfect for learning modern testing practices, CI/CD pipelines, and production-grade web development.
 
 ---
 
-## 🌐 Live Demo
+## 🚀 Quick Links
 
-👉 https://dash-testify.vercel.app/
+| Link | Purpose |
+|------|---------|
+| 🌐 **[Live Dashboard](https://dash-testify.vercel.app/)** | View the live cryptocurrency dashboard |
+| 📊 **[QA Analytics](https://dash-testify.vercel.app/quality-analytics)** | Test metrics & failure analysis |
+| 🧪 **[Test Report](https://chenahuel.github.io/DashTestify/)** | Playwright HTML test reports |
 
-## 🧪 Test Report (Playwright)
+## ✨ Features
 
-👉 https://chenahuel.github.io/DashTestify/
+### 💰 Cryptocurrency Dashboard
+- **Real-time & Mock Modes**: Live CoinCap API v3 data or deterministic mock data
+- **Interactive Charts**: 9 timeframes (1H to 5M) with Recharts
+- **Smart Search**: Filter by coin name or symbol
+- **Sorting Options**: Market cap, price, 24H change
+- **Watchlist**: Save favorite coins locally
+- **Price Alerts**: Get notified when prices hit targets
+- **Trade Journal**: Keep per-coin trading notes
 
-## 📊 QA Analytics
+### 🤖 AI-Powered QA Analytics (Local Dev)
+- **AI Failure Analysis**: Auto-analyze test failures with Claude, OpenAI, Gemini, etc.
+- **Suggested Fixes**: AI generates code patches for failing tests
+- **Flaky Test Detection**: Identify unstable tests
+- **Top Failures**: Aggregate and track failure patterns
+- **Confidence Scoring**: Trust metrics for AI suggestions
 
-👉 https://dash-testify.vercel.app/quality-analytics
-
-## 🚀 Features
-
-### Crypto Dashboard
-- 🔗 Real-time data from CoinCap API v3 (or mock mode for offline)
-- 📊 Interactive historical charts (H1, H2, H6, H12, D1, M1, M5, M15, M30)
-- 🔍 Smart search & filtering by name or symbol
-- 📈 Sort by market cap, price, or 24H change
-- 📔 Trade journal with per-coin notes
-- 🔔 Price alerts with email and localStorage persistence
-- ⭐ Watchlist with localStorage persistence
-
-### QA Analytics Dashboard
-- 🤖 AI-powered failure analysis & fix suggestions (local development)
-- 📈 Historical test metrics & trends (production)
-- 🐛 Flaky test detection & analysis
-- 🔴 Top failures tracking & aggregation
-- 🌿 Branch health metrics (production with Supabase)
+### 📊 Production Analytics (with Supabase)
+- **Historical Metrics**: Track test trends over time
+- **Branch Health**: Monitor code quality per branch
+- **Test Runs**: Complete audit of all test executions
 
 ## 📡 Data Sources
 
@@ -96,14 +99,16 @@ AI tools were used to support test case generation, code review, and test valida
 
 ## 🛠 Tech Stack
 
-- Next.js 16 (App Router)
-- TypeScript
-- Tailwind CSS
-- TanStack Query
-- Recharts
-- Playwright (E2E Testing)
-- CoinCap API v3
-- Axios
+| Layer | Technology | Purpose |
+|-------|-----------|---------|
+| **Framework** | Next.js 16 (App Router) | Full-stack React with server components |
+| **Language** | TypeScript | Type-safe JavaScript |
+| **Styling** | Tailwind CSS | Utility-first CSS framework |
+| **State & Data** | TanStack Query | Server state management & caching |
+| **Charts** | Recharts | Interactive React charts |
+| **Testing** | Playwright | Browser automation & E2E tests |
+| **API** | Axios | HTTP client for API calls |
+| **Data Source** | CoinCap API v3 | Live cryptocurrency market data |
 
 ### 📂 Project Structure
 
@@ -163,6 +168,12 @@ tests/
 
 ## 🚀 Quick Start
 
+### Prerequisites
+
+- **Node.js** 18+ (check with `node --version`)
+- **npm** 9+ (check with `npm --version`)
+- **Git** (check with `git --version`)
+
 ### 1. Clone & Install
 
 ```bash
@@ -177,15 +188,59 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser. The app works with **mock data by default** — no API keys needed.
+Open **[http://localhost:3000](http://localhost:3000)** in your browser.
+
+✅ The app works **out of the box** with mock data — no API keys needed!
 
 ### 3. Explore the App
 
-| URL | Purpose |
-|-----|---------|
-| `/` | Main cryptocurrency dashboard |
-| `/quality-analytics` | QA dashboard (test results, AI analysis, metrics) |
-| `/ai-failure-analysis` | Direct link to AI failure analysis (dev-only) |
+| Route | What You'll See |
+|-------|-----------------|
+| `/` | Cryptocurrency dashboard with live prices and charts |
+| `/quality-analytics` | Test results, AI failure analysis, metrics |
+| `/ai-failure-analysis` | Detailed AI-powered debugging suggestions |
+
+### 4. Run Tests (Optional)
+
+```bash
+# Run all E2E tests in mock mode (recommended)
+npm run test:e2e
+
+# View interactive test UI
+npm run test:e2e:ui
+
+# See the test report
+npm run test:e2e:report
+```
+
+---
+
+## 📚 For Beginners
+
+### What is E2E Testing?
+**End-to-End (E2E) testing** simulates real user interactions by controlling a browser. Instead of unit tests that test code in isolation, E2E tests verify that the entire application works correctly from a user's perspective.
+
+**Example**: An E2E test might:
+1. Click the search box
+2. Type "bitcoin"
+3. Verify that bitcoin appears in results
+4. Click on bitcoin
+5. Verify the price chart loads
+
+### Why Playwright?
+- **Fast & reliable**: Runs tests in parallel with minimal flakiness
+- **Multi-browser**: Test in Chrome, Firefox, Safari
+- **Great debugging**: Built-in inspector, screenshots, traces
+- **No setup headaches**: Works out of the box
+
+### Why AI for Failure Analysis?
+When a test fails, the AI analyzes:
+- The error message
+- The code that was running
+- The test file context
+- The application code
+
+Then it **suggests fixes** — sometimes even auto-generating code patches. Perfect for learning and rapid debugging during development.
 
 ---
 
@@ -351,20 +406,62 @@ NEXT_PUBLIC_SUPABASE_KEY=your_supabase_key
 
 > **Note:** Without Supabase, local analytics still work perfectly. Live metrics are only available on production with Supabase configured.
 
-## ⚙️ CI/CD
+## 🔧 Troubleshooting
 
-- GitHub Actions pipeline runs automated tests on every push and pull request
-- Test execution acts as a quality gate before deployment
-- On successful validation, the application is automatically deployed to Vercel
-- Playwright HTML reports are published via GitHub Pages
+### "Port 3000 already in use"
+```bash
+# Use a different port
+npm run dev -- -p 3001
+```
 
-## 📈 What This Project Demonstrates
+### "Tests fail with timeout errors"
+```bash
+# Increase the timeout
+npm run test:e2e -- --timeout=60000
+```
 
-- Designing scalable and maintainable test automation frameworks
-- Implementing reliable end-to-end testing strategies with Playwright
-- Integrating CI/CD pipelines with automated reporting
-- Applying best practices for test stability and maintainability
-- Using AI-assisted workflows to enhance testing efficiency
+### "Mock data not loading"
+Restart the dev server:
+```bash
+npm run dev
+```
+
+### "TypeScript errors in IDE"
+Your IDE might be cached. Try:
+```bash
+npm run build
+```
+
+### "Need live CoinCap data?"
+Get a free API key from [rest.coincap.io](https://rest.coincap.io), add it to `.env`:
+```bash
+COINCAP_API_KEY=your_key_here
+```
+Then restart with `npm run dev`.
+
+---
+
+## 🎓 What This Project Demonstrates
+
+- **Test Automation**: Reliable E2E testing with Playwright & Page Object Model
+- **Modern React**: Next.js, server components, and client interactivity
+- **TypeScript**: Type-safe development at scale
+- **CI/CD Pipelines**: Automated testing & deployment with GitHub Actions
+- **AI Integration**: Leveraging LLMs for intelligent failure analysis
+- **API Integration**: Handling real APIs with fallback mock data
+- **Performance**: Server-side rendering, caching, and optimization
+
+---
+
+## ⚙️ CI/CD Pipeline
+
+This project uses **GitHub Actions** to:
+- Run tests on every push and pull request
+- Act as a quality gate before merging
+- Deploy to Vercel on successful builds
+- Publish Playwright reports via GitHub Pages
+
+See `.github/workflows/` for pipeline configuration.
 
 ## 📄 License
 

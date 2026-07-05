@@ -1,18 +1,8 @@
 import Image from "next/image";
 import { Coin, CoinHistoryRequest } from "../types/coin";
+import { compactFormatter, currencyFormatter } from "@/lib/formatters";
 import { useCoinHistory } from "../hooks/useCoinHistory";
 import { CoinSparkline } from "./CoinSparkline";
-
-const currencyFormatter = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "USD",
-  maximumFractionDigits: 2,
-});
-
-const compactFormatter = new Intl.NumberFormat("en-US", {
-  notation: "compact",
-  maximumFractionDigits: 2,
-});
 
 export const CoinCard = ({
   coin,

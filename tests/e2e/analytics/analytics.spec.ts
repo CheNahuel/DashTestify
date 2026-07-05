@@ -896,18 +896,9 @@ test("local qa analytics can start a mock run and shows progress before success"
   await page.getByTestId("run-tests-button").click();
   // Wait for run to progress and complete
   await expect(page.getByRole("progressbar")).toBeVisible({ timeout: 3000 });
-  // Check for progress indicators while running (may be transient as polling updates state)
-  const hasProgressText = await page.getByText(/Now running:/).isVisible().catch(() => false);
-  const hasProgressCount = await page.getByText("Progress 12/35").isVisible().catch(() => false);
-  if (!hasProgressText && !hasProgressCount) {
-    // If progress text is gone, we're in the final state - check for results
-    await expect(page.getByTestId("summary-metric-total")).toContainText("21");
-  } else {
-    // Still in progress state
-    expect(hasProgressText || hasProgressCount).toBeTruthy();
-  }
   // Wait for completion
   await expect(page.getByRole("progressbar")).toHaveCount(0, { timeout: 3000 });
+  // Verify final results
   await expect(page.getByTestId("summary-metric-total")).toContainText("21");
 });
 
@@ -1179,15 +1170,9 @@ test("local qa analytics refreshes latest results when a run fails", async ({ pa
   await page.getByTestId("run-tests-button").click();
   // Wait for run to progress and complete
   await expect(page.getByRole("progressbar")).toBeVisible({ timeout: 3000 });
-  // Check for progress indicators while running (may be transient as polling updates state)
-  const hasProgressText = await page.getByText(/Now running:/).isVisible().catch(() => false);
-  const hasProgressCount = await page.getByText(/Progress \d+\/\d+/).isVisible().catch(() => false);
-  if (!hasProgressText && !hasProgressCount) {
-    // If progress text is gone, we're in the final state - check for results
-    await expect(page.getByTestId("summary-metric-total")).toContainText("21");
-  }
   // Wait for completion
   await expect(page.getByRole("progressbar")).toHaveCount(0, { timeout: 3000 });
+  // Verify final results
   await expect(page.getByTestId("summary-metric-total")).toContainText("21");
   await expect(page.getByTestId("failing-test-search-by-symbol-finds-the-coin")).toContainText(
     "3 failures",
