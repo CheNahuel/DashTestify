@@ -72,6 +72,3 @@ export async function POST(request: Request) {
   }
 }
 
-export async function DELETE() {
-  return NextResponse.json({ error: "Stop functionality is disabled." }, { status: 405 });
-}

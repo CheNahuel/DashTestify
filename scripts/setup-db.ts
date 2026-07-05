@@ -57,9 +57,10 @@ async function setupDatabase() {
     );
     console.log("\nTo set up the database manually:");
     console.log("1. Go to Supabase Dashboard > SQL Editor");
-    console.log("2. Create a new query");
-    console.log("3. Copy the contents from scripts/migrations/001_create_test_runs.sql");
-    console.log("4. Execute the query");
+    console.log("2. Run each migration in order:");
+    console.log("   - scripts/migrations/001_create_test_runs.sql");
+    console.log("   - scripts/migrations/002_create_test_results.sql");
+    console.log("3. Copy contents from each file and execute in order");
     process.exit(1);
   }
 }

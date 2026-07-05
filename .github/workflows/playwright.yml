@@ -5,6 +5,13 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_call:
+    inputs:
+      run_type:
+        description: "Execution type (ci, scheduled, manual)"
+        required: false
+        type: string
+        default: "ci"
 
 jobs:
   test:
@@ -60,3 +67,4 @@ jobs:
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
           GITHUB_SHA: ${{ github.sha }}
           GITHUB_REF_NAME: ${{ github.ref_name }}
+          RUN_TYPE: ${{ inputs.run_type }}
