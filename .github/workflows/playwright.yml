@@ -28,6 +28,9 @@ jobs:
           node-version: 22
           cache: npm
 
+      - name: Configure Git
+        run: git config --global init.defaultBranch main && git config --global advice.detachedHead false
+
       - name: Cache Playwright browsers
         uses: actions/cache@v4
         with:
