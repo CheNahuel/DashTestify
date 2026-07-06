@@ -76,7 +76,7 @@ export function MetricsPage() {
         .order("created_at", { ascending: false });
 
       if (error) {
-        console.error(error);
+        console.error("Failed to load test runs:", error instanceof Error ? error.message : String(error));
         return;
       }
 
@@ -94,7 +94,7 @@ export function MetricsPage() {
 
         setTrendData(payload.data || []);
       } catch (error) {
-        console.error(error);
+        console.error("Failed to load test trends:", error instanceof Error ? error.message : "Unknown error");
         setTrendData([]);
       }
     }
