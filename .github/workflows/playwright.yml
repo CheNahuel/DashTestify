@@ -149,9 +149,12 @@ jobs:
               `- **⏱️ Duration:** ${summary.duration}s`,
               '',
               '#### 📄 Full Report',
-              `**📥 Download Artifact:** [playwright-report-${{ github.run_id }}](${artifactUrl})`
+              `[**📥 Download Artifact** \`playwright-report-${{ github.run_id }}\`](${artifactUrl})`,
               '',
-              'Extract the ZIP and open `playwright-report/index.html` in your browser to view the complete interactive report'
+              'Extract the ZIP and open `playwright-report/index.html` in your browser to view the complete interactive report with test details, screenshots, videos, and traces.',
+              '',
+              '---',
+              '*Playwright Test Runner*'
             ].join('\n');
 
             const { data: comments } = await github.rest.issues.listComments({
