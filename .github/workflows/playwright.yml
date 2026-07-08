@@ -17,8 +17,6 @@ permissions:
   contents: read
   checks: write
   pull-requests: write
-  pages: write
-  id-token: write
 
 jobs:
   test:
@@ -115,13 +113,16 @@ jobs:
           | **Skipped** | $SKIPPED |
           | **Duration** | ${DURATION}s |
 
-          ### 📦 Artifacts
-          - **Artifact Name**: \`playwright-report-${{ github.run_id }}\`
-          - **Retention**: 30 days
+          ### 📦 HTML Report
+          **Download the artifact** \`playwright-report-${{ github.run_id }}\` from the **Artifacts** section below to view the interactive HTML report.
 
-          ### 📄 Reports
-          - [View HTML Report (GitHub Actions)](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
-          - [GitHub Pages Report](https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/)
+          Steps to view:
+          1. Click **Artifacts** section (bottom of workflow summary)
+          2. Download \`playwright-report-${{ github.run_id }}.zip\`
+          3. Extract the ZIP file
+          4. Open \`playwright-report/index.html\` in your browser
+
+          **Retention**: 30 days
 
           EOF
 
@@ -199,32 +200,3 @@ jobs:
           GITHUB_REF_NAME: ${{ github.ref_name }}
           RUN_TYPE: ${{ inputs.run_type }}
 
-      - name: Check Playwright report exists
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        run: |
-          echo "Checking for playwright-report directory..."
-          if [ -d playwright-report ]; then
-            echo "✅ playwright-report directory exists"
-            ls -la playwright-report/ | head -20
-            echo "Total files: $(find playwright-report -type f | wc -l)"
-          else
-            echo "❌ playwright-report directory NOT FOUND"
-          fi
-
-      - name: Upload Pages artifact
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: playwright-report/
-
-  deploy-pages:
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    needs: test
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
