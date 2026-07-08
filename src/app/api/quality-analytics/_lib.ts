@@ -36,7 +36,7 @@ function getSupabaseClient() {
   const supabaseKey = process.env.SUPABASE_KEY;
 
   if (!supabaseUrl || !supabaseKey) {
-    throw new Error("SUPABASE_URL and SUPABASE_KEY are required for QA analytics routes.");
+    return null;
   }
 
   return createClient(supabaseUrl, supabaseKey);
@@ -82,6 +82,14 @@ export async function loadAnalyticsWindow(days: number): Promise<AnalyticsWindow
   const supabase = getSupabaseClient();
   const since = createSinceDate(days);
   const sinceIso = since.toISOString();
+
+  if (!supabase) {
+    return {
+      runs: [],
+      results: [],
+      sinceIso,
+    };
+  }
 
   const { data: runsData, error: runsError } = await supabase
     .from("test_runs")
