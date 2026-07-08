@@ -4,7 +4,7 @@
  * Parse Playwright test results and output structured data
  * Used for GitHub Actions job summary and PR comments
  *
- * Handles Playwright JSON reporter output format
+ * Reads from Playwright JSON reporter: test-results/results.json
  */
 
 const fs = require('fs');
@@ -30,44 +30,28 @@ try {
   const fileContent = fs.readFileSync(resultsFile, 'utf-8');
   const results = JSON.parse(fileContent);
 
-  let passed = 0;
-  let failed = 0;
-  let skipped = 0;
-  let totalDuration = 0;
+  // Playwright JSON format has stats at top level
+  if (results.stats) {
+    const stats = results.stats;
+    const passed = stats.expected || 0;
+    const failed = stats.unexpected || 0;
+    const skipped = stats.skipped || 0;
+    const totalDuration = stats.duration || 0;
 
-  // Playwright JSON reporter format: { "suites": [ { "tests": [...] } ] }
-  if (results.suites && Array.isArray(results.suites)) {
-    results.suites.forEach(suite => {
-      // Recursively process suite and nested suites
-      function processSuite(s) {
-        if (s.tests && Array.isArray(s.tests)) {
-          s.tests.forEach(test => {
-            totalDuration += test.duration || 0;
-            if (test.status === 'passed') passed++;
-            else if (test.status === 'failed') failed++;
-            else if (test.status === 'skipped') skipped++;
-          });
-        }
-        // Handle nested suites
-        if (s.suites && Array.isArray(s.suites)) {
-          s.suites.forEach(nested => processSuite(nested));
-        }
-      }
-      processSuite(suite);
-    });
+    const output = {
+      passed,
+      failed,
+      skipped,
+      total: passed + failed + skipped,
+      duration: Math.round(totalDuration / 1000), // Convert ms to seconds
+      timestamp: new Date().toISOString(),
+      status: failed > 0 ? 'failed' : passed > 0 ? 'passed' : 'no_tests'
+    };
+
+    console.log(JSON.stringify(output, null, 2));
+  } else {
+    throw new Error('No stats found in Playwright results.json');
   }
-
-  const output = {
-    passed,
-    failed,
-    skipped,
-    total: passed + failed + skipped,
-    duration: Math.round(totalDuration / 1000), // Convert to seconds
-    timestamp: new Date().toISOString(),
-    status: failed > 0 ? 'failed' : passed > 0 ? 'passed' : 'no_tests'
-  };
-
-  console.log(JSON.stringify(output, null, 2));
 } catch (error) {
   console.error('Error parsing test results:', error.message);
   const output = {
