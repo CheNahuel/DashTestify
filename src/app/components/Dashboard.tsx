@@ -7,6 +7,7 @@ import Image from "next/image";
 import { Container } from "@/components/Container";
 import { CoinChart } from "@/features/crypto/components/CoinChart";
 import { CoinJournal, type CoinJournalEntry } from "@/features/crypto/components/CoinJournal";
+import { CryptoAIAnalyst } from "@/features/crypto/components/CryptoAIAnalyst";
 import { useCoinHistory } from "@/features/crypto/hooks/useCoinHistory";
 import { useCoins } from "@/features/crypto/hooks/useCoins";
 import {
@@ -568,6 +569,8 @@ export const Dashboard = ({
           />
         )}
       </section>
+
+      {!useMock && isLiveAvailable && <CryptoAIAnalyst />}
     </Container>
   );
 };
