@@ -37,7 +37,15 @@ export async function GET(request: NextRequest, context: RouteContext) {
       ? getMockCoinHistory(coinId, historyRequest)
       : await getCoinHistoryFromCoinCap(coinId, historyRequest);
 
-    return NextResponse.json(history);
+    const response = NextResponse.json(history);
+
+    // Cache for 1 hour (3600 seconds) - matches our CoinCap history TTL
+    response.headers.set(
+      "Cache-Control",
+      "public, s-maxage=3600, stale-while-revalidate=7200"
+    );
+
+    return response;
   } catch (error: unknown) {
     const status =
       typeof error === "object" &&
