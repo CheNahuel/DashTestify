@@ -1,4 +1,3 @@
-import Anthropic from '@anthropic-ai/sdk';
 import type { AiProviderName } from '../../../scripts/ai/types';
 
 export interface CryptoAnalysisRequest {
@@ -38,12 +37,16 @@ When answering, consider:
 Provide your analysis concisely in a clear, structured format.`;
 }
 
+interface AnthropicResponse {
+  content?: Array<{ type: string; text?: string }>;
+  error?: { message: string };
+}
+
 export async function analyzeCryptoQuery(
   request: CryptoAnalysisRequest,
   providerName: AiProviderName
 ): Promise<CryptoAnalysisResponse> {
-  // Use Claude directly for crypto analysis
-  // (expandable to support other providers in the future)
+  // Currently only supports Claude provider
   if (providerName !== 'claude') {
     console.warn(`Crypto analysis currently only supports Claude provider, falling back from ${providerName}`);
   }
@@ -53,31 +56,47 @@ export async function analyzeCryptoQuery(
     throw new Error('CLAUDE_API_KEY or ANTHROPIC_API_KEY is required for crypto analysis');
   }
 
-  const client = new Anthropic({ apiKey });
   const model = process.env.CLAUDE_MODEL || 'claude-haiku-4-5-20251001';
-
   const systemPrompt = buildCryptoSystemPrompt(request.context);
 
-  const response = await client.messages.create({
-    model,
-    max_tokens: 1024,
-    system: systemPrompt,
-    messages: [
-      {
-        role: 'user',
-        content: request.query,
-      },
-    ],
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify({
+      model,
+      max_tokens: 1024,
+      system: systemPrompt,
+      messages: [
+        {
+          role: 'user',
+          content: request.query,
+        },
+      ],
+    }),
   });
 
-  const answer = response.content
-    .filter((block) => block.type === 'text')
-    .map((block) => (block.type === 'text' ? block.text : ''))
+  if (!response.ok) {
+    throw new Error(`Anthropic API error: ${response.status} ${response.statusText}`);
+  }
+
+  const data = (await response.json()) as AnthropicResponse;
+
+  if (data.error) {
+    throw new Error(`Anthropic error: ${data.error.message}`);
+  }
+
+  const answer = data.content
+    ?.filter((block) => block.type === 'text')
+    .map((block) => block.text || '')
     .join('\n')
-    .trim();
+    .trim() || 'Unable to generate analysis';
 
   return {
-    answer: answer || 'Unable to generate analysis',
+    answer,
     sources: request.endpoints,
     provider: 'claude',
   };
