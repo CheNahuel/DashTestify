@@ -1329,3 +1329,66 @@ test("/ai-failure-analysis page renders AI analyzer in local mode", async ({ pag
   await expect(page.getByTestId("ai-provider-panel")).toBeVisible();
 });
 
+test("quality analytics page requires valid Supabase configuration to load data", async ({ page }) => {
+  // Mock Supabase endpoints with valid data
+  await page.route("**/rest/v1/test_runs?*", async (route) => {
+    await route.fulfill({
+      json: [
+        {
+          id: "test-run-1",
+          created_at: new Date().toISOString(),
+          branch: "main",
+          commit_sha: "abc123",
+          total_tests: 100,
+          passed: 95,
+          failed: 5,
+          run_type: "ci",
+        },
+      ],
+    });
+  });
+
+  await page.route("**/rest/v1/test_results?*", async (route) => {
+    await route.fulfill({
+      json: [
+        {
+          run_id: "test-run-1",
+          test_name: "sample test",
+          suite: "smoke",
+          status: "passed",
+          error_message: null,
+          duration_ms: 1000,
+        },
+      ],
+    });
+  });
+
+  // Mock API endpoints
+  await page.route("**/api/quality-analytics/test-trends*", async (route) => {
+    await route.fulfill({
+      json: {
+        data: [
+          { date: new Date().toISOString().split("T")[0], passed: 95, failed: 5, pass_rate: 95 },
+        ],
+        days: 30,
+      },
+    });
+  });
+
+  await page.route("**/api/quality-analytics/top-failures*", async (route) => {
+    await route.fulfill({ json: { data: [] } });
+  });
+
+  await page.route("**/api/quality-analytics/flaky-tests*", async (route) => {
+    await route.fulfill({ json: { data: [] } });
+  });
+
+  await page.route("**/api/quality-analytics/branch-health*", async (route) => {
+    await route.fulfill({ json: { data: [] } });
+  });
+
+  // Navigate and verify page loads without errors
+  await page.goto("/quality-analytics");
+  await expect(page.getByTestId("test-trends-chart")).toBeVisible();
+});
+

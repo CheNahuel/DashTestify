@@ -9,7 +9,8 @@ export default defineConfig({
   outputDir: 'test-results',
   reporter: [
     ['html', { open: 'never' }],
-    ['json', { outputFile: 'test-results/results.json' }]
+    ['json', { outputFile: 'test-results/results.json' }],
+    ['junit', { outputFile: 'test-results/junit.xml' }]
   ],
   use: {
     baseURL: "http://127.0.0.1:3000",

@@ -76,27 +76,21 @@ export function MetricsPage() {
         .order("created_at", { ascending: false });
 
       if (error) {
-        console.error(error);
-        return;
+        throw new Error(`Failed to load test runs: ${error.message}`);
       }
 
       setRuns((data || []) as TestRun[]);
     }
 
     async function loadTrends() {
-      try {
-        const response = await fetch("/api/quality-analytics/test-trends?days=30");
-        const payload = (await response.json()) as TestTrendsResponse;
+      const response = await fetch("/api/quality-analytics/test-trends?days=30");
+      const payload = (await response.json()) as TestTrendsResponse;
 
-        if (!response.ok) {
-          throw new Error(payload.error || "Unable to load test trends.");
-        }
-
-        setTrendData(payload.data || []);
-      } catch (error) {
-        console.error(error);
-        setTrendData([]);
+      if (!response.ok) {
+        throw new Error(payload.error || "Unable to load test trends.");
       }
+
+      setTrendData(payload.data || []);
     }
 
     await loadRuns();
@@ -108,7 +102,11 @@ export function MetricsPage() {
 
     const initializeData = async () => {
       if (mounted) {
-        await loadData();
+        try {
+          await loadData();
+        } catch (error) {
+          console.error("Failed to initialize analytics:", error instanceof Error ? error.message : String(error));
+        }
       }
     };
 
