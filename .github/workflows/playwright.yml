@@ -94,11 +94,16 @@ jobs:
       - name: Create GitHub Actions Job Summary
         if: always()
         run: |
+          if [ ! -f test-summary.json ]; then
+            echo "⚠️ No test summary found" >> $GITHUB_STEP_SUMMARY
+            exit 0
+          fi
+
           SUMMARY=$(cat test-summary.json)
-          PASSED=$(echo "$SUMMARY" | jq -r '.passed')
-          FAILED=$(echo "$SUMMARY" | jq -r '.failed')
-          SKIPPED=$(echo "$SUMMARY" | jq -r '.skipped')
-          DURATION=$(echo "$SUMMARY" | jq -r '.duration')
+          PASSED=$(echo "$SUMMARY" | jq -r '.passed // 0')
+          FAILED=$(echo "$SUMMARY" | jq -r '.failed // 0')
+          SKIPPED=$(echo "$SUMMARY" | jq -r '.skipped // 0')
+          DURATION=$(echo "$SUMMARY" | jq -r '.duration // 0')
 
           cat >> $GITHUB_STEP_SUMMARY <<EOF
           ## ✅ Playwright Test Results
@@ -116,7 +121,7 @@ jobs:
 
           ### 📄 Reports
           - [View HTML Report (GitHub Actions)](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
-          - [GitHub Pages Report](https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/report-${{ github.run_id }}/)
+          - [GitHub Pages Report](https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/)
 
           EOF
 
@@ -194,14 +199,26 @@ jobs:
           GITHUB_REF_NAME: ${{ github.ref_name }}
           RUN_TYPE: ${{ inputs.run_type }}
 
+      - name: Check Playwright report exists
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: |
+          echo "Checking for playwright-report directory..."
+          if [ -d playwright-report ]; then
+            echo "✅ playwright-report directory exists"
+            ls -la playwright-report/ | head -20
+            echo "Total files: $(find playwright-report -type f | wc -l)"
+          else
+            echo "❌ playwright-report directory NOT FOUND"
+          fi
+
       - name: Upload Pages artifact
-        if: always() && github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         uses: actions/upload-pages-artifact@v3
         with:
           path: playwright-report/
 
   deploy-pages:
-    if: always() && github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     needs: test
     runs-on: ubuntu-latest
     environment:
