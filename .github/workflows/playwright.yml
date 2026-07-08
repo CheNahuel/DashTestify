@@ -31,6 +31,19 @@ jobs:
       - name: Configure Git
         run: git config --global init.defaultBranch main && git config --global advice.detachedHead false
 
+      - name: Verify Environment Variables
+        run: |
+          echo "Checking configured environment variables..."
+          echo "SUPABASE_URL: ${SUPABASE_URL:+configured}"
+          echo "SUPABASE_KEY: ${SUPABASE_KEY:+configured}"
+          echo "NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL:+configured}"
+          echo "NEXT_PUBLIC_SUPABASE_KEY: ${NEXT_PUBLIC_SUPABASE_KEY:+configured}"
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_KEY }}
+
       - name: Cache Playwright browsers
         uses: actions/cache@v4
         with:
@@ -54,6 +67,10 @@ jobs:
         run: npm run test:e2e
         env:
           CI: true
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_KEY }}
 
       - name: Debug test results
         if: always()
