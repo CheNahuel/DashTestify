@@ -79,6 +79,15 @@ jobs:
           ls
           ls test-results || true
 
+      - name: Upload Playwright report as artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ github.run_id }}
+          path: test-results/
+          retention-days: 30
+          if-no-files-found: warn
+
       - name: Upload test results to Supabase
         if: always()
         run: npm run upload:test-results
