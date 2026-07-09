@@ -47,7 +47,7 @@ Las Edge Functions necesitan saber:
 # Via CLI (si tienes Supabase CLI)
 supabase secrets set \
   NEXT_PUBLIC_URL="https://tudominio.com" \
-  INTERNAL_SYNC_SECRET="tu-secreto-aqui"
+    ="tu-secreto-aqui"
 
 # Verificar
 supabase secrets list
@@ -75,7 +75,7 @@ En el **SQL Editor** de Supabase Dashboard:
 
 ```sql
 -- Set the sync secret for pg_cron to use
-ALTER DATABASE "kayzrduiqcxvwwjftttk" 
+ALTER DATABASE "postgres" 
 SET "app.internal_sync_secret" = 'TU-SYNC-SECRET-AQUI';
 
 -- Verificar que el cron job está configurado
