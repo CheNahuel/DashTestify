@@ -39,6 +39,10 @@ select cron.schedule(
   $$
 );
 
+-- Set the sync secret for pg_cron to use
+ALTER DATABASE "postgres"
+SET "app.internal_sync_secret" = 'YOUR-SYNC-SECRET-HERE';
+
 -- You can check cron jobs with:
 -- select * from cron.job;
 --
