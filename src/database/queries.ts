@@ -17,6 +17,21 @@ export async function getCoinBySymbol(symbol: string) {
   return data;
 }
 
+export async function getCoinByCoincapId(coincapId: string) {
+  const { data, error } = await supabase
+    .from("coins")
+    .select("*")
+    .eq("coincap_id", coincapId)
+    .single();
+
+  if (error) {
+    console.error(`Error fetching coin with coincap_id ${coincapId}:`, error);
+    return null;
+  }
+
+  return data;
+}
+
 export async function getCoinById(coinId: string) {
   const { data, error } = await supabase
     .from("coins")

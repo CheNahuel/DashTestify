@@ -4,6 +4,7 @@ export interface CryptoAnalysisRequest {
   query: string;
   context: Record<string, unknown>;
   endpoints: string[];
+  dataSource?: 'Supabase' | 'CoinCap';
 }
 
 export interface CryptoAnalysisResponse {
@@ -12,19 +13,19 @@ export interface CryptoAnalysisResponse {
   provider: AiProviderName;
 }
 
-function buildCryptoSystemPrompt(context: Record<string, unknown>): string {
+function buildCryptoSystemPrompt(context: Record<string, unknown>, dataSource: string = 'market data'): string {
   return `You are a senior cryptocurrency analyst with deep expertise in blockchain markets.
 
-Your role is to answer questions about cryptocurrency using ONLY the provided CoinCap market data.
+Your role is to answer questions about cryptocurrency using ONLY the provided ${dataSource}.
 
 CRITICAL RULES:
 1. Never invent prices, trends, or market information
-2. Only use data from the CoinCap API context provided
+2. Only use data from the provided context
 3. If required information is unavailable, clearly state it
 4. Be concise and data-driven
 5. Use markdown formatting for clarity (headers, bullet points, tables when appropriate)
 
-Available CoinCap Data:
+Available Data from ${dataSource}:
 ${JSON.stringify(context, null, 2)}
 
 When answering, consider:
@@ -57,7 +58,8 @@ export async function analyzeCryptoQuery(
   }
 
   const model = process.env.CLAUDE_MODEL || 'claude-haiku-4-5-20251001';
-  const systemPrompt = buildCryptoSystemPrompt(request.context);
+  const dataSource = request.dataSource || 'market data';
+  const systemPrompt = buildCryptoSystemPrompt(request.context, dataSource);
 
   const response = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
