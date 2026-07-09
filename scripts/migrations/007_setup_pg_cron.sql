@@ -8,7 +8,7 @@ select cron.schedule(
   '0 1 * * *',
   $$
     select net.http_post(
-      url:='https://PROJECT_ID.supabase.co/functions/v1/sync-daily',
+      url:='https://kayzrduiqcxvwwjftttk.supabase.co/functions/v1/sync-daily',
       headers:=jsonb_build_object(
         'authorization', 'Bearer ' || current_setting('app.internal_sync_secret'),
         'content-type', 'application/json'
@@ -27,7 +27,7 @@ select cron.schedule(
   '*/5 * * * *',
   $$
     select net.http_post(
-      url:='https://PROJECT_ID.supabase.co/functions/v1/sync-intraday',
+      url:='https://kayzrduiqcxvwwjftttk.supabase.co/functions/v1/sync-intraday',
       headers:=jsonb_build_object(
         'authorization', 'Bearer ' || current_setting('app.internal_sync_secret'),
         'content-type', 'application/json'
