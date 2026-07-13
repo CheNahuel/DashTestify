@@ -26,8 +26,8 @@ export async function POST(request: Request) {
     // Parse provider name (defaults to claude for crypto analysis)
     const provider = parseAiProviderName(body.provider || 'claude');
 
-    // Use Supabase as data source (default) or CoinCap as fallback
-    const useSupabase = body.useSupabase !== false && process.env.USE_SUPABASE_CRYPTO !== 'false';
+    // Use CoinCap as data source (default) or Supabase as opt-in
+    const useSupabase = body.useSupabase === true && process.env.USE_SUPABASE_CRYPTO === 'true';
     const dataProvider = useSupabase ? createSupabaseProvider() : createCoinCapProvider();
     const dataSource = useSupabase ? 'Supabase' : 'CoinCap';
 
