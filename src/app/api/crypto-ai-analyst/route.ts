@@ -26,14 +26,66 @@ export async function POST(request: Request) {
     // Parse provider name (defaults to claude for crypto analysis)
     const provider = parseAiProviderName(body.provider || 'claude');
 
-    // Use CoinCap as data source (default) or Supabase as opt-in
-    const useSupabase = body.useSupabase === true && process.env.USE_SUPABASE_CRYPTO === 'true';
-    const dataProvider = useSupabase ? createSupabaseProvider() : createCoinCapProvider();
-    const dataSource = useSupabase ? 'Supabase' : 'CoinCap';
+    // Prefer Supabase (if available), fallback to CoinCap
+    const useSupabase = body.useSupabase !== false && process.env.USE_SUPABASE_CRYPTO !== 'false';
+    let dataProvider;
+    let dataSource: string;
+
+    if (useSupabase) {
+      try {
+        dataProvider = createSupabaseProvider();
+        dataSource = 'Supabase';
+        console.log('[crypto-analyst] Using Supabase data source');
+      } catch (error) {
+        console.warn('[crypto-analyst] Supabase provider failed, falling back to CoinCap:', error);
+        dataProvider = createCoinCapProvider();
+        dataSource = 'CoinCap (fallback)';
+      }
+    } else {
+      dataProvider = createCoinCapProvider();
+      dataSource = 'CoinCap';
+    }
 
     console.log(`[crypto-analyst] Using data source: ${dataSource} for query: "${body.query}"`);
 
-    const { context, endpoints } = await dataProvider.fetchMarketData(body.query);
+    let context: Record<string, unknown> = {};
+    let endpoints: string[] = [];
+    let lastError: Error | null = null;
+
+    // Try to fetch with selected provider
+    try {
+      const result = await dataProvider.fetchMarketData(body.query);
+      context = result.context;
+      endpoints = result.endpoints;
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+      console.warn(`[crypto-analyst] ${dataSource} failed:`, lastError.message);
+
+      // If we tried Supabase and it failed, fallback to CoinCap
+      if (useSupabase && dataSource !== 'CoinCap') {
+        console.log('[crypto-analyst] Attempting fallback to CoinCap...');
+        try {
+          const fallbackProvider = createCoinCapProvider();
+          const result = await fallbackProvider.fetchMarketData(body.query);
+          context = result.context;
+          endpoints = result.endpoints;
+          dataSource = 'CoinCap (fallback after Supabase error)';
+          lastError = null;
+        } catch (fallbackError) {
+          lastError = fallbackError instanceof Error ? fallbackError : new Error(String(fallbackError));
+        }
+      }
+    }
+
+    // If we couldn't get data from either source, return error
+    if (lastError && (!context || Object.keys(context).length === 0)) {
+      return NextResponse.json(
+        {
+          error: `Could not fetch market data. ${lastError.message}`,
+        },
+        { status: 503 }
+      );
+    }
 
     if (Object.keys(context).length === 0) {
       return NextResponse.json(
@@ -62,7 +114,6 @@ export async function POST(request: Request) {
         query: body.query,
         context,
         endpoints,
-        dataSource,
       },
       provider
     );
