@@ -11,7 +11,8 @@ Migrations should be run in order:
 4. `004_create_price_daily.sql` - Creates the price_daily table for OHLC data
 5. `005_create_price_intraday.sql` - Creates the price_intraday table for recent prices
 6. `006_create_coin_metrics.sql` - Creates the coin_metrics table for pre-calculated metrics
-7. `007_setup_pg_cron.sql` - Enables pg_cron and schedules daily/intraday sync jobs
+7. `007_setup_pg_cron.sql` - (Legacy, superseded by GitHub Actions) Enables pg_cron and schedules daily/intraday sync jobs
+8. `008_grant_public_read.sql` - Grants public read access to crypto tables (required for RLS policies to work)
 
 ## Tables
 
@@ -45,8 +46,8 @@ Stores individual test results for each test run. Linked to test_runs via foreig
 
 ## Running Migrations
 
-**Note:** Migrations 001-006 should be applied. Migration 007 (`007_setup_pg_cron.sql`) is superseded
-by GitHub Actions-based scheduling (see below) and is no longer needed. Run only 001-006.
+**Note:** Migrations 001-006 and 008 should be applied. Migration 007 (`007_setup_pg_cron.sql`) is superseded
+by GitHub Actions-based scheduling (see below) and is no longer needed. Run migrations in order but skip 007.
 
 ### With Supabase CLI
 ```bash
@@ -173,6 +174,20 @@ All crypto tables have RLS enabled:
 - **Service role write access**: Only the service role can insert/update/delete
 
 This prevents the frontend (using anon key) from modifying data, while backend cron jobs (using service role key) can maintain the data.
+
+## Public Read Access (Migration 008)
+
+Migration 008 grants `SELECT` permissions to anonymous and authenticated Supabase roles on the crypto
+tables. This is **required** for the RLS "public read" policies (in migrations 003-006) to function
+correctly. Without this grant, attempts to read from crypto tables fail with `permission denied` even
+when an RLS policy explicitly allows the read.
+
+Run this migration once after applying migrations 003-006:
+```sql
+psql -h <host> -U <user> -d <db> -f 008_grant_public_read.sql
+```
+
+Or via Supabase Dashboard SQL Editor, copy and execute the contents.
 
 ## Scheduled Crypto Data Syncing
 
