@@ -95,9 +95,9 @@ export async function syncInitialForCoin(input: InitialSyncInput) {
 
     // 1.5. Check if already synced
     const latestPrice = await queries.getLatestPriceDailyForCoin(coin.id);
-    const metrics = await queries.getCoinMetrics(coin.id);
+    const existingMetrics = await queries.getCoinMetrics(coin.id);
 
-    if (latestPrice && metrics) {
+    if (latestPrice && existingMetrics) {
       console.log(`✓ ${input.symbol}: Already synced, skipping`);
       return {
         success: true,
