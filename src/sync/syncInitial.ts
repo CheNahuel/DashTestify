@@ -10,6 +10,57 @@ interface InitialSyncInput {
   coingeckoId?: string;
 }
 
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+interface FetchHistoryError {
+  response?: {
+    status: number;
+    data?: {
+      error?: {
+        message?: string;
+        hint_tool?: string;
+      };
+    };
+  };
+  message?: string;
+}
+
+async function fetchCoinHistoryWithRetry(
+  coinId: string,
+  maxAttempts: number = 3
+): Promise<unknown[]> {
+  let lastError: FetchHistoryError | null = null;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      return await coincapClient.fetchCoinHistory(coinId);
+    } catch (error: unknown) {
+      lastError = error as FetchHistoryError;
+      const status = lastError.response?.status;
+
+      if ((status === 403 || status === 429) && attempt < maxAttempts) {
+        const errorData = lastError.response?.data?.error;
+        const retryAfterMs =
+          (errorData?.hint_tool?.match(/(\d+)/)?.[0] &&
+            parseInt(errorData.hint_tool.match(/(\d+)/)?.[0])) ||
+          65000;
+
+        console.log(
+          `Rate limited (HTTP ${status}), retrying in ${retryAfterMs}ms (attempt ${attempt}/${maxAttempts})...`
+        );
+        await sleep(retryAfterMs);
+        continue;
+      }
+
+      throw error;
+    }
+  }
+
+  throw lastError;
+}
+
 /**
  * Initial sync: download complete historical data for a coin.
  * This runs once per coin and should not be repeated.
@@ -42,9 +93,22 @@ export async function syncInitialForCoin(input: InitialSyncInput) {
       coin = data;
     }
 
+    // 1.5. Check if already synced
+    const latestPrice = await queries.getLatestPriceDailyForCoin(coin.id);
+    const metrics = await queries.getCoinMetrics(coin.id);
+
+    if (latestPrice && metrics) {
+      console.log(`✓ ${input.symbol}: Already synced, skipping`);
+      return {
+        success: true,
+        coinId: coin.id,
+        priceCount: 0,
+      };
+    }
+
     // 2. Fetch historical data from CoinCap
     console.log(`Fetching historical data for ${input.symbol}...`);
-    const history = await coincapClient.fetchCoinHistory(input.coincapId);
+    const history = await fetchCoinHistoryWithRetry(input.coincapId);
 
     if (!history || history.length === 0) {
       throw new Error(`No historical data returned for ${input.symbol}`);
@@ -178,15 +242,26 @@ export async function syncInitialForCoin(input: InitialSyncInput) {
 }
 
 /**
- * Batch sync multiple coins on initial load.
+ * Batch sync multiple coins on initial load with rate-limit throttling.
+ * Spaces requests ~13 seconds apart to stay under CoinCap's 5 requests/min free tier.
  */
 export async function syncInitialBatch(coins: InitialSyncInput[]) {
   const results = [];
+  const throttleMs = 13000; // 13s * 5 coins ≈ 65s per cycle, safely under 5/min limit
 
-  for (const coin of coins) {
+  for (let i = 0; i < coins.length; i++) {
+    const coin = coins[i];
+
     try {
       const result = await syncInitialForCoin(coin);
       results.push(result);
+
+      // Throttle between requests only if the coin wasn't already synced
+      // (skip check in syncInitialForCoin returns priceCount=0 for already-synced)
+      if (result.success && result.priceCount > 0 && i < coins.length - 1) {
+        console.log(`Waiting ${throttleMs / 1000}s before next request...`);
+        await sleep(throttleMs);
+      }
     } catch (error) {
       results.push({
         success: false,
