@@ -45,6 +45,9 @@ Stores individual test results for each test run. Linked to test_runs via foreig
 
 ## Running Migrations
 
+**Note:** Migrations 001-006 should be applied. Migration 007 (`007_setup_pg_cron.sql`) is superseded
+by GitHub Actions-based scheduling (see below) and is no longer needed. Run only 001-006.
+
 ### With Supabase CLI
 ```bash
 supabase db push
@@ -53,6 +56,7 @@ supabase db push
 ### With psql (direct SQL)
 ```bash
 psql -h your-host -U your-user -d your-db -f 001_create_test_runs.sql
+# ... repeat for 002-006
 ```
 
 ### Via Supabase Dashboard
@@ -170,21 +174,47 @@ All crypto tables have RLS enabled:
 
 This prevents the frontend (using anon key) from modifying data, while backend cron jobs (using service role key) can maintain the data.
 
-## Scheduled Jobs Setup (Migration 007)
+## Scheduled Crypto Data Syncing
 
-Migration 007 configures `pg_cron` to schedule recurring sync jobs. Before running this migration:
+Crypto data is kept fresh via GitHub Actions workflows that POST to the deployed app's internal
+sync endpoints (`/api/internal/sync-daily` and `/api/internal/sync-intraday`). No Supabase pg_cron
+configuration is required.
 
-1. Replace `PROJECT_ID` in the migration with your actual Supabase project ID (found in your Supabase URL)
-2. Ensure `app.internal_sync_secret` is set in your Supabase project settings, or modify the SQL to use a hardcoded secret
-3. Ensure Edge Functions `sync-daily` and `sync-intraday` are deployed to your Supabase project
+### Setup
 
-You can verify scheduled jobs with:
+1. **Initial backfill** (one-time):
+   ```bash
+   # 1. Seed the default 10 coins
+   npx tsx scripts/init-crypto-coins.ts
+
+   # 2. Fetch ~1 year of historical data for each coin
+   npx tsx scripts/run-initial-sync.ts
+   ```
+
+2. **Daily refresh** (automatic via GitHub Actions):
+   - The workflow `.github/workflows/crypto-daily-sync.yml` runs daily at 1 AM UTC
+   - Requires two repo secrets:
+     - `APP_URL`: Your deployed Next.js app URL (e.g., `https://yourdomain.vercel.app`)
+     - `INTERNAL_SYNC_SECRET`: A secure random string (should match the value in your app's `INTERNAL_SYNC_SECRET` env var)
+
+3. **Monitor sync runs**:
+   - Check GitHub Actions > Crypto Daily Sync workflow runs
+   - Logs show which coins were synced and any errors
+
+### Manual Verification
+
+Verify initial sync with:
 ```sql
-SELECT * FROM cron.job;
+SELECT symbol, COUNT(*) as price_count FROM coins c
+LEFT JOIN price_daily pd ON c.id = pd.coin_id
+GROUP BY c.id, symbol;
 ```
 
-To remove a job:
-```sql
-SELECT cron.unschedule('sync-crypto-daily');
-SELECT cron.unschedule('sync-crypto-intraday');
-```
+Each coin should have ~365 daily price records after initial sync.
+
+### Legacy (not used)
+
+Migration 007 (`007_setup_pg_cron.sql`) previously configured Supabase pg_cron + Edge Functions
+for syncing. This is now superseded by GitHub Actions and should not be run. The Edge Functions
+`supabase/functions/sync-daily` and `supabase/functions/sync-intraday` remain in the codebase
+for reference but are no longer invoked.

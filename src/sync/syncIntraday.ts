@@ -28,7 +28,7 @@ export async function syncIntraday() {
     let pricesUpdated = 0;
 
     try {
-      // Fetch current prices for all coins in one batch
+      // Fetch current prices for tracked coins only
       const assets = await coincapClient.fetchAssets(coincapIds);
 
       // Map assets by coincap_id for quick lookup
