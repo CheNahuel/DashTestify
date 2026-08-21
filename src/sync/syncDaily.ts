@@ -44,12 +44,29 @@ export async function syncDaily() {
         }
 
         // Fetch yesterday's data from CoinCap
-        const history = await coincapClient.fetchCoinHistory(coin.coincap_id, {
-          start: yesterday.getTime(),
-          end: new Date().getTime(),
-        });
+        const history = await coincapClient.fetchCoinHistory(
+          coin.coincap_id,
+          'd1',
+          2,
+          { start: yesterday.getTime(), end: new Date().getTime() }
+        );
 
-        const yesterdayData = history.find((h) => h.date === yesterdayStr);
+        if (!history || history.length === 0) {
+          console.log(`${coin.symbol}: No data available for ${yesterdayStr}`);
+          continue;
+        }
+
+        // Map CoinCap response {time, priceUsd} to {date, price}
+        interface CoinCapHistoryPoint {
+          time: number;
+          priceUsd: string;
+        }
+        const mappedHistory = (history as CoinCapHistoryPoint[]).map((h) => ({
+          date: new Date(h.time).toISOString().split('T')[0],
+          price: Number(h.priceUsd),
+        }));
+
+        const yesterdayData = mappedHistory.find((h) => h.date === yesterdayStr);
 
         if (!yesterdayData) {
           console.log(`${coin.symbol}: No data available for ${yesterdayStr}`);
@@ -62,12 +79,12 @@ export async function syncDaily() {
           .insert({
             coin_id: coin.id,
             date: yesterdayStr,
-            open: yesterdayData.price, // Simplified: use single price as OHLC
+            open: yesterdayData.price, // Single price from endpoint as OHLC
             high: yesterdayData.price,
             low: yesterdayData.price,
             close: yesterdayData.price,
-            volume: yesterdayData.volume || null,
-            market_cap: yesterdayData.marketCap || null,
+            volume: null,
+            market_cap: null,
           });
 
         if (priceError) {

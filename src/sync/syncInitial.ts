@@ -50,8 +50,18 @@ export async function syncInitialForCoin(input: InitialSyncInput) {
       throw new Error(`No historical data returned for ${input.symbol}`);
     }
 
+    // Map CoinCap response {time, priceUsd} to {date, price}
+    interface CoinCapHistoryPoint {
+      time: number;
+      priceUsd: string;
+    }
+    const mappedHistory = (history as CoinCapHistoryPoint[]).map((h) => ({
+      date: new Date(h.time).toISOString().split('T')[0],
+      price: Number(h.priceUsd),
+    }));
+
     // 3. Convert to daily candles (collapse to 1 per day, use OHLC)
-    const dailyCandles = history
+    const dailyCandles = mappedHistory
       .reduce(
         (acc, h) => {
           const date = h.date;
@@ -62,8 +72,6 @@ export async function syncInitialForCoin(input: InitialSyncInput) {
             existing.high = Math.max(existing.high, h.price);
             existing.low = Math.min(existing.low, h.price);
             existing.close = h.price; // Last price of day
-            if (h.volume) existing.volume = (existing.volume || 0) + h.volume;
-            existing.marketCap = h.marketCap; // Use latest
           } else {
             // New day
             acc.push({
@@ -72,8 +80,6 @@ export async function syncInitialForCoin(input: InitialSyncInput) {
               high: h.price,
               low: h.price,
               close: h.price,
-              volume: h.volume || 0,
-              marketCap: h.marketCap,
             });
           }
 
@@ -85,8 +91,6 @@ export async function syncInitialForCoin(input: InitialSyncInput) {
           high: number;
           low: number;
           close: number;
-          volume?: number;
-          marketCap?: number;
         }>
       )
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
@@ -103,8 +107,8 @@ export async function syncInitialForCoin(input: InitialSyncInput) {
         high: candle.high,
         low: candle.low,
         close: candle.close,
-        volume: candle.volume || null,
-        market_cap: candle.marketCap || null,
+        volume: null,
+        market_cap: null,
       });
 
       if (error) {
@@ -122,8 +126,6 @@ export async function syncInitialForCoin(input: InitialSyncInput) {
         high: c.high,
         low: c.low,
         close: c.close,
-        volume: c.volume,
-        marketCap: c.marketCap,
       }))
     );
 
@@ -149,7 +151,7 @@ export async function syncInitialForCoin(input: InitialSyncInput) {
         ema200: metrics.ema200,
         rsi14: metrics.rsi14,
         volatility: metrics.volatility,
-        market_cap: latestCandle.marketCap || null,
+        market_cap: null,
         updated_at: new Date().toISOString(),
       });
 

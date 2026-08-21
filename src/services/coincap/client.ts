@@ -14,12 +14,20 @@ export interface FetchResult {
   endpoints: string[];
 }
 
+interface DateRange {
+  start?: number; // Epoch milliseconds
+  end?: number;   // Epoch milliseconds
+}
+
 class CoinCapClient {
-  async fetchAssets(): Promise<unknown[]> {
-    return coincapCache.getOrFetch('assets', async () => {
-      const response = await apiClient.get<{ data: unknown[] }>('/assets', {
-        params: { limit: 50 },
-      });
+  async fetchAssets(ids?: string[]): Promise<unknown[]> {
+    const cacheKey = ids ? `assets:${ids.join(',')}` : 'assets';
+    return coincapCache.getOrFetch(cacheKey, async () => {
+      const params: Record<string, unknown> = { limit: 50 };
+      if (ids && ids.length > 0) {
+        params.ids = ids.join(',');
+      }
+      const response = await apiClient.get<{ data: unknown[] }>('/assets', { params });
       return response.data.data;
     });
   }
@@ -45,15 +53,18 @@ class CoinCapClient {
   async fetchCoinHistory(
     coinId: string,
     interval: string = 'd1',
-    limit: number = 365
+    limit: number = 365,
+    range?: DateRange
   ): Promise<unknown[]> {
-    const key = `history:${coinId}:${interval}`;
+    const rangeStr = range ? `:${range.start}:${range.end}` : '';
+    const key = `history:${coinId}:${interval}:${limit}${rangeStr}`;
     return coincapCache.getOrFetch(key, async () => {
+      const params: Record<string, unknown> = { interval, limit };
+      if (range?.start) params.start = range.start;
+      if (range?.end) params.end = range.end;
       const response = await apiClient.get<{ data: unknown[] }>(
         `/assets/${coinId}/history`,
-        {
-          params: { interval, limit },
-        }
+        { params }
       );
       return response.data.data;
     });
