@@ -1,6 +1,6 @@
-import { getSupabaseClient } from "@/lib/supabase";
+import { getSupabaseServiceClient } from "@/lib/supabase";
 
-const supabase = getSupabaseClient();
+const supabase = getSupabaseServiceClient();
 
 export async function getCoinBySymbol(symbol: string) {
   const { data, error } = await supabase
