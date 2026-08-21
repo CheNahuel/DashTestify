@@ -5,7 +5,9 @@ A modern cryptocurrency dashboard built with **Next.js** and **TypeScript**, fea
 Perfect for learning modern testing practices, CI/CD pipelines, and production-grade web development.
 
 ---
-
+export SUPABASE_URL="https://kayzrduiqcxvwwjftttk.supabase.co"
+export SUPABASE_SERVICE_ROLE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtheXpyZHVpcWN4dnd3amZ0dHRrIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTM5NDUzNSwiZXhwIjoyMDk0OTcwNTM1fQ.C4tNOBIQC8rd4tFY1Gktuqsv1g0H0obkz5Si0-ae8LE"
+export INTERNAL_SYNC_SECRET="Iwj1WIim8Dmuxi0rNdrTX2stN6/8Yi+nXh/iPT1lKik="
 ## 🚀 Quick Links
 
 | Link | Purpose |
