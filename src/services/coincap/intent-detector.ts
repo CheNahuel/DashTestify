@@ -56,6 +56,7 @@ export function detectIntent(query: string): DataIntent {
     ));
 
   const needsHistory =
+    targetCoinIds.length > 0 ||
     lowerQuery.includes('history') ||
     lowerQuery.includes('trend') ||
     lowerQuery.includes('perform') ||
@@ -64,11 +65,7 @@ export function detectIntent(query: string): DataIntent {
     lowerQuery.includes('year') ||
     lowerQuery.includes('6 month') ||
     lowerQuery.includes('week') ||
-    lowerQuery.includes('day') ||
-    (targetCoinIds.length > 0 && (
-      lowerQuery.includes('price') ||
-      lowerQuery.includes('over time')
-    ));
+    lowerQuery.includes('day');
 
   const needsMarkets =
     lowerQuery.includes('market') ||
