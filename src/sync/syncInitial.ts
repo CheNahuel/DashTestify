@@ -100,16 +100,19 @@ export async function syncInitialForCoin(input: InitialSyncInput) {
     // 4. Insert daily candles into price_daily
     console.log(`Inserting ${dailyCandles.length} daily candles...`);
     for (const candle of dailyCandles) {
-      const { error } = await supabaseService.from("price_daily").upsert({
-        coin_id: coin.id,
-        date: candle.date,
-        open: candle.open,
-        high: candle.high,
-        low: candle.low,
-        close: candle.close,
-        volume: null,
-        market_cap: null,
-      });
+      const { error } = await supabaseService.from("price_daily").upsert(
+        {
+          coin_id: coin.id,
+          date: candle.date,
+          open: candle.open,
+          high: candle.high,
+          low: candle.low,
+          close: candle.close,
+          volume: null,
+          market_cap: null,
+        },
+        { onConflict: "coin_id,date" }
+      );
 
       if (error) {
         console.error(`Failed to insert price for ${candle.date}:`, error);
@@ -135,25 +138,28 @@ export async function syncInitialForCoin(input: InitialSyncInput) {
     // 6. Upsert metrics
     const { error: metricsError } = await supabaseService
       .from("coin_metrics")
-      .upsert({
-        coin_id: coin.id,
-        current_price: latestCandle.close,
-        ytd_return: metrics.ytdReturn,
-        return_1m: metrics.return1m,
-        return_3m: metrics.return3m,
-        return_6m: metrics.return6m,
-        return_1y: metrics.return1y,
-        ath: metrics.ath,
-        ath_date: metrics.athDate,
-        drawdown: metrics.drawdown,
-        ema20: metrics.ema20,
-        ema50: metrics.ema50,
-        ema200: metrics.ema200,
-        rsi14: metrics.rsi14,
-        volatility: metrics.volatility,
-        market_cap: null,
-        updated_at: new Date().toISOString(),
-      });
+      .upsert(
+        {
+          coin_id: coin.id,
+          current_price: latestCandle.close,
+          ytd_return: metrics.ytdReturn,
+          return_1m: metrics.return1m,
+          return_3m: metrics.return3m,
+          return_6m: metrics.return6m,
+          return_1y: metrics.return1y,
+          ath: metrics.ath,
+          ath_date: metrics.athDate,
+          drawdown: metrics.drawdown,
+          ema20: metrics.ema20,
+          ema50: metrics.ema50,
+          ema200: metrics.ema200,
+          rsi14: metrics.rsi14,
+          volatility: metrics.volatility,
+          market_cap: null,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "coin_id" }
+      );
 
     if (metricsError) {
       throw new Error(`Failed to insert metrics: ${metricsError.message}`);

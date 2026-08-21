@@ -148,25 +148,28 @@ export async function recalculateAllMetrics() {
       // Upsert metrics
       const { error: metricsError } = await supabaseService
         .from("coin_metrics")
-        .upsert({
-          coin_id: coin.id,
-          current_price: parseFloat(latestCandle.close),
-          ytd_return: metrics.ytdReturn,
-          return_1m: metrics.return1m,
-          return_3m: metrics.return3m,
-          return_6m: metrics.return6m,
-          return_1y: metrics.return1y,
-          ath: metrics.ath,
-          ath_date: metrics.athDate,
-          drawdown: metrics.drawdown,
-          ema20: metrics.ema20,
-          ema50: metrics.ema50,
-          ema200: metrics.ema200,
-          rsi14: metrics.rsi14,
-          volatility: metrics.volatility,
-          market_cap: latestCandle.market_cap ? parseFloat(latestCandle.market_cap) : null,
-          updated_at: new Date().toISOString(),
-        });
+        .upsert(
+          {
+            coin_id: coin.id,
+            current_price: parseFloat(latestCandle.close),
+            ytd_return: metrics.ytdReturn,
+            return_1m: metrics.return1m,
+            return_3m: metrics.return3m,
+            return_6m: metrics.return6m,
+            return_1y: metrics.return1y,
+            ath: metrics.ath,
+            ath_date: metrics.athDate,
+            drawdown: metrics.drawdown,
+            ema20: metrics.ema20,
+            ema50: metrics.ema50,
+            ema200: metrics.ema200,
+            rsi14: metrics.rsi14,
+            volatility: metrics.volatility,
+            market_cap: latestCandle.market_cap ? parseFloat(latestCandle.market_cap) : null,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "coin_id" }
+        );
 
       if (metricsError) {
         console.error(`${coin.symbol}: Failed to update metrics:`, metricsError);
