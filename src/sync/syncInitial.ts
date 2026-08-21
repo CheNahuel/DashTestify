@@ -93,12 +93,19 @@ export async function syncInitialForCoin(input: InitialSyncInput) {
       coin = data;
     }
 
-    // 1.5. Check if already synced
-    const latestPrice = await queries.getLatestPriceDailyForCoin(coin.id);
-    const existingMetrics = await queries.getCoinMetrics(coin.id);
+    // 1.5. Check if already synced (skip expensive API call if data exists)
+    const { count: priceCount } = await supabaseService
+      .from("price_daily")
+      .select("*", { count: "exact", head: true })
+      .eq("coin_id", coin.id);
 
-    if (latestPrice && existingMetrics) {
-      console.log(`✓ ${input.symbol}: Already synced, skipping`);
+    const { count: metricsCount } = await supabaseService
+      .from("coin_metrics")
+      .select("*", { count: "exact", head: true })
+      .eq("coin_id", coin.id);
+
+    if (priceCount && priceCount > 0 && metricsCount && metricsCount > 0) {
+      console.log(`✓ ${input.symbol}: Already synced (${priceCount} days), skipping`);
       return {
         success: true,
         coinId: coin.id,
