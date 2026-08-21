@@ -189,6 +189,21 @@ psql -h <host> -U <user> -d <db> -f 008_grant_public_read.sql
 
 Or via Supabase Dashboard SQL Editor, copy and execute the contents.
 
+## Service Role Write Permissions
+
+The `service_role` (backend/server-side operations) also needs explicit `INSERT`, `UPDATE`, `DELETE`
+permissions on the crypto tables. Add these grants to your Supabase project:
+
+```sql
+GRANT INSERT, SELECT, UPDATE, DELETE ON TABLE public.coins TO service_role;
+GRANT INSERT, SELECT, UPDATE, DELETE ON TABLE public.price_daily TO service_role;
+GRANT INSERT, SELECT, UPDATE, DELETE ON TABLE public.price_intraday TO service_role;
+GRANT INSERT, SELECT, UPDATE, DELETE ON TABLE public.coin_metrics TO service_role;
+```
+
+Run these via Supabase Dashboard SQL Editor (recommended) or psql. These grants are required for
+the data backfill and daily sync scripts to successfully insert/update records.
+
 ## Scheduled Crypto Data Syncing
 
 Crypto data is kept fresh via GitHub Actions workflows that POST to the deployed app's internal
@@ -200,11 +215,16 @@ configuration is required.
 1. **Initial backfill** (one-time):
    ```bash
    # 1. Seed the default 10 coins
-   npx tsx scripts/init-crypto-coins.ts
+   npx tsx --env-file=.env scripts/init-crypto-coins.ts
 
    # 2. Fetch ~1 year of historical data for each coin
-   npx tsx scripts/run-initial-sync.ts
+   npx tsx --env-file=.env scripts/run-initial-sync.ts
    ```
+   
+   **Prerequisites:**
+   - Ensure `.env` file contains `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`
+   - Have already run migrations 001-006 and 008 (see [Running Migrations](#running-migrations))
+   - Have granted service_role write permissions (see [Service Role Write Permissions](#service-role-write-permissions))
 
 2. **Daily refresh** (automatic via GitHub Actions):
    - The workflow `.github/workflows/crypto-daily-sync.yml` runs daily at 1 AM UTC
