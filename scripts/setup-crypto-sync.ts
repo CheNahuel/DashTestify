@@ -34,7 +34,7 @@ const DEFAULT_COINS = [
   { symbol: "SOL", name: "Solana", coincapId: "solana", coingeckoId: "solana" },
   { symbol: "BNB", name: "Binance Coin", coincapId: "binance-coin", coingeckoId: "binance" },
   { symbol: "ADA", name: "Cardano", coincapId: "cardano", coingeckoId: "cardano" },
-  { symbol: "XRP", name: "XRP", coincapId: "ripple", coingeckoId: "ripple" },
+  { symbol: "XRP", name: "XRP", coincapId: "xrp", coingeckoId: "ripple" },
   { symbol: "DOGE", name: "Dogecoin", coincapId: "dogecoin", coingeckoId: "dogecoin" },
   { symbol: "LINK", name: "Chainlink", coincapId: "chainlink", coingeckoId: "chainlink" },
 ];

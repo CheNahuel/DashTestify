@@ -13,7 +13,7 @@ const COMMON_COINS = [
   { names: ['solana', 'sol'], id: 'solana' },
   { names: ['cardano', 'ada'], id: 'cardano' },
   { names: ['polkadot', 'dot'], id: 'polkadot' },
-  { names: ['ripple', 'xrp'], id: 'ripple' },
+  { names: ['ripple', 'xrp'], id: 'xrp' },
   { names: ['litecoin', 'ltc'], id: 'litecoin' },
   { names: ['bitcoin-cash', 'bch'], id: 'bitcoin-cash' },
   { names: ['chainlink', 'link'], id: 'chainlink' },
