@@ -11,8 +11,8 @@ Perfect for learning modern testing practices, CI/CD pipelines, and production-g
 | Link | Purpose |
 |------|---------|
 | 🌐 **[Live Dashboard](https://dash-testify.vercel.app/)** | View the live cryptocurrency dashboard |
-| 📊 **[QA Analytics](https://dash-testify.vercel.app/quality-analytics)** | Test metrics & failure analysis |
-| 🧪 **[Test Report](https://chenahuel.github.io/DashTestify/)** | Playwright HTML test reports |
+| 📊 **[QA Metrics](https://dash-testify.vercel.app/quality-analytics)** | Historical test metrics (Supabase) |
+| 🧪 **Test reports** | Download `playwright-report-{run_id}` artifacts from GitHub Actions |
 
 ## ✨ Features
 
@@ -91,7 +91,7 @@ This project emphasizes test reliability and maintainability:
 - **Behavior-based test separation** (data, search, error, interactions, data-source)
 - **`data-testid` selectors** for stable UI targeting
 - **CI integration with GitHub Actions**
-- **Automated HTML reports published via GitHub Pages**
+- **HTML reports uploaded as GitHub Actions artifacts** (per run)
 
 ## 🤖 AI-assisted Development
 
@@ -116,8 +116,8 @@ AI tools were used to support test case generation, code review, and test valida
 src/
 ├── app/
 │   ├── page.tsx                       # Main crypto dashboard
-│   ├── quality-analytics/             # Main QA dashboard (local & live modes)
-│   ├── ai-failure-analysis/           # AI analysis page (dev-only, redirects in prod)
+│   ├── quality-analytics/             # Supabase metrics dashboard
+│   ├── ai-failure-analysis/           # Local AI analysis (dev-only, redirects in prod)
 │   ├── api/
 │   │   ├── coins/markets/             # CoinCap proxy — GET /api/coins/markets[?mock=1]
 │   │   ├── coins/[coinId]/history/    # History proxy — GET /api/coins/:id/history
@@ -197,8 +197,8 @@ Open **[http://localhost:3000](http://localhost:3000)** in your browser.
 | Route | What You'll See |
 |-------|-----------------|
 | `/` | Cryptocurrency dashboard with live prices and charts |
-| `/quality-analytics` | Test results, AI failure analysis, metrics |
-| `/ai-failure-analysis` | Detailed AI-powered debugging suggestions |
+| `/quality-analytics` | Historical metrics from Supabase (trends, flaky tests, branch health) |
+| `/ai-failure-analysis` | Local AI failure analysis & run Playwright (development only) |
 
 ### 4. Run Tests (Optional)
 
@@ -329,18 +329,33 @@ Tests use the **Page Object Model (POM)** pattern and are located in `tests/e2e/
 
 ## 📊 QA Analytics Dashboard
 
-The project includes a **QA Analytics Dashboard** for analyzing test results, investigating failures, and monitoring test health.
+The project includes two related QA surfaces:
 
 ### Access Routes
 
 | URL | Mode | Purpose |
 |-----|------|---------|
-| `/quality-analytics` | Auto-detected | Main dashboard (local dev / live production) |
-| `/ai-failure-analysis` | Local dev only | AI-powered failure analysis (redirects in production) |
+| `/quality-analytics` | Local or production | Historical metrics from Supabase |
+| `/ai-failure-analysis` | Local development only | AI failure analysis + run Playwright (redirects to `/quality-analytics` in production) |
 
-### Local Mode (Development)
+### Metrics (`/quality-analytics`)
 
-**Available at:** [http://localhost:3000/quality-analytics](http://localhost:3000/quality-analytics)
+**Local:** [http://localhost:3000/quality-analytics](http://localhost:3000/quality-analytics)  
+**Production:** [https://dash-testify.vercel.app/quality-analytics](https://dash-testify.vercel.app/quality-analytics)
+
+Shows **historical aggregate metrics** from uploaded test runs:
+
+- 📈 Total test runs over time
+- 📊 Historical trend chart
+- 🔴 Top failures across all runs
+- 🐛 Flaky test detection
+- 🌿 Branch health metrics
+
+**Requirements:** Supabase configuration (see below). Without it, the page shows a clear configuration/error message.
+
+### AI Failure Analysis (`/ai-failure-analysis`, development only)
+
+**Available at:** [http://localhost:3000/ai-failure-analysis](http://localhost:3000/ai-failure-analysis)
 
 Shows AI-powered analysis of your **most recent local test run**:
 
@@ -351,7 +366,7 @@ Shows AI-powered analysis of your **most recent local test run**:
 - ⚡ Real-time test execution monitoring
 - 📋 Structured breakdown of failures by test file
 
-**Requirements:** None — works immediately after running `npm run test:e2e`
+**Requirements:** None for viewing local results — works after `npm run test:e2e`. The local-only API routes that run tests or apply patches are blocked in production deployments.
 
 **AI Analysis Setup (Optional):**
 
@@ -379,23 +394,9 @@ DEEPSEEK_MODEL=deepseek-chat
 
 > **Tip:** Claude (Haiku) and Groq offer free/cheap tiers and are excellent for local testing.
 
-### Live Mode (Production)
+### Supabase Configuration (Optional — for metrics)
 
-**Available at:** [https://dash-testify.vercel.app/quality-analytics](https://dash-testify.vercel.app/quality-analytics) (Vercel deployment only)
-
-Shows **historical aggregate metrics** from all test runs:
-
-- 📈 Total test runs over time
-- 📊 Historical trend chart
-- 🔴 Top failures across all runs
-- 🐛 Flaky test detection
-- 🌿 Branch health metrics
-
-**Requirements:** Supabase configuration (see below)
-
-### Supabase Configuration (Optional — Production Only)
-
-To enable live metrics and historical tracking on production deployments, set these environment variables:
+To enable historical metrics tracking, set these environment variables:
 
 ```bash
 SUPABASE_URL=your_supabase_url
@@ -404,7 +405,7 @@ NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_KEY=your_supabase_key
 ```
 
-> **Note:** Without Supabase, local analytics still work perfectly. Live metrics are only available on production with Supabase configured.
+> **Note:** Local AI failure analysis does not require Supabase. Metrics on `/quality-analytics` do.
 
 ## 🔧 Troubleshooting
 
@@ -459,9 +460,9 @@ This project uses **GitHub Actions** to:
 - Run tests on every push and pull request
 - Act as a quality gate before merging
 - Deploy to Vercel on successful builds
-- Publish Playwright reports via GitHub Pages
+- Upload Playwright HTML reports as per-run artifacts (`playwright-report-{run_id}`)
 
-See `.github/workflows/` for pipeline configuration.
+See `.github/workflows/` for pipeline configuration and [docs/ARTIFACT_BASED_REPORTING.md](docs/ARTIFACT_BASED_REPORTING.md) for how to download reports.
 
 ## 📄 License
 
