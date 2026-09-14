@@ -65,6 +65,7 @@ export function MetricsPage() {
   const [runs, setRuns] = useState<TestRun[]>([]);
   const [trendData, setTrendData] = useState<TrendPoint[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const loadData = async () => {
     const supabase = getSupabaseClient();
@@ -93,6 +94,7 @@ export function MetricsPage() {
       setTrendData(payload.data || []);
     }
 
+    setLoadError(null);
     await loadRuns();
     await loadTrends();
   };
@@ -105,7 +107,11 @@ export function MetricsPage() {
         try {
           await loadData();
         } catch (error) {
-          console.error("Failed to initialize analytics:", error instanceof Error ? error.message : String(error));
+          const message = error instanceof Error ? error.message : String(error);
+          console.error("Failed to initialize analytics:", message);
+          if (mounted) {
+            setLoadError(message);
+          }
         }
       }
     };
@@ -121,6 +127,9 @@ export function MetricsPage() {
     setIsRefreshing(true);
     try {
       await loadData();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      setLoadError(message);
     } finally {
       setIsRefreshing(false);
     }
@@ -187,6 +196,21 @@ export function MetricsPage() {
             </div>
           </div>
         </header>
+
+        {loadError ? (
+          <div
+            role="alert"
+            data-testid="supabase-config-error"
+            className="rounded-2xl border border-rose-500/40 bg-rose-950/40 p-4 text-sm text-rose-100 shadow-lg"
+          >
+            <p className="font-semibold">Unable to load quality metrics</p>
+            <p className="mt-2 text-rose-100/90">
+              Check that Supabase is configured (`NEXT_PUBLIC_SUPABASE_URL` and
+              `NEXT_PUBLIC_SUPABASE_KEY`) and that the database is reachable.
+            </p>
+            <p className="mt-2 break-words text-xs text-rose-200/80">{loadError}</p>
+          </div>
+        ) : null}
 
         <section className="grid gap-2 sm:gap-3 md:gap-4 grid-cols-2 sm:grid-cols-4">
           <div className="rounded-2xl sm:rounded-3xl border border-white/10 bg-slate-950/75 p-2 sm:p-4 md:p-6 shadow-lg" data-testid="stats-total-runs">
