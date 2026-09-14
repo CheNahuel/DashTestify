@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { rejectUnlessLocalQaTools } from "@/lib/qa-api-guard";
 import {
   readQaAnalyticsRunState,
   startQaAnalyticsRun,
@@ -17,7 +18,12 @@ function parseMode(value: unknown): QaAnalyticsRunMode | null {
   return null;
 }
 
-export async function GET() {
+export async function GET(request: Request) {
+  const denied = rejectUnlessLocalQaTools(request);
+  if (denied) {
+    return denied;
+  }
+
   const state = await readQaAnalyticsRunState();
 
   return NextResponse.json(
@@ -31,6 +37,11 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const denied = rejectUnlessLocalQaTools(request);
+  if (denied) {
+    return denied;
+  }
+
   try {
     const body = (await request.json().catch(() => null)) as { mode?: unknown } | null;
     const mode = parseMode(body?.mode);
