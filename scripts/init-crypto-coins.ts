@@ -10,12 +10,13 @@
  */
 
 import { createClient } from "@supabase/supabase-js";
+import "dotenv/config";
 
 const DEFAULT_COINS = [
   { symbol: "BTC", name: "Bitcoin", coincapId: "bitcoin", coingeckoId: "bitcoin" },
   { symbol: "ETH", name: "Ethereum", coincapId: "ethereum", coingeckoId: "ethereum" },
   { symbol: "SOL", name: "Solana", coincapId: "solana", coingeckoId: "solana" },
-  { symbol: "BNB", name: "Binance Coin", coincapId: "binance-coin", coingeckoId: "binance" },
+  { symbol: "BNB", name: "Binance Coin", coincapId: "binance-coin", coingeckoId: "binancecoin" },
   { symbol: "ADA", name: "Cardano", coincapId: "cardano", coingeckoId: "cardano" },
   { symbol: "XRP", name: "XRP", coincapId: "xrp", coingeckoId: "ripple" },
   { symbol: "DOGE", name: "Dogecoin", coincapId: "dogecoin", coingeckoId: "dogecoin" },
@@ -69,8 +70,8 @@ async function initializeCoins() {
     }
 
     console.log("\n✨ Coins initialized successfully!");
-    console.log("\n📝 Next: Run initial sync for each coin");
-    console.log("   npx ts-node scripts/sync-initial-coins.ts");
+    console.log("\n📝 Next: Sync historical data for each coin");
+    console.log("   npx tsx scripts/sync-historical-data.ts");
   } catch (error) {
     console.error("❌ Error:", error);
     process.exit(1);
