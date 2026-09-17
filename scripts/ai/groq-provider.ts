@@ -40,7 +40,7 @@ function extractGroqText(payload: GroqChatCompletionResponse) {
 export function createGroqFailureAnalyzer(options: GroqFailureAnalyzerOptions) {
   const fetchImpl = options.fetchImpl ?? fetch;
   const apiKey = options.apiKey.trim();
-  const model = options.model?.trim() || "llama-3.3-70b-versatile";
+  const model = options.model?.trim() || "openai/gpt-oss-20b";
   const maxOutputTokens = options.maxOutputTokens ?? 1024;
 
   if (!apiKey) {

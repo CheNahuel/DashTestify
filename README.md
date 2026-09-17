@@ -5,20 +5,23 @@ A modern cryptocurrency dashboard built with **Next.js** and **TypeScript**, fea
 Perfect for learning modern testing practices, CI/CD pipelines, and production-grade web development.
 
 ---
+
 export SUPABASE_URL="https://kayzrduiqcxvwwjftttk.supabase.co"
 export SUPABASE_SERVICE_ROLE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtheXpyZHVpcWN4dnd3amZ0dHRrIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTM5NDUzNSwiZXhwIjoyMDk0OTcwNTM1fQ.C4tNOBIQC8rd4tFY1Gktuqsv1g0H0obkz5Si0-ae8LE"
 export INTERNAL_SYNC_SECRET="Iwj1WIim8Dmuxi0rNdrTX2stN6/8Yi+nXh/iPT1lKik="
+
 ## 🚀 Quick Links
 
-| Link | Purpose |
-|------|---------|
-| 🌐 **[Live Dashboard](https://dash-testify.vercel.app/)** | View the live cryptocurrency dashboard |
-| 📊 **[QA Analytics](https://dash-testify.vercel.app/quality-analytics)** | Test metrics & failure analysis |
-| 🧪 **[Test Report](https://chenahuel.github.io/DashTestify/)** | Playwright HTML test reports |
+| Link                                                                     | Purpose                                |
+| ------------------------------------------------------------------------ | -------------------------------------- |
+| 🌐 **[Live Dashboard](https://dash-testify.vercel.app/)**                | View the live cryptocurrency dashboard |
+| 📊 **[QA Analytics](https://dash-testify.vercel.app/quality-analytics)** | Test metrics & failure analysis        |
+| 🧪 **[Test Report](https://chenahuel.github.io/DashTestify/)**           | Playwright HTML test reports           |
 
 ## ✨ Features
 
 ### 💰 Cryptocurrency Dashboard
+
 - **Real-time & Mock Modes**: Live CoinCap API v3 data or deterministic mock data
 - **Interactive Charts**: 9 timeframes (1H to 5M) with Recharts
 - **Smart Search**: Filter by coin name or symbol
@@ -28,6 +31,7 @@ export INTERNAL_SYNC_SECRET="Iwj1WIim8Dmuxi0rNdrTX2stN6/8Yi+nXh/iPT1lKik="
 - **Trade Journal**: Keep per-coin trading notes
 
 ### 🤖 AI-Powered QA Analytics (Local Dev)
+
 - **AI Failure Analysis**: Auto-analyze test failures with Claude, OpenAI, Gemini, etc.
 - **Suggested Fixes**: AI generates code patches for failing tests
 - **Flaky Test Detection**: Identify unstable tests
@@ -35,6 +39,7 @@ export INTERNAL_SYNC_SECRET="Iwj1WIim8Dmuxi0rNdrTX2stN6/8Yi+nXh/iPT1lKik="
 - **Confidence Scoring**: Trust metrics for AI suggestions
 
 ### 📊 Production Analytics (with Supabase)
+
 - **Historical Metrics**: Track test trends over time
 - **Branch Health**: Monitor code quality per branch
 - **Test Runs**: Complete audit of all test executions
@@ -101,16 +106,16 @@ AI tools were used to support test case generation, code review, and test valida
 
 ## 🛠 Tech Stack
 
-| Layer | Technology | Purpose |
-|-------|-----------|---------|
-| **Framework** | Next.js 16 (App Router) | Full-stack React with server components |
-| **Language** | TypeScript | Type-safe JavaScript |
-| **Styling** | Tailwind CSS | Utility-first CSS framework |
-| **State & Data** | TanStack Query | Server state management & caching |
-| **Charts** | Recharts | Interactive React charts |
-| **Testing** | Playwright | Browser automation & E2E tests |
-| **API** | Axios | HTTP client for API calls |
-| **Data Source** | CoinCap API v3 | Live cryptocurrency market data |
+| Layer            | Technology              | Purpose                                 |
+| ---------------- | ----------------------- | --------------------------------------- |
+| **Framework**    | Next.js 16 (App Router) | Full-stack React with server components |
+| **Language**     | TypeScript              | Type-safe JavaScript                    |
+| **Styling**      | Tailwind CSS            | Utility-first CSS framework             |
+| **State & Data** | TanStack Query          | Server state management & caching       |
+| **Charts**       | Recharts                | Interactive React charts                |
+| **Testing**      | Playwright              | Browser automation & E2E tests          |
+| **API**          | Axios                   | HTTP client for API calls               |
+| **Data Source**  | CoinCap API v3          | Live cryptocurrency market data         |
 
 ### 📂 Project Structure
 
@@ -196,11 +201,11 @@ Open **[http://localhost:3000](http://localhost:3000)** in your browser.
 
 ### 3. Explore the App
 
-| Route | What You'll See |
-|-------|-----------------|
-| `/` | Cryptocurrency dashboard with live prices and charts |
-| `/quality-analytics` | Test results, AI failure analysis, metrics |
-| `/ai-failure-analysis` | Detailed AI-powered debugging suggestions |
+| Route                  | What You'll See                                      |
+| ---------------------- | ---------------------------------------------------- |
+| `/`                    | Cryptocurrency dashboard with live prices and charts |
+| `/quality-analytics`   | Test results, AI failure analysis, metrics           |
+| `/ai-failure-analysis` | Detailed AI-powered debugging suggestions            |
 
 ### 4. Run Tests (Optional)
 
@@ -220,9 +225,11 @@ npm run test:e2e:report
 ## 📚 For Beginners
 
 ### What is E2E Testing?
+
 **End-to-End (E2E) testing** simulates real user interactions by controlling a browser. Instead of unit tests that test code in isolation, E2E tests verify that the entire application works correctly from a user's perspective.
 
 **Example**: An E2E test might:
+
 1. Click the search box
 2. Type "bitcoin"
 3. Verify that bitcoin appears in results
@@ -230,13 +237,16 @@ npm run test:e2e:report
 5. Verify the price chart loads
 
 ### Why Playwright?
+
 - **Fast & reliable**: Runs tests in parallel with minimal flakiness
 - **Multi-browser**: Test in Chrome, Firefox, Safari
 - **Great debugging**: Built-in inspector, screenshots, traces
 - **No setup headaches**: Works out of the box
 
 ### Why AI for Failure Analysis?
+
 When a test fails, the AI analyzes:
+
 - The error message
 - The code that was running
 - The test file context
@@ -273,7 +283,7 @@ OPENROUTER_API_KEY=your_key       # Auto-selects free models if left empty
 CLAUDE_MODEL=claude-haiku-4-5
 OPENAI_MODEL=gpt-4o-mini
 GEMINI_MODEL=gemini-2.0-flash-lite
-GROQ_MODEL=llama-3.3-70b-versatile
+GROQ_MODEL=openai/gpt-oss-20b
 DEEPSEEK_MODEL=deepseek-chat
 ```
 
@@ -335,9 +345,9 @@ The project includes a **QA Analytics Dashboard** for analyzing test results, in
 
 ### Access Routes
 
-| URL | Mode | Purpose |
-|-----|------|---------|
-| `/quality-analytics` | Auto-detected | Main dashboard (local dev / live production) |
+| URL                    | Mode           | Purpose                                               |
+| ---------------------- | -------------- | ----------------------------------------------------- |
+| `/quality-analytics`   | Auto-detected  | Main dashboard (local dev / live production)          |
 | `/ai-failure-analysis` | Local dev only | AI-powered failure analysis (redirects in production) |
 
 ### Local Mode (Development)
@@ -375,7 +385,7 @@ Each provider has sensible defaults. Optionally override the model:
 CLAUDE_MODEL=claude-haiku-4-5
 OPENAI_MODEL=gpt-4o-mini
 GEMINI_MODEL=gemini-2.0-flash-lite
-GROQ_MODEL=llama-3.3-70b-versatile
+GROQ_MODEL=openai/gpt-oss-20b
 DEEPSEEK_MODEL=deepseek-chat
 ```
 
@@ -411,34 +421,43 @@ NEXT_PUBLIC_SUPABASE_KEY=your_supabase_key
 ## 🔧 Troubleshooting
 
 ### "Port 3000 already in use"
+
 ```bash
 # Use a different port
 npm run dev -- -p 3001
 ```
 
 ### "Tests fail with timeout errors"
+
 ```bash
 # Increase the timeout
 npm run test:e2e -- --timeout=60000
 ```
 
 ### "Mock data not loading"
+
 Restart the dev server:
+
 ```bash
 npm run dev
 ```
 
 ### "TypeScript errors in IDE"
+
 Your IDE might be cached. Try:
+
 ```bash
 npm run build
 ```
 
 ### "Need live CoinCap data?"
+
 Get a free API key from [rest.coincap.io](https://rest.coincap.io), add it to `.env`:
+
 ```bash
 COINCAP_API_KEY=your_key_here
 ```
+
 Then restart with `npm run dev`.
 
 ---
@@ -458,6 +477,7 @@ Then restart with `npm run dev`.
 ## ⚙️ CI/CD Pipeline
 
 This project uses **GitHub Actions** to:
+
 - Run tests on every push and pull request
 - Act as a quality gate before merging
 - Deploy to Vercel on successful builds

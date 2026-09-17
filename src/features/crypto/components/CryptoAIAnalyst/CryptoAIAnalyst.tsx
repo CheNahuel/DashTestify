@@ -1,47 +1,23 @@
 'use client';
 
 import { useCallback, useRef, useState, useEffect } from 'react';
-import type { AiProviderName } from '@/components/quality-analytics/types';
+import ReactMarkdown from 'react-markdown';
+import type { AiProviderName } from '../../../../../scripts/ai/types';
 import type { CryptoChatMessage } from './types';
 
 const PROVIDER_OPTIONS: Array<{
   value: AiProviderName;
   label: string;
-  description: string;
 }> = [
-  {
-    value: 'claude',
-    label: 'Claude',
-    description: 'Token-efficient and accurate market analysis',
-  },
-  {
-    value: 'openai',
-    label: 'OpenAI',
-    description: 'GPT-4o Mini for detailed analysis',
-  },
-  {
-    value: 'gemini',
-    label: 'Gemini',
-    description: 'Fast and capable for market queries',
-  },
-  {
-    value: 'groq',
-    label: 'Groq',
-    description: 'High-speed inference',
-  },
-  {
-    value: 'deepseek',
-    label: 'Deepseek',
-    description: 'Alternative provider',
-  },
-  {
-    value: 'openrouter',
-    label: 'OpenRouter',
-    description: 'Multi-model API aggregator',
-  },
+  { value: 'claude', label: 'Claude' },
+  { value: 'openai', label: 'OpenAI' },
+  { value: 'gemini', label: 'Gemini' },
+  { value: 'groq', label: 'Groq' },
+  { value: 'deepseek', label: 'DeepSeek' },
+  { value: 'openrouter', label: 'OpenRouter' },
 ];
 
-const SUGGESTED_QUESTIONS = [
+const DEFAULT_SUGGESTED_QUESTIONS = [
   'Compare Bitcoin and Ethereum over the last 6 months.',
   'How has Bitcoin performed this year?',
   'What are today\'s biggest gainers?',
@@ -54,12 +30,55 @@ const SUGGESTED_QUESTIONS = [
   'Explain Bitcoin\'s historical trend.',
 ];
 
+function generateRelatedQuestions(query: string): string[] {
+  // Generate follow-up questions based on the original query
+  const lowerQuery = query.toLowerCase();
+  const relatedQuestions: string[] = [];
+
+  if (lowerQuery.includes('gain') || lowerQuery.includes('top') || lowerQuery.includes('best')) {
+    relatedQuestions.push(
+      'What are today\'s biggest losers?',
+      'Which coins have the lowest volatility?',
+      'Show me assets with the highest volume.'
+    );
+  } else if (lowerQuery.includes('lose') || lowerQuery.includes('worst') || lowerQuery.includes('bottom')) {
+    relatedQuestions.push(
+      'What are today\'s biggest gainers?',
+      'Which coins are most stable?',
+      'Show me assets with unusual volume.'
+    );
+  } else if (lowerQuery.includes('bitcoin') || lowerQuery.includes('btc')) {
+    relatedQuestions.push(
+      'How has Bitcoin performed this year?',
+      'Compare Bitcoin vs Ethereum.',
+      'What\'s Bitcoin\'s all-time high?'
+    );
+  } else if (lowerQuery.includes('ethereum') || lowerQuery.includes('eth')) {
+    relatedQuestions.push(
+      'How has Ethereum performed this year?',
+      'Compare Ethereum vs Bitcoin.',
+      'What\'s Ethereum\'s current price?'
+    );
+  } else if (lowerQuery.includes('compare') || lowerQuery.includes('vs')) {
+    relatedQuestions.push(
+      'What are the key differences?',
+      'Which one has higher volatility?',
+      'Compare their market caps.'
+    );
+  }
+
+  // If we generated some related questions, use them; otherwise use defaults
+  return relatedQuestions.length > 0 ? relatedQuestions.slice(0, 4) : DEFAULT_SUGGESTED_QUESTIONS.slice(0, 4);
+}
+
 export function CryptoAIAnalyst() {
   const [messages, setMessages] = useState<CryptoChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [provider, setProvider] = useState<AiProviderName>('claude');
+  const [suggestedQuestions, setSuggestedQuestions] = useState(DEFAULT_SUGGESTED_QUESTIONS.slice(0, 4));
+  const [lastUserQuery, setLastUserQuery] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to bottom
@@ -89,6 +108,7 @@ export function CryptoAIAnalyst() {
 
       setMessages((prev) => [...prev, userMessage]);
       const userQuery = input;
+      setLastUserQuery(userQuery);
       setInput('');
       setIsLoading(true);
       setError(null);
@@ -122,19 +142,13 @@ export function CryptoAIAnalyst() {
         };
 
         setMessages((prev) => [...prev, assistantMessage]);
+
+        // On success, show related questions based on the user's query
+        setSuggestedQuestions(generateRelatedQuestions(userQuery));
       } catch (err) {
         const errorMessage =
           err instanceof Error ? err.message : 'Failed to get response';
         setError(errorMessage);
-
-        const errorAssistantMessage: CryptoChatMessage = {
-          id: `msg-${Date.now()}-error`,
-          role: 'assistant',
-          content: `Error: ${errorMessage}`,
-          timestamp: new Date(),
-        };
-
-        setMessages((prev) => [...prev, errorAssistantMessage]);
       } finally {
         setIsLoading(false);
       }
@@ -160,19 +174,19 @@ export function CryptoAIAnalyst() {
           </div>
         </div>
 
-        {/* Provider selector - matches ai-failure-analysis pattern */}
-        <div className="mt-4">
+        {/* Provider selector */}
+        <div className="mt-4 flex flex-col sm:flex-row sm:items-center sm:gap-3">
           <label className="text-xs uppercase tracking-wider text-slate-400">
             AI Provider
           </label>
           <select
             value={provider}
             onChange={(e) => setProvider(e.target.value as AiProviderName)}
-            className="mt-2 w-full sm:w-40 rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-sm text-white transition hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-cyan-300"
+            className="mt-2 sm:mt-0 w-full sm:w-auto rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-sm text-white transition hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-cyan-300"
           >
             {PROVIDER_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>
-                {opt.label} — {opt.description}
+                {opt.label}
               </option>
             ))}
           </select>
@@ -200,21 +214,54 @@ export function CryptoAIAnalyst() {
               }`}
             >
               <div
-                className={`max-w-xs sm:max-w-md lg:max-w-lg rounded-lg p-3 text-sm sm:text-base ${
+                className={`max-w-xs sm:max-w-md lg:max-w-lg rounded-lg p-4 text-sm sm:text-base ${
                   message.role === 'user'
                     ? 'bg-cyan-600 text-white'
                     : 'bg-slate-800 text-slate-100'
                 }`}
               >
-                <p className="whitespace-pre-wrap break-words">
-                  {message.content}
-                </p>
+                {message.role === 'assistant' ? (
+                  <div className="prose prose-invert max-w-none prose-sm">
+                    <ReactMarkdown
+                      components={{
+                        h1: ({ ...props }: any) => <h1 className="text-lg font-bold mt-3 mb-2" {...props} />,
+                        h2: ({ ...props }: any) => <h2 className="text-base font-bold mt-2 mb-1" {...props} />,
+                        h3: ({ ...props }: any) => <h3 className="text-sm font-semibold mt-2 mb-1" {...props} />,
+                        p: ({ ...props }: any) => <p className="mb-2" {...props} />,
+                        ul: ({ ...props }: any) => <ul className="list-disc list-inside mb-2 space-y-1" {...props} />,
+                        ol: ({ ...props }: any) => <ol className="list-decimal list-inside mb-2 space-y-1" {...props} />,
+                        li: ({ ...props }: any) => <li className="ml-0" {...props} />,
+                        table: ({ ...props }: any) => (
+                          <table className="w-full border-collapse mb-2 text-xs border border-slate-600" {...props} />
+                        ),
+                        th: ({ ...props }: any) => (
+                          <th className="border border-slate-600 px-2 py-1 bg-slate-700 font-semibold text-left" {...props} />
+                        ),
+                        td: ({ ...props }: any) => (
+                          <td className="border border-slate-600 px-2 py-1" {...props} />
+                        ),
+                        code: ({ inline, ...props }: any) =>
+                          inline ? (
+                            <code className="bg-slate-700 rounded px-1.5 py-0.5 font-mono text-xs" {...props} />
+                          ) : (
+                            <code className="block bg-slate-700 rounded p-2 font-mono text-xs overflow-x-auto mb-2" {...props} />
+                          ),
+                        a: ({ ...props }: any) => <a className="text-cyan-300 hover:underline" {...props} />,
+                        strong: ({ ...props }: any) => <strong className="font-bold text-cyan-200" {...props} />,
+                      }}
+                    >
+                      {message.content}
+                    </ReactMarkdown>
+                  </div>
+                ) : (
+                  <p>{message.content}</p>
+                )}
                 {message.sources && message.sources.length > 0 && (
-                  <div className="mt-2 border-t border-white/20 pt-2">
+                  <div className="mt-3 border-t border-white/20 pt-2">
                     <p className="text-xs font-semibold text-slate-300">
                       Data Sources:
                     </p>
-                    <ul className="mt-1 text-xs">
+                    <ul className="mt-1 text-xs space-y-0.5">
                       {message.sources.map((source) => (
                         <li key={source} className="text-slate-400">
                           ✓ {source}
@@ -243,19 +290,35 @@ export function CryptoAIAnalyst() {
 
       {/* Error message */}
       {error && (
-        <div className="border-t border-rose-500/30 bg-rose-500/10 p-3 sm:p-4">
-          <p className="text-xs sm:text-sm text-rose-200">{error}</p>
+        <div className="border-t border-rose-500/50 bg-rose-500/15 p-4 sm:p-5">
+          <div className="flex gap-3">
+            <div className="text-rose-400 flex-shrink-0">⚠️</div>
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-rose-200 mb-1">Error</p>
+              <p className="text-xs sm:text-sm text-rose-100 leading-relaxed">{error}</p>
+              <button
+                onClick={() => {
+                  setError(null);
+                  // Reset to default suggested questions on error dismiss
+                  setSuggestedQuestions(DEFAULT_SUGGESTED_QUESTIONS.slice(0, 4));
+                }}
+                className="mt-2 text-xs text-rose-300 hover:text-rose-200 underline"
+              >
+                Dismiss
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
-      {/* Suggested questions */}
-      {messages.length === 0 && (
+      {/* Suggested questions - show when no error and not loading */}
+      {!error && !isLoading && (
         <div className="border-t border-white/10 bg-slate-950/30 p-4 sm:p-5">
           <p className="mb-3 text-xs uppercase tracking-wider text-slate-400">
-            Suggested Questions
+            {lastUserQuery ? 'Related Questions' : 'Suggested Questions'}
           </p>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-            {SUGGESTED_QUESTIONS.slice(0, 4).map((question, idx) => (
+            {suggestedQuestions.map((question, idx) => (
               <button
                 key={idx}
                 onClick={() => handleSuggestedQuestion(question)}
