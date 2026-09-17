@@ -1,15 +1,13 @@
 import { NextResponse } from 'next/server';
 import { parseAiProviderName } from '@/lib/ai/index';
 import { analyzeCryptoQuery } from '@/lib/ai/crypto-analyst';
-import { createSupabaseProvider } from '@/features/crypto/lib/supabase-provider';
-import { createCoinCapProvider } from '@/features/crypto/lib/coincap-provider';
+import { getCryptoDataProvider, getDataSource, createMockProvider } from '@/services/crypto';
 
 export const runtime = 'nodejs';
 
 type CryptoAiRequestBody = {
   query: string;
   provider?: string;
-  useSupabase?: boolean;
 };
 
 export async function POST(request: Request) {
@@ -26,33 +24,16 @@ export async function POST(request: Request) {
     // Parse provider name (defaults to claude for crypto analysis)
     const provider = parseAiProviderName(body.provider || 'claude');
 
-    // Prefer Supabase (if available), fallback to CoinCap
-    const useSupabase = body.useSupabase !== false && process.env.USE_SUPABASE_CRYPTO !== 'false';
-    let dataProvider;
-    let dataSource: string;
-
-    if (useSupabase) {
-      try {
-        dataProvider = createSupabaseProvider();
-        dataSource = 'Supabase';
-        console.log('[crypto-analyst] Using Supabase data source');
-      } catch (error) {
-        console.warn('[crypto-analyst] Supabase provider failed, falling back to CoinCap:', error);
-        dataProvider = createCoinCapProvider();
-        dataSource = 'CoinCap (fallback)';
-      }
-    } else {
-      dataProvider = createCoinCapProvider();
-      dataSource = 'CoinCap';
-    }
-
+    // Use configured data source (controlled by DATA_SOURCE env var)
+    const dataSource = getDataSource();
+    const dataProvider = getCryptoDataProvider();
     console.log(`[crypto-analyst] Using data source: ${dataSource} for query: "${body.query}"`);
 
     let context: Record<string, unknown> = {};
     let endpoints: string[] = [];
     let lastError: Error | null = null;
 
-    // Try to fetch with selected provider
+    // Try to fetch with configured provider
     try {
       const result = await dataProvider.fetchMarketData(body.query);
       context = result.context;
@@ -61,23 +42,22 @@ export async function POST(request: Request) {
       lastError = error instanceof Error ? error : new Error(String(error));
       console.warn(`[crypto-analyst] ${dataSource} failed:`, lastError.message);
 
-      // If we tried Supabase and it failed, fallback to CoinCap
-      if (useSupabase && dataSource !== 'CoinCap') {
-        console.log('[crypto-analyst] Attempting fallback to CoinCap...');
-        try {
-          const fallbackProvider = createCoinCapProvider();
-          const result = await fallbackProvider.fetchMarketData(body.query);
-          context = result.context;
-          endpoints = result.endpoints;
-          dataSource = 'CoinCap (fallback after Supabase error)';
-          lastError = null;
-        } catch (fallbackError) {
-          lastError = fallbackError instanceof Error ? fallbackError : new Error(String(fallbackError));
-        }
+      // Fallback to mock provider if primary fails
+      console.log('[crypto-analyst] Attempting fallback to mock data...');
+      try {
+        const mockProvider = createMockProvider();
+        const result = await mockProvider.fetchMarketData(body.query);
+        context = result.context;
+        endpoints = result.endpoints;
+        console.log('[crypto-analyst] Successfully fell back to mock data');
+        lastError = null;
+      } catch (fallbackError) {
+        lastError = fallbackError instanceof Error ? fallbackError : new Error(String(fallbackError));
+        console.warn('[crypto-analyst] Mock provider also failed:', lastError.message);
       }
     }
 
-    // If we couldn't get data from either source, return error
+    // If we couldn't get data from any source, return error
     if (lastError && (!context || Object.keys(context).length === 0)) {
       return NextResponse.json(
         {
@@ -91,7 +71,7 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           error: `Could not fetch market data from ${dataSource}. ${
-            useSupabase ? 'Please ensure coins are synced to Supabase.' : 'The API may be experiencing issues.'
+            dataSource === 'supabase' ? 'Please ensure coins are synced to Supabase.' : 'The API may be experiencing issues.'
           } Please try again in a moment.`,
         },
         { status: 503 }

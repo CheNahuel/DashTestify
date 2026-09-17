@@ -7,6 +7,7 @@ import * as queries from "@/database/queries";
  * Daily sync: fetch and insert the previous day's candle for each coin.
  * Runs once per day (e.g., at 1 AM UTC).
  * Also recalculates metrics for all coins.
+ * Additionally fetches current market_cap/volume from CoinCap and updates coin_metrics.
  */
 export async function syncDaily() {
   const supabaseService = getSupabaseServiceClient();
@@ -16,6 +17,34 @@ export async function syncDaily() {
 
     // Get all coins
     const coins = await queries.getAllCoins();
+
+    // Fetch current market cap/volume from CoinCap for all coins (batched)
+    if (coins.length > 0) {
+      try {
+        console.log("Fetching current market data from CoinCap...");
+        const coincapIds = coins.map((c) => c.coincap_id);
+        const currentData = await coincapClient.fetchAssets(coincapIds);
+
+        // Update coin_metrics with latest market_cap and volume24h
+        for (const asset of currentData) {
+          const coin = coins.find((c) => c.coincap_id === asset.id);
+          if (coin && asset.marketCapUsd && asset.volumeUsd24Hr) {
+            await supabaseService
+              .from("coin_metrics")
+              .update({
+                market_cap: asset.marketCapUsd ? parseFloat(asset.marketCapUsd) : null,
+                volume24h: asset.volumeUsd24Hr ? parseFloat(asset.volumeUsd24Hr) : null,
+                updated_at: new Date().toISOString(),
+              })
+              .eq("coin_id", coin.id);
+          }
+        }
+        console.log("Market data updated for all coins");
+      } catch (error) {
+        console.warn("Failed to fetch market data from CoinCap:", error);
+        // Continue with daily sync even if market data fetch fails
+      }
+    }
 
     if (coins.length === 0) {
       console.log("No coins to sync");
