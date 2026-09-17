@@ -133,6 +133,7 @@ export const Dashboard = ({
   initialTrend = DEFAULT_TREND,
   useMock = false,
   isLiveAvailable = false,
+  dataSource = "supabase",
 }: {
   initialCoins?: Coin[];
   marketUnavailable?: boolean;
@@ -144,6 +145,7 @@ export const Dashboard = ({
   initialTrend?: string;
   useMock?: boolean;
   isLiveAvailable?: boolean;
+  dataSource?: "supabase" | "coincap";
 }) => {
   const router = useRouter();
   const pathname = usePathname();
@@ -428,7 +430,7 @@ export const Dashboard = ({
                   }`}
                 />
               </span>
-              {useMock ? "Mock" : "Live"}
+              {useMock ? "Mock" : `Live (${dataSource === "supabase" ? "Supabase" : "CoinCap"})`}
             </button>
           </div>
         </div>

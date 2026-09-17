@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { createSupabaseProvider } from "@/features/crypto/lib/supabase-provider";
+import { createSupabaseProvider } from "@/services/crypto";
 import { analyzeCryptoQuery } from "@/lib/ai/crypto-analyst";
 
 // Mock data for testing

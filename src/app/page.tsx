@@ -67,6 +67,8 @@ export default async function Home({
   const isLiveAvailable = Boolean(process.env.COINCAP_API_KEY) || getDataSource() === "supabase";
   const useMock = params.mockData === "1" || !isLiveAvailable;
 
+  const dataSource = getDataSource();
+
   return (
     <Dashboard
       initialCoins={[]}
@@ -79,6 +81,7 @@ export default async function Home({
       initialTrend={params.trend ?? DEFAULT_TREND}
       useMock={useMock}
       isLiveAvailable={isLiveAvailable}
+      dataSource={dataSource}
     />
   );
 }
