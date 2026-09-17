@@ -78,14 +78,6 @@ function extractResponseText(data: GenericApiResponse, providerName: AiProviderN
     }
   }
 
-  // Groq & DeepSeek: same as OpenAI
-  if (Array.isArray(data.choices)) {
-    const choice = (data.choices as Array<{ message?: { content?: string } }>)[0];
-    if (choice?.message?.content) {
-      return choice.message.content.trim();
-    }
-  }
-
   return "";
 }
 

@@ -6,10 +6,6 @@ Perfect for learning modern testing practices, CI/CD pipelines, and production-g
 
 ---
 
-export SUPABASE_URL="https://kayzrduiqcxvwwjftttk.supabase.co"
-export SUPABASE_SERVICE_ROLE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtheXpyZHVpcWN4dnd3amZ0dHRrIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTM5NDUzNSwiZXhwIjoyMDk0OTcwNTM1fQ.C4tNOBIQC8rd4tFY1Gktuqsv1g0H0obkz5Si0-ae8LE"
-export INTERNAL_SYNC_SECRET="Iwj1WIim8Dmuxi0rNdrTX2stN6/8Yi+nXh/iPT1lKik="
-
 ## 🚀 Quick Links
 
 | Link                                                                     | Purpose                                |
@@ -30,13 +26,16 @@ export INTERNAL_SYNC_SECRET="Iwj1WIim8Dmuxi0rNdrTX2stN6/8Yi+nXh/iPT1lKik="
 - **Price Alerts**: Get notified when prices hit targets
 - **Trade Journal**: Keep per-coin trading notes
 
-### 🤖 AI-Powered QA Analytics (Local Dev)
+### 🤖 AI-Powered Features
 
-- **AI Failure Analysis**: Auto-analyze test failures with Claude, OpenAI, Gemini, etc.
+- **Crypto AI Analyst**: Multi-provider cryptocurrency analysis with Claude, OpenAI, Gemini, Groq, DeepSeek, OpenRouter
+  - Markdown-formatted responses for better readability
+  - Smart suggested prompts that adapt to user queries
+  - Real-time data from Supabase or CoinCap
+- **QA Failure Analysis**: Auto-analyze test failures with AI
 - **Suggested Fixes**: AI generates code patches for failing tests
 - **Flaky Test Detection**: Identify unstable tests
 - **Top Failures**: Aggregate and track failure patterns
-- **Confidence Scoring**: Trust metrics for AI suggestions
 
 ### 📊 Production Analytics (with Supabase)
 
@@ -192,7 +191,12 @@ npm install
 ### 2. Run the Application
 
 ```bash
+# Default (uses DATA_SOURCE env var, falls back to mock data)
 npm run dev
+
+# Or specify a data source explicitly:
+npm run dev:supabase    # Use Supabase backend
+npm run dev:coincap     # Use CoinCap API directly
 ```
 
 Open **[http://localhost:3000](http://localhost:3000)** in your browser.
@@ -365,31 +369,20 @@ Shows AI-powered analysis of your **most recent local test run**:
 
 **Requirements:** None — works immediately after running `npm run test:e2e`
 
-**AI Analysis Setup (Optional):**
 
-To enable AI-powered failure analysis, add an API key from your preferred provider to `.env`:
+### Crypto AI Analyst
 
-```bash
-# Choose one or more:
-CLAUDE_API_KEY=your_key           # (Recommended) Fast & free tier available
-OPENAI_API_KEY=your_key
-GEMINI_API_KEY=your_key
-GROQ_API_KEY=your_key
-DEEPSEEK_API_KEY=your_key
-OPENROUTER_API_KEY=your_key       # (Tip) Auto-selects free models if left empty
-```
+**Available at:** [http://localhost:3000/](http://localhost:3000/) (integrated into main dashboard)
 
-Each provider has sensible defaults. Optionally override the model:
+Interactive cryptocurrency analysis powered by 6 AI providers:
 
-```bash
-CLAUDE_MODEL=claude-haiku-4-5
-OPENAI_MODEL=gpt-4o-mini
-GEMINI_MODEL=gemini-2.0-flash-lite
-GROQ_MODEL=openai/gpt-oss-20b
-DEEPSEEK_MODEL=deepseek-chat
-```
+- **Multi-Provider Support**: Claude, OpenAI, Gemini, Groq, DeepSeek, OpenRouter
+- **Markdown Rendering**: Beautiful, formatted responses with tables, code, and lists
+- **Smart Suggestions**: Contextual follow-up questions based on your queries
+- **Real-time Data**: Fetches from Supabase (preferred) or CoinCap API
+- **Error Recovery**: Clear error messages with dismissible state
 
-> **Tip:** Claude (Haiku) and Groq offer free/cheap tiers and are excellent for local testing.
+**Setup:** Add any AI provider API key to `.env` (see Environment Variables below). Uses sensible defaults if model not specified.
 
 ### Live Mode (Production)
 
@@ -417,6 +410,47 @@ NEXT_PUBLIC_SUPABASE_KEY=your_supabase_key
 ```
 
 > **Note:** Without Supabase, local analytics still work perfectly. Live metrics are only available on production with Supabase configured.
+
+## 📊 Crypto Data Synchronization
+
+For development or self-hosted deployments, sync historical cryptocurrency data to Supabase:
+
+### Scripts
+
+| Script                       | Purpose                                              |
+| ---------------------------- | ---------------------------------------------------- |
+| `init-crypto-coins.ts`       | Initialize 10 crypto coins in Supabase              |
+| `sync-historical-data.ts`    | Sync ~1 year of OHLC data for each coin (primary)   |
+| `verify-sync.ts`             | Check if sync is complete and valid                 |
+
+### Quick Start
+
+```bash
+# 1. Initialize coins (one-time)
+npx tsx scripts/init-crypto-coins.ts
+
+# 2. Sync historical data (one-time)
+npx tsx scripts/sync-historical-data.ts
+
+# 3. Verify sync completed
+npx tsx scripts/verify-sync.ts
+```
+
+### Data Strategy
+
+- **Primary Source**: CoinGecko (unlimited free API)
+- **Fallback**: CoinCap (if CoinGecko unavailable)
+- **Scope**: 365 days of daily OHLC candles per coin
+- **Metrics**: Price, ATH, drawdown, EMA, RSI, volatility, returns (YTD, 1m, 3m, 6m, 1y)
+
+### Requirements
+
+```bash
+SUPABASE_URL=your_supabase_url
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+```
+
+> **Tip:** Without Supabase, the app works fine with mock data. Sync is only needed for production deployments.
 
 ## 🔧 Troubleshooting
 

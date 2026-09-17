@@ -4,6 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:supabase": "DATA_SOURCE=supabase next dev",
+    "dev:coincap": "DATA_SOURCE=coincap next dev",
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",

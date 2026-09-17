@@ -1,5 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { syncDaily } from "@/sync/syncDaily";
+import { validateSyncSecret, syncSuccessResponse, syncErrorResponse } from "../_auth";
 
 export const maxDuration = 300; // 5 minutes
 
@@ -9,42 +10,18 @@ export const maxDuration = 300; // 5 minutes
  * Called by Supabase Edge Functions via pg_cron.
  */
 export async function POST(request: NextRequest) {
+  const auth = validateSyncSecret(request);
+  if (!auth.valid) {
+    return auth.response;
+  }
+
   try {
-    // Validate secret header
-    const authHeader = request.headers.get("authorization");
-    const expectedSecret = process.env.INTERNAL_SYNC_SECRET;
-
-    if (!expectedSecret || authHeader !== `Bearer ${expectedSecret}`) {
-      return NextResponse.json(
-        { error: "Unauthorized: invalid or missing secret" },
-        { status: 401 }
-      );
-    }
-
     console.log("[sync-daily] Starting daily sync from Edge Function");
-
-    // Run daily sync
     const result = await syncDaily();
-
     console.log("[sync-daily] Completed:", result);
-
-    return NextResponse.json(
-      {
-        success: true,
-        message: "Daily sync completed",
-        result,
-      },
-      { status: 200 }
-    );
+    return syncSuccessResponse("Daily sync completed", result);
   } catch (error) {
     console.error("[sync-daily] Error:", error);
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : String(error),
-      },
-      { status: 500 }
-    );
+    return syncErrorResponse(error);
   }
 }
