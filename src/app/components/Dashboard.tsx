@@ -4,6 +4,11 @@ import { startTransition, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import Image from "next/image";
+
+const getFallbackCoinImage = (symbol: string) =>
+  `data:image/svg+xml;base64,${btoa(
+    `<svg width="40" height="40" xmlns="http://www.w3.org/2000/svg"><circle cx="20" cy="20" r="18" fill="#64748b"/><text x="20" y="25" text-anchor="middle" font-family="Arial" font-size="12" fill="white">${symbol.slice(0, 2).toUpperCase()}</text></svg>`,
+  )}`;
 import { Container } from "@/components/Container";
 import { CoinChart } from "@/features/crypto/components/CoinChart";
 import { CoinJournal, type CoinJournalEntry } from "@/features/crypto/components/CoinJournal";
@@ -618,10 +623,7 @@ const MainDashboard = ({
             <div className="mt-2 flex flex-wrap items-center gap-2 sm:gap-3">
               <div className="flex min-w-0 items-center gap-2 sm:gap-3">
                 <Image
-                  src={
-                    coin.image ||
-                    `data:image/svg+xml;base64,${btoa(`<svg width="40" height="40" xmlns="http://www.w3.org/2000/svg"><circle cx="20" cy="20" r="18" fill="#64748b"/><text x="20" y="25" text-anchor="middle" font-family="Arial" font-size="12" fill="white">${coin.symbol.slice(0, 2).toUpperCase()}</text></svg>`)}`
-                  }
+                  src={coin.image || getFallbackCoinImage(coin.symbol)}
                   alt={coin.name}
                   width={40}
                   height={40}

@@ -1,8 +1,14 @@
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { Coin, CoinHistoryRequest } from "../types/coin";
 import { compactFormatter, currencyFormatter } from "@/lib/formatters";
 import { useCoinHistory } from "../hooks/useCoinHistory";
 import { CoinSparkline } from "./CoinSparkline";
+
+const getFallbackCoinImage = (symbol: string) =>
+  `data:image/svg+xml;base64,${btoa(
+    `<svg width="40" height="40" xmlns="http://www.w3.org/2000/svg"><circle cx="20" cy="20" r="18" fill="#64748b"/><text x="20" y="25" text-anchor="middle" font-family="Arial" font-size="12" fill="white">${symbol.slice(0, 2).toUpperCase()}</text></svg>`,
+  )}`;
 
 export const CoinCard = ({
   coin,
@@ -21,6 +27,13 @@ export const CoinCard = ({
   historyRequest: CoinHistoryRequest;
   useMock?: boolean;
 }) => {
+  const fallback = getFallbackCoinImage(coin.symbol);
+  const [imgSrc, setImgSrc] = useState(coin.image || fallback);
+
+  useEffect(() => {
+    setImgSrc(coin.image || fallback);
+  }, [coin.image, coin.symbol, fallback]);
+
   const { data: history } = useCoinHistory(coin.id, historyRequest, useMock);
 
   const historyPrices = history?.prices.map(([, price]) => price) ?? [];
@@ -52,14 +65,12 @@ export const CoinCard = ({
           className="flex min-w-0 flex-1 items-center gap-2 text-left sm:gap-3"
         >
           <Image
-            src={
-              coin.image ||
-              `data:image/svg+xml;base64,${btoa(`<svg width="40" height="40" xmlns="http://www.w3.org/2000/svg"><circle cx="20" cy="20" r="18" fill="#64748b"/><text x="20" y="25" text-anchor="middle" font-family="Arial" font-size="12" fill="white">${coin.symbol.slice(0, 2).toUpperCase()}</text></svg>`)}`
-            }
+            src={imgSrc}
             alt={coin.name}
             width={40}
             height={40}
             className="h-8 w-8 shrink-0 rounded-full sm:h-10 sm:w-10"
+            onError={() => setImgSrc(fallback)}
           />
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold sm:text-base">{coin.name}</p>
