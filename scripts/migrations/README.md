@@ -46,8 +46,9 @@ Stores individual test results for each test run. Linked to test_runs via foreig
 
 ## Running Migrations
 
-**Note:** Migrations 001-006 and 008 should be applied. Migration 007 (`007_setup_pg_cron.sql`) is superseded
-by GitHub Actions-based scheduling (see below) and is no longer needed. Run migrations in order but skip 007.
+**Note:** Migrations 001-006 and 008 are always required. Migration 007 (`007_setup_pg_cron.sql`) is optional:
+- Use it if you want pg_cron + Edge Functions to handle daily/intraday syncs (Edge Functions fetch from CoinCap and write directly to Supabase)
+- Skip it if you prefer GitHub Actions-based scheduling (see [Scheduled Crypto Data Syncing](#scheduled-crypto-data-syncing) below)
 
 ### With Supabase CLI
 ```bash
@@ -247,9 +248,45 @@ GROUP BY c.id, symbol;
 
 Each coin should have ~365 daily price records after initial sync.
 
-### Legacy (not used)
+### Alternative: pg_cron + Edge Functions (Migration 007)
 
-Migration 007 (`007_setup_pg_cron.sql`) previously configured Supabase pg_cron + Edge Functions
-for syncing. This is now superseded by GitHub Actions and should not be run. The Edge Functions
-`supabase/functions/sync-daily` and `supabase/functions/sync-intraday` remain in the codebase
-for reference but are no longer invoked.
+If you prefer to use Supabase pg_cron for scheduled syncing instead of GitHub Actions:
+
+1. **Deploy Edge Functions to Supabase**:
+   ```bash
+   supabase functions deploy sync-daily
+   supabase functions deploy sync-intraday
+   ```
+
+2. **Set Edge Function environment variables**:
+   The Edge Functions need access to your Supabase credentials to insert data:
+   ```bash
+   # Note: SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are automatically available
+   # in Supabase Edge Functions, no need to set them manually.
+   # Verify they're accessible:
+   supabase secrets list
+   ```
+
+3. **Run the migration**:
+   ```bash
+   supabase db push
+   ```
+   Or paste the contents of `scripts/migrations/007_setup_pg_cron.sql` into Supabase Dashboard > SQL Editor
+
+4. **Verify**:
+   ```sql
+   -- Check cron jobs are scheduled
+   SELECT * FROM cron.job WHERE jobname LIKE 'sync-crypto%';
+   
+   -- View recent job executions
+   SELECT * FROM cron.job_run_details ORDER BY start_time DESC LIMIT 5;
+   ```
+
+5. **Monitor Edge Function logs** (after cron triggers):
+   ```bash
+   supabase functions logs sync-daily --follow
+   supabase functions logs sync-intraday --follow
+   ```
+
+**Architecture**: Edge Functions call CoinCap API directly and insert data into Supabase using the service role key.
+No external authentication tokens are needed—Edge Functions authenticate internally.

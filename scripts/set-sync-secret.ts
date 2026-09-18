@@ -48,7 +48,18 @@ async function main() {
     console.log("\n⏳ Connecting to database...");
 
     // Execute SQL command using psql
-    const sql = `ALTER DATABASE postgres SET "app.internal_sync_secret" = '${syncSecret.replace(/'/g, "''")}'`;
+    // Store secret in Vault (idempotent upsert)
+    const escapedSecret = syncSecret.replace(/'/g, "''");
+    const sql = `
+do $$
+begin
+  if exists (select 1 from vault.secrets where name = 'internal_sync_secret') then
+    perform vault.update_secret((select id from vault.secrets where name = 'internal_sync_secret'), '${escapedSecret}');
+  else
+    perform vault.create_secret('${escapedSecret}', 'internal_sync_secret');
+  end if;
+end $$;
+`;
 
     // Option 1: Try using psql if available
     try {
@@ -57,7 +68,7 @@ async function main() {
         stdio: "pipe",
       });
       console.log("✅ Secret configured successfully!");
-      console.log(`\n📝 The INTERNAL_SYNC_SECRET is now set in your database.`);
+      console.log(`\n📝 The INTERNAL_SYNC_SECRET is now stored in Supabase Vault.`);
       console.log(`   Next: Run pg_cron setup and initialize coins.`);
       process.exit(0);
     } catch (psqlError) {
@@ -69,8 +80,15 @@ async function main() {
       console.log("Option A: Install psql and run:");
       console.log(`  psql "${connString}"`);
       console.log(`  Then in psql prompt, paste:`);
-      console.log(`    ALTER DATABASE postgres SET "app.internal_sync_secret" = '${syncSecret}';`);
-      console.log(`    \\q  (to exit psql)\n`);
+      console.log(`do $$`);
+      console.log(`begin`);
+      console.log(`  if exists (select 1 from vault.secrets where name = 'internal_sync_secret') then`);
+      console.log(`    perform vault.update_secret((select id from vault.secrets where name = 'internal_sync_secret'), '${syncSecret}');`);
+      console.log(`  else`);
+      console.log(`    perform vault.create_secret('${syncSecret}', 'internal_sync_secret');`);
+      console.log(`  end if;`);
+      console.log(`end $$;`);
+      console.log(`  \\q  (to exit psql)\n`);
 
       console.log("Option B: Use Supabase CLI:");
       console.log(`  supabase db execute --db-url "${connString}" -- "${sql}"\n`);
@@ -79,7 +97,14 @@ async function main() {
       console.log(`  1. Go to SQL Editor`);
       console.log(`  2. Create new query`);
       console.log(`  3. Paste this command:`);
-      console.log(`     ALTER DATABASE postgres SET "app.internal_sync_secret" = '${syncSecret}';`);
+      console.log(`do $$`);
+      console.log(`begin`);
+      console.log(`  if exists (select 1 from vault.secrets where name = 'internal_sync_secret') then`);
+      console.log(`    perform vault.update_secret((select id from vault.secrets where name = 'internal_sync_secret'), '${syncSecret}');`);
+      console.log(`  else`);
+      console.log(`    perform vault.create_secret('${syncSecret}', 'internal_sync_secret');`);
+      console.log(`  end if;`);
+      console.log(`end $$;`);
       console.log(`  4. Execute\n`);
 
       process.exit(1);
