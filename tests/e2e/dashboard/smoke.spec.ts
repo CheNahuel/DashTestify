@@ -40,7 +40,7 @@ test("data source toggle shows Supabase by default", async ({
   await dashboardPage.goto("/?sort=market-cap-desc&trend=all&timeframe=7D");
   await waitForDashboardData(dashboardPage.page);
 
-  await expect(dashboardPage.dataSourceToggle).toContainText("Live (Supabase)");
+  await expect(dashboardPage.dataSourceLive).toHaveClass(/bg-emerald-500/);
 });
 
 test("key UI panels for selected coin appear after selection", async ({

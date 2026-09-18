@@ -8,7 +8,8 @@ export class DashboardPage {
   readonly trendSelect: Locator;
   readonly favoritesFilter: Locator;
   readonly resetButton: Locator;
-  readonly dataSourceToggle: Locator;
+  readonly dataSourceMock: Locator;
+  readonly dataSourceLive: Locator;
   readonly selectedAssetName: Locator;
   readonly selectedAssetPrice: Locator;
   readonly selectedAssetChange: Locator;
@@ -46,7 +47,8 @@ export class DashboardPage {
     this.trendSelect = page.getByTestId("trend-select");
     this.favoritesFilter = page.getByTestId("favorites-filter");
     this.resetButton = page.getByTestId("reset-dashboard");
-    this.dataSourceToggle = page.getByTestId("data-source-toggle");
+    this.dataSourceMock = page.getByTestId("data-source-mock");
+    this.dataSourceLive = page.getByTestId("data-source-live");
     this.selectedAssetName = page.getByTestId("selected-asset-name");
     this.selectedAssetPrice = page.getByTestId("selected-asset-price");
     this.selectedAssetChange = page.getByTestId("selected-asset-change");

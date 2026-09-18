@@ -17,42 +17,25 @@ test.describe("Navigation between Home and Metrics", () => {
     });
   });
 
-  test("Metrics button appears on the home page", async ({ page }) => {
+  test("Quality Analytics link appears in top navigation", async ({ page }) => {
     const dashboardPage = new DashboardPage(page);
     await dashboardPage.goto("/?mockData=1");
     await waitForDashboardData(page);
 
-    await dashboardPage.page.getByTestId("metrics-button").waitFor({ state: "visible" });
-    await expect(dashboardPage.page.getByTestId("metrics-button")).toBeVisible();
+    const qualityAnalyticsLink = page.getByRole("link", { name: /Quality Analytics/i });
+    await expect(qualityAnalyticsLink).toBeVisible();
   });
 
-  test("Clicking Metrics button navigates to metrics page", async ({ page }) => {
+  test("Clicking Quality Analytics navigates to metrics page", async ({ page }) => {
     const dashboardPage = new DashboardPage(page);
     await dashboardPage.goto("/?mockData=1");
     await waitForDashboardData(page);
 
-    const metricsButton = dashboardPage.page.getByTestId("metrics-button");
-    await metricsButton.click();
+    const qualityAnalyticsLink = page.getByRole("link", { name: /Quality Analytics/i });
+    await qualityAnalyticsLink.click();
 
     await page.waitForURL(/.*\/quality-analytics/);
     expect(page.url()).toContain("/quality-analytics");
-  });
-
-  test("Back to Home button is visible on metrics page", async ({ page }) => {
-    const metricsPage = new MetricsPage(page);
-    await metricsPage.goto("/quality-analytics");
-
-    await metricsPage.expectBackToHomeButtonVisible();
-    await expect(metricsPage.backToHomeButton).toBeVisible();
-  });
-
-  test("Clicking Back to Home navigates to home page", async ({ page }) => {
-    const metricsPage = new MetricsPage(page);
-    await metricsPage.goto("/quality-analytics");
-
-    await metricsPage.clickBackToHome();
-    await page.waitForURL(/.*\/$/);
-    expect(page.url()).toContain("/");
   });
 
   test("Refresh button is visible on metrics page", async ({ page }) => {
@@ -63,19 +46,20 @@ test.describe("Navigation between Home and Metrics", () => {
     await expect(metricsPage.refreshButton).toBeVisible();
   });
 
-  test("Full navigation flow: Home -> Metrics -> Home", async ({ page }) => {
+  test("Full navigation flow: Home -> Quality Analytics -> Home", async ({ page }) => {
     const dashboardPage = new DashboardPage(page);
-    const metricsPage = new MetricsPage(page);
 
     await dashboardPage.goto("/?mockData=1");
     await waitForDashboardData(page);
     expect(page.url()).toContain("/");
 
-    await dashboardPage.page.getByTestId("metrics-button").click();
+    const qualityAnalyticsLink = page.getByRole("link", { name: /Quality Analytics/i });
+    await qualityAnalyticsLink.click();
     await page.waitForURL(/.*\/quality-analytics/);
     expect(page.url()).toContain("/quality-analytics");
 
-    await metricsPage.clickBackToHome();
+    const cryptoDashboardLink = page.getByRole("link", { name: /Crypto Dashboard/i });
+    await cryptoDashboardLink.click();
     await page.waitForURL(/.*\/$/);
     expect(page.url()).toContain("/");
   });
