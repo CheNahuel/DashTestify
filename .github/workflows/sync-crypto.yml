@@ -9,27 +9,29 @@ on:
   # Allow manual trigger
   workflow_dispatch:
 
+env:
+  SUPABASE_URL: https://kayzrduiqcxvwwjftttk.supabase.co
+  SUPABASE_FUNCTIONS_V1: https://kayzrduiqcxvwwjftttk.supabase.co/functions/v1
+
 jobs:
   sync-intraday:
     runs-on: ubuntu-latest
     # Run intraday on 5-minute schedule
     if: github.event.schedule == '*/5 * * * *' || github.event_name == 'workflow_dispatch'
     steps:
-      - name: Call sync-intraday Edge Function
+      - name: Sync intraday crypto data
         run: |
-          curl -X POST https://kayzrduiqcxvwwjftttk.supabase.co/functions/v1/sync-intraday \
+          curl -X POST "${{ env.SUPABASE_FUNCTIONS_V1 }}/sync-intraday" \
             -H "Content-Type: application/json" \
-            -d '{"timestamp":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'"}'
-        continue-on-error: true
+            -d '{}'
 
   sync-daily:
     runs-on: ubuntu-latest
     # Run daily at 1 AM UTC
     if: github.event.schedule == '0 1 * * *' || github.event_name == 'workflow_dispatch'
     steps:
-      - name: Call sync-daily Edge Function
+      - name: Sync daily crypto data
         run: |
-          curl -X POST https://kayzrduiqcxvwwjftttk.supabase.co/functions/v1/sync-daily \
+          curl -X POST "${{ env.SUPABASE_FUNCTIONS_V1 }}/sync-daily" \
             -H "Content-Type: application/json" \
-            -d '{"timestamp":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'"}'
-        continue-on-error: true
+            -d '{}'
