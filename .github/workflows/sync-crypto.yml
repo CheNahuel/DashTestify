@@ -1,0 +1,37 @@
+name: Sync Crypto Data
+
+on:
+  schedule:
+    # Intraday sync: every 5 minutes
+    - cron: '*/5 * * * *'
+    # Daily sync: 1 AM UTC
+    - cron: '0 1 * * *'
+  # Allow manual trigger
+  workflow_dispatch:
+
+env:
+  SUPABASE_URL: https://kayzrduiqcxvwwjftttk.supabase.co
+  SUPABASE_FUNCTIONS_V1: https://kayzrduiqcxvwwjftttk.supabase.co/functions/v1
+
+jobs:
+  sync-intraday:
+    runs-on: ubuntu-latest
+    # Run intraday on 5-minute schedule
+    if: github.event.schedule == '*/5 * * * *' || github.event_name == 'workflow_dispatch'
+    steps:
+      - name: Sync intraday crypto data
+        run: |
+          curl -X POST "${{ env.SUPABASE_FUNCTIONS_V1 }}/sync-intraday" \
+            -H "Content-Type: application/json" \
+            -d '{}'
+
+  sync-daily:
+    runs-on: ubuntu-latest
+    # Run daily at 1 AM UTC
+    if: github.event.schedule == '0 1 * * *' || github.event_name == 'workflow_dispatch'
+    steps:
+      - name: Sync daily crypto data
+        run: |
+          curl -X POST "${{ env.SUPABASE_FUNCTIONS_V1 }}/sync-daily" \
+            -H "Content-Type: application/json" \
+            -d '{}'
