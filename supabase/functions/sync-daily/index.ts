@@ -3,18 +3,22 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
-const COINCAP_BASE_URL = "https://api.coincap.io/v2";
+const COINGECKO_BASE_URL = "https://api.coingecko.com/api/v3";
 
 interface Coin {
   id: string;
   symbol: string;
   name: string;
-  coincap_id: string;
+  coingecko_id: string;
 }
 
-interface CoinCapHistoryPoint {
-  time: number;
-  priceUsd: string;
+interface CoinGeckoPrice {
+  [key: string]: {
+    usd: number;
+    usd_market_cap: number;
+    usd_24h_vol: number;
+    usd_24h_change: number;
+  };
 }
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
@@ -22,68 +26,62 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 async function getAllCoins(): Promise<Coin[]> {
   const { data, error } = await supabase
     .from("coins")
-    .select("id, symbol, name, coincap_id");
+    .select("id, symbol, name, coingecko_id");
 
   if (error) {
     throw new Error(`Failed to fetch coins: ${error.message}`);
   }
 
-  return data as Coin[];
+  return (data as Coin[]).filter((c) => c.coingecko_id);
 }
 
-async function fetchCoinHistory(
-  coinId: string,
-  interval: string = "d1",
-  limit: number = 2
-): Promise<CoinCapHistoryPoint[]> {
-  const yesterday = new Date();
-  yesterday.setDate(yesterday.getDate() - 1);
-  const start = yesterday.getTime();
-  const end = new Date().getTime();
+async function fetchCurrentPrices(
+  coingeckoIds: string[]
+): Promise<CoinGeckoPrice> {
+  if (coingeckoIds.length === 0) return {};
 
   const params = new URLSearchParams({
-    interval,
-    limit: limit.toString(),
-    start: start.toString(),
-    end: end.toString(),
+    ids: coingeckoIds.join(","),
+    vs_currencies: "usd",
+    include_market_cap: "true",
+    include_24hr_vol: "true",
+    include_24hr_change: "true",
   });
 
   const response = await fetch(
-    `${COINCAP_BASE_URL}/assets/${coinId}/history?${params}`
+    `${COINGECKO_BASE_URL}/simple/price?${params}`
   );
 
   if (!response.ok) {
     throw new Error(
-      `CoinCap API error: ${response.status} ${response.statusText}`
+      `CoinGecko API error: ${response.status} ${response.statusText}`
     );
   }
 
-  const data = await response.json();
-  return data.data as CoinCapHistoryPoint[];
+  return response.json();
 }
 
-async function fetchCurrentAssets(coinIds: string[]): Promise<Record<string, unknown>> {
-  if (coinIds.length === 0) return {};
-
+async function fetchMarketChart(
+  coingeckoId: string,
+  days: number = 2
+): Promise<number[][]> {
   const params = new URLSearchParams({
-    ids: coinIds.join(","),
-    limit: "50",
+    vs_currency: "usd",
+    days: days.toString(),
   });
 
-  const response = await fetch(`${COINCAP_BASE_URL}/assets?${params}`);
+  const response = await fetch(
+    `${COINGECKO_BASE_URL}/coins/${coingeckoId}/market_chart?${params}`
+  );
 
   if (!response.ok) {
     throw new Error(
-      `CoinCap API error: ${response.status} ${response.statusText}`
+      `CoinGecko API error: ${response.status} ${response.statusText}`
     );
   }
 
   const data = await response.json();
-  const assets: Record<string, unknown> = {};
-  for (const asset of data.data) {
-    assets[asset.id] = asset;
-  }
-  return assets;
+  return data.prices; // Array of [timestamp, price]
 }
 
 async function syncDaily() {
@@ -104,34 +102,29 @@ async function syncDaily() {
   let processed = 0;
   let failed = 0;
 
-  // Fetch current market data for all coins
+  // Fetch and update current market data
   try {
-    const coincapIds = coins.map((c) => c.coincap_id);
-    const currentAssets = await fetchCurrentAssets(coincapIds);
+    const coingeckoIds = coins.map((c) => c.coingecko_id);
+    const pricesData = await fetchCurrentPrices(coingeckoIds);
 
     for (const coin of coins) {
       try {
-        const asset = currentAssets[coin.coincap_id];
-        if (asset && typeof asset === "object") {
-          const assetData = asset as Record<string, unknown>;
-          const { error } = await supabase
-            .from("coin_metrics")
-            .update({
-              market_cap: assetData.marketCapUsd
-                ? parseFloat(assetData.marketCapUsd as string)
-                : null,
-              volume24h: assetData.volumeUsd24Hr
-                ? parseFloat(assetData.volumeUsd24Hr as string)
-                : null,
-              updated_at: new Date().toISOString(),
-            })
-            .eq("coin_id", coin.id);
+        const priceInfo = pricesData[coin.coingecko_id];
+        if (!priceInfo) continue;
 
-          if (error) {
-            console.warn(
-              `[sync-daily] Failed to update metrics for ${coin.symbol}: ${error.message}`
-            );
-          }
+        const { error } = await supabase
+          .from("coin_metrics")
+          .update({
+            market_cap: priceInfo.usd_market_cap,
+            volume24h: priceInfo.usd_24h_vol,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("coin_id", coin.id);
+
+        if (error) {
+          console.warn(
+            `[sync-daily] Failed to update metrics for ${coin.symbol}: ${error.message}`
+          );
         }
       } catch (error) {
         console.warn(
@@ -162,37 +155,42 @@ async function syncDaily() {
         continue;
       }
 
-      // Fetch yesterday's data
-      const history = await fetchCoinHistory(coin.coincap_id, "d1", 2);
+      // Fetch last 2 days of price data
+      const marketChart = await fetchMarketChart(coin.coingecko_id, 2);
 
-      if (!history || history.length === 0) {
+      if (!marketChart || marketChart.length === 0) {
         console.log(
-          `[sync-daily] ${coin.symbol}: No data available for ${yesterdayStr}`
+          `[sync-daily] ${coin.symbol}: No price data available`
         );
         continue;
       }
 
-      const mappedHistory = history.map((h) => ({
-        date: new Date(h.time).toISOString().split("T")[0],
-        price: Number(h.priceUsd),
-      }));
+      // Find yesterday's price (most recent before today)
+      const yesterdayDate = new Date(yesterdayStr);
+      const yesterdayTime = yesterdayDate.getTime();
+      const todayTime = new Date().getTime();
 
-      const yesterdayData = mappedHistory.find((h) => h.date === yesterdayStr);
+      const yesterdayPrice = marketChart.find(([timestamp]) => {
+        const date = new Date(timestamp).toISOString().split("T")[0];
+        return date === yesterdayStr;
+      });
 
-      if (!yesterdayData) {
+      if (!yesterdayPrice) {
         console.log(
           `[sync-daily] ${coin.symbol}: No data for ${yesterdayStr}`
         );
         continue;
       }
 
+      const price = yesterdayPrice[1];
+
       const { error } = await supabase.from("price_daily").insert({
         coin_id: coin.id,
         date: yesterdayStr,
-        open: yesterdayData.price,
-        high: yesterdayData.price,
-        low: yesterdayData.price,
-        close: yesterdayData.price,
+        open: price,
+        high: price,
+        low: price,
+        close: price,
         volume: null,
         market_cap: null,
       });
@@ -206,7 +204,7 @@ async function syncDaily() {
       }
 
       console.log(
-        `[sync-daily] ${coin.symbol}: Inserted candle for ${yesterdayStr}`
+        `[sync-daily] ${coin.symbol}: Inserted candle for ${yesterdayStr} at $${price}`
       );
       processed++;
     } catch (error) {
