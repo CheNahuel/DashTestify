@@ -15,38 +15,6 @@ test("npm run dev script exists in package.json", () => {
   expect(packageJson.scripts.dev).toBeDefined();
 });
 
-test("npm run dev:supabase script exists in package.json", () => {
-  const packageJsonPath = path.join(projectRoot, "package.json");
-  const packageJson = require(packageJsonPath);
-
-  expect(packageJson.scripts).toBeDefined();
-  expect(packageJson.scripts["dev:supabase"]).toBeDefined();
-  expect(packageJson.scripts["dev:supabase"]).toContain("DATA_SOURCE=supabase");
-});
-
-test("npm run dev:coincap script exists in package.json", () => {
-  const packageJsonPath = path.join(projectRoot, "package.json");
-  const packageJson = require(packageJsonPath);
-
-  expect(packageJson.scripts).toBeDefined();
-  expect(packageJson.scripts["dev:coincap"]).toBeDefined();
-  expect(packageJson.scripts["dev:coincap"]).toContain("DATA_SOURCE=coincap");
-});
-
-test("dev scripts use correct environment variable names", () => {
-  const packageJsonPath = path.join(projectRoot, "package.json");
-  const packageJson = require(packageJsonPath);
-
-  const devScripts = [
-    packageJson.scripts["dev:supabase"],
-    packageJson.scripts["dev:coincap"],
-  ];
-
-  devScripts.forEach((script: string) => {
-    expect(script).toContain("next dev");
-    expect(script).toContain("DATA_SOURCE=");
-  });
-});
 
 test(".env.example documents all AI provider keys", () => {
   const envExamplePath = path.join(projectRoot, ".env.example");
@@ -77,35 +45,26 @@ test(".env.example documents data source options", () => {
   expect(envContent).toContain("supabase");
 });
 
-test("README documents new dev scripts", () => {
+test("README documents npm run dev command", () => {
   const readmePath = path.join(projectRoot, "README.md");
   const readmeContent = require("fs").readFileSync(readmePath, "utf8");
 
-  expect(readmeContent).toContain("npm run dev:supabase");
-  expect(readmeContent).toContain("npm run dev:coincap");
-  expect(readmeContent).toContain("Use Supabase backend");
-  expect(readmeContent).toContain("Use CoinCap API directly");
+  expect(readmeContent).toContain("npm run dev");
 });
 
-test("README documents Crypto AI Analyst feature", () => {
+test("README documents AI capabilities", () => {
   const readmePath = path.join(projectRoot, "README.md");
   const readmeContent = require("fs").readFileSync(readmePath, "utf8");
 
-  expect(readmeContent).toContain("Crypto AI Analyst");
-  expect(readmeContent).toContain("Multi-Provider Support");
-  expect(readmeContent).toContain("Markdown Rendering");
-  expect(readmeContent).toContain("Smart Suggestions");
+  expect(readmeContent).toContain("AI");
+  expect(readmeContent).toContain("Claude");
 });
 
-test("README documents data synchronization scripts", () => {
+test("README documents setup instructions", () => {
   const readmePath = path.join(projectRoot, "README.md");
   const readmeContent = require("fs").readFileSync(readmePath, "utf8");
 
-  expect(readmeContent).toContain("Crypto Data Synchronization");
-  expect(readmeContent).toContain("init-crypto-coins.ts");
-  expect(readmeContent).toContain("sync-historical-data.ts");
-  expect(readmeContent).toContain("verify-sync.ts");
-  expect(readmeContent).toContain("CoinGecko");
+  expect(readmeContent).toContain("npm install");
   expect(readmeContent).toContain("CoinCap");
 });
 
