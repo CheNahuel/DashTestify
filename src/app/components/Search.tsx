@@ -1,6 +1,7 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import type { Coin } from "@/features/crypto/types/coin";
 import { currencyFormatter } from "@/lib/formatters";
@@ -9,6 +10,45 @@ const getFallbackCoinImage = (symbol: string) =>
   `data:image/svg+xml;base64,${btoa(
     `<svg width="40" height="40" xmlns="http://www.w3.org/2000/svg"><circle cx="20" cy="20" r="18" fill="#64748b"/><text x="20" y="25" text-anchor="middle" font-family="Arial" font-size="12" fill="white">${symbol.slice(0, 2).toUpperCase()}</text></svg>`,
   )}`;
+
+const SearchItem = ({ coin, onSelectCoin }: { coin: Coin; onSelectCoin: (coin: Coin) => void }) => {
+  const fallback = getFallbackCoinImage(coin.symbol);
+  const [imgSrc, setImgSrc] = useState<string>(coin.image || fallback);
+
+  useEffect(() => {
+    setImgSrc(prev => {
+      const newSrc = coin.image || fallback;
+      return newSrc !== prev ? newSrc : prev;
+    });
+  }, [coin.image, coin.symbol, fallback]);
+
+  return (
+    <button
+      type="button"
+      data-testid={`search-dropdown-item-${coin.id}`}
+      onClick={() => onSelectCoin(coin)}
+      className="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-slate-800/90"
+    >
+      <Image
+        src={imgSrc}
+        alt={coin.name}
+        width={28}
+        height={28}
+        className="h-7 w-7 shrink-0 rounded-full"
+        onError={() => setImgSrc(fallback)}
+      />
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-semibold text-white">{coin.name}</p>
+        <p className="truncate text-xs uppercase tracking-wider text-slate-400">
+          {coin.symbol}
+        </p>
+      </div>
+      <p className="shrink-0 text-sm font-semibold text-cyan-100">
+        {currencyFormatter.format(coin.current_price)}
+      </p>
+    </button>
+  );
+};
 
 export const Search = ({
   selectedCoin,
@@ -98,29 +138,7 @@ export const Search = ({
             {filteredCoins.length > 0 ? (
               filteredCoins.map((coin) => (
                 <li key={coin.id}>
-                  <button
-                    type="button"
-                    data-testid={`search-dropdown-item-${coin.id}`}
-                    onClick={() => onSelectCoin(coin)}
-                    className="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-slate-800/90"
-                  >
-                    <Image
-                      src={coin.image || getFallbackCoinImage(coin.symbol)}
-                      alt={coin.name}
-                      width={28}
-                      height={28}
-                      className="h-7 w-7 shrink-0 rounded-full"
-                    />
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-semibold text-white">{coin.name}</p>
-                      <p className="truncate text-xs uppercase tracking-wider text-slate-400">
-                        {coin.symbol}
-                      </p>
-                    </div>
-                    <p className="shrink-0 text-sm font-semibold text-cyan-100">
-                      {currencyFormatter.format(coin.current_price)}
-                    </p>
-                  </button>
+                  <SearchItem coin={coin} onSelectCoin={onSelectCoin} />
                 </li>
               ))
             ) : (

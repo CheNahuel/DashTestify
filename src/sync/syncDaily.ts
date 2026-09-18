@@ -1,0 +1,216 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { getSupabaseServiceClient } from "@/lib/supabase";
+import { coincapClient } from "@/services/coincap/client";
+import { calculateAllMetrics } from "@/services/metrics";
+import * as queries from "@/database/queries";
+
+/**
+ * Daily sync: fetch and insert the previous day's candle for each coin.
+ * Runs once per day (e.g., at 1 AM UTC).
+ * Also recalculates metrics for all coins.
+ * Additionally fetches current market_cap/volume from CoinCap and updates coin_metrics.
+ */
+export async function syncDaily() {
+  const supabaseService = getSupabaseServiceClient();
+
+  try {
+    console.log("Starting daily sync...");
+
+    // Get all coins
+    const coins = await queries.getAllCoins();
+
+    // Fetch current market cap/volume from CoinCap for all coins (batched)
+    if (coins.length > 0) {
+      try {
+        console.log("Fetching current market data from CoinCap...");
+        const coincapIds = coins.map((c) => c.coincap_id);
+        const currentData = await coincapClient.fetchAssets(coincapIds);
+
+        // Update coin_metrics with latest market_cap and volume24h
+        for (const asset of currentData) {
+          const assetData = asset as any;
+          const coin = coins.find((c) => c.coincap_id === assetData.id);
+          if (coin && assetData.marketCapUsd && assetData.volumeUsd24Hr) {
+            await (supabaseService as any)
+              .from("coin_metrics")
+              .update({
+                market_cap: assetData.marketCapUsd ? parseFloat(assetData.marketCapUsd) : null,
+                volume24h: assetData.volumeUsd24Hr ? parseFloat(assetData.volumeUsd24Hr) : null,
+                updated_at: new Date().toISOString(),
+              })
+              .eq("coin_id", coin.id);
+          }
+        }
+        console.log("Market data updated for all coins");
+      } catch (error) {
+        console.warn("Failed to fetch market data from CoinCap:", error);
+        // Continue with daily sync even if market data fetch fails
+      }
+    }
+
+    if (coins.length === 0) {
+      console.log("No coins to sync");
+      return { success: true, coinsProcessed: 0 };
+    }
+
+    console.log(`Processing ${coins.length} coins...`);
+
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = yesterday.toISOString().split("T")[0];
+
+    for (const coin of coins) {
+      try {
+        // Check if we already have yesterday's data
+        const { data: existingData } = await supabaseService
+          .from("price_daily")
+          .select("id")
+          .eq("coin_id", coin.id)
+          .eq("date", yesterdayStr)
+          .single();
+
+        if (existingData) {
+          console.log(`${coin.symbol}: Data for ${yesterdayStr} already exists, skipping`);
+          continue;
+        }
+
+        // Fetch yesterday's data from CoinCap
+        const history = await coincapClient.fetchCoinHistory(
+          coin.coincap_id,
+          'd1',
+          2,
+          { start: yesterday.getTime(), end: new Date().getTime() }
+        );
+
+        if (!history || history.length === 0) {
+          console.log(`${coin.symbol}: No data available for ${yesterdayStr}`);
+          continue;
+        }
+
+        // Map CoinCap response {time, priceUsd} to {date, price}
+        interface CoinCapHistoryPoint {
+          time: number;
+          priceUsd: string;
+        }
+        const mappedHistory = (history as CoinCapHistoryPoint[]).map((h) => ({
+          date: new Date(h.time).toISOString().split('T')[0],
+          price: Number(h.priceUsd),
+        }));
+
+        const yesterdayData = mappedHistory.find((h) => h.date === yesterdayStr);
+
+        if (!yesterdayData) {
+          console.log(`${coin.symbol}: No data available for ${yesterdayStr}`);
+          continue;
+        }
+
+        // Insert daily candle
+        const { error: priceError } = await (supabaseService as any)
+          .from("price_daily")
+          .insert({
+            coin_id: coin.id,
+            date: yesterdayStr,
+            open: yesterdayData.price, // Single price from endpoint as OHLC
+            high: yesterdayData.price,
+            low: yesterdayData.price,
+            close: yesterdayData.price,
+            volume: null,
+            market_cap: null,
+          });
+
+        if (priceError) {
+          console.error(`${coin.symbol}: Failed to insert price:`, priceError);
+          continue;
+        }
+
+        console.log(`${coin.symbol}: Inserted candle for ${yesterdayStr}`);
+      } catch (error) {
+        console.error(`${coin.symbol}: Sync failed:`, error);
+        continue;
+      }
+    }
+
+    // Recalculate metrics for all coins
+    console.log("Recalculating metrics for all coins...");
+    await recalculateAllMetrics();
+
+    console.log("✓ Daily sync completed");
+    return { success: true, coinsProcessed: coins.length };
+  } catch (error) {
+    console.error("✗ Daily sync failed:", error);
+    throw error;
+  }
+}
+
+/**
+ * Recalculate metrics for all coins based on their price_daily history.
+ */
+export async function recalculateAllMetrics() {
+  const supabaseService = getSupabaseServiceClient();
+  const coins = await queries.getAllCoins();
+
+  for (const coin of coins) {
+    try {
+      // Get all daily prices for this coin
+      const startDate = new Date(coin.created_at);
+      const endDate = new Date();
+      const priceHistory = await queries.getPriceDailyForCoin(coin.id, startDate, endDate);
+
+      if (priceHistory.length === 0) {
+        console.log(`${coin.symbol}: No price history, skipping metrics`);
+        continue;
+      }
+
+      // Calculate metrics
+      const metrics = calculateAllMetrics(
+        priceHistory.map((p) => ({
+          date: p.date,
+          open: parseFloat(p.open),
+          high: parseFloat(p.high),
+          low: parseFloat(p.low),
+          close: parseFloat(p.close),
+          volume: p.volume ? parseFloat(p.volume) : undefined,
+          marketCap: p.market_cap ? parseFloat(p.market_cap) : undefined,
+        }))
+      );
+
+      const latestCandle = priceHistory[priceHistory.length - 1];
+
+      // Upsert metrics
+      const { error: metricsError } = await (supabaseService as any)
+        .from("coin_metrics")
+        .upsert(
+          {
+            coin_id: coin.id,
+            current_price: parseFloat(latestCandle.close),
+            ytd_return: metrics.ytdReturn,
+            return_1m: metrics.return1m,
+            return_3m: metrics.return3m,
+            return_6m: metrics.return6m,
+            return_1y: metrics.return1y,
+            ath: metrics.ath,
+            ath_date: metrics.athDate,
+            drawdown: metrics.drawdown,
+            ema20: metrics.ema20,
+            ema50: metrics.ema50,
+            ema200: metrics.ema200,
+            rsi14: metrics.rsi14,
+            volatility: metrics.volatility,
+            market_cap: latestCandle.market_cap ? parseFloat(latestCandle.market_cap) : null,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "coin_id" }
+        );
+
+      if (metricsError) {
+        console.error(`${coin.symbol}: Failed to update metrics:`, metricsError);
+        continue;
+      }
+
+      console.log(`${coin.symbol}: Metrics recalculated`);
+    } catch (error) {
+      console.error(`${coin.symbol}: Metric calculation failed:`, error);
+      continue;
+    }
+  }
+}

@@ -1,6 +1,7 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useMemo, useState, useEffect } from "react";
 import Image from "next/image";
 
 export type CoinJournalEntry = {
@@ -17,6 +18,11 @@ const formatDate = (value: string) =>
     minute: "2-digit",
   }).format(new Date(value));
 
+const getFallbackCoinImage = (coinId: string) =>
+  `data:image/svg+xml;base64,${btoa(
+    `<svg width="24" height="24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10" fill="#64748b"/><text x="12" y="16" text-anchor="middle" font-family="Arial" font-size="8" fill="white">${coinId.slice(0, 2).toUpperCase()}</text></svg>`,
+  )}`;
+
 export const CoinJournal = ({
   coinId,
   coinName,
@@ -32,8 +38,17 @@ export const CoinJournal = ({
   onAddEntry: (coinId: string, note: string) => void;
   onDeleteEntry: (coinId: string, noteId: string) => void;
 }) => {
+  const fallback = getFallbackCoinImage(coinId);
+  const [imgSrc, setImgSrc] = useState<string>(coinImage || fallback);
   const [note, setNote] = useState("");
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    setImgSrc(prev => {
+      const newSrc = coinImage || fallback;
+      return newSrc !== prev ? newSrc : prev;
+    });
+  }, [coinImage, coinId, fallback]);
 
   const noteCountLabel = useMemo(() => {
     if (entries.length === 1) {
@@ -67,14 +82,12 @@ export const CoinJournal = ({
           </p>
           <div className="mt-2 flex items-center gap-2">
             <Image
-              src={
-                coinImage ||
-                `data:image/svg+xml;base64,${btoa(`<svg width="24" height="24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10" fill="#64748b"/><text x="12" y="16" text-anchor="middle" font-family="Arial" font-size="8" fill="white">${coinId.slice(0, 2).toUpperCase()}</text></svg>`)}`
-              }
+              src={imgSrc}
               alt={coinName}
               width={24}
               height={24}
               className="h-6 w-6 shrink-0 rounded-full"
+              onError={() => setImgSrc(fallback)}
             />
             <h3 className="break-words text-base font-semibold text-white sm:text-lg md:text-xl">
               Notes for {coinName}

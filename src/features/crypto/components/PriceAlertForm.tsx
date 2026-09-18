@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 
 import { useActionState, useEffect, useRef, useState, startTransition } from "react";
@@ -18,6 +19,14 @@ type PriceAlert = {
 
 const ALERTS_STORAGE_KEY = "dashtestify.priceAlerts";
 
+const getFallbackCoinImage = (coinId: string, size: "sm" | "md" = "md") => {
+  const sizeMap = { sm: 20, md: 24 };
+  const s = sizeMap[size];
+  return `data:image/svg+xml;base64,${btoa(
+    `<svg width="${s}" height="${s}" xmlns="http://www.w3.org/2000/svg"><circle cx="${s / 2}" cy="${s / 2}" r="${s / 2 - 2}" fill="#64748b"/><text x="${s / 2}" y="${s / 2 + 3}" text-anchor="middle" font-family="Arial" font-size="${size === "sm" ? 6 : 8}" fill="white">${coinId.slice(0, 2).toUpperCase()}</text></svg>`,
+  )}`;
+};
+
 const SubmitButton = () => {
   const { pending } = useFormStatus();
 
@@ -30,6 +39,53 @@ const SubmitButton = () => {
     >
       {pending ? "Saving..." : "Create Alert"}
     </button>
+  );
+};
+
+const AlertTableRow = ({ alert, onDelete }: { alert: PriceAlert; onDelete: (id: string) => void }) => {
+  const fallback = getFallbackCoinImage(alert.coinId, "sm");
+  const [imgSrc, setImgSrc] = useState(alert.coinImage || fallback);
+
+  useEffect(() => {
+    setImgSrc(alert.coinImage || fallback);
+  }, [alert.coinImage, alert.coinId, fallback]);
+
+  return (
+    <tr className="border-b border-white/5 last:border-b-0">
+      <td className="px-2 py-2 text-slate-200 sm:px-3">
+        <div className="flex items-center gap-2">
+          <Image
+            src={imgSrc}
+            alt={alert.coinName}
+            width={20}
+            height={20}
+            className="h-5 w-5 shrink-0 rounded-full"
+            onError={() => setImgSrc(fallback)}
+          />
+          <span className="truncate">{alert.coinName}</span>
+        </div>
+        <div className="mt-1 truncate text-[11px] text-slate-500 sm:hidden">
+          {alert.email}
+        </div>
+      </td>
+      <td className="px-2 py-2 whitespace-nowrap text-slate-200 sm:px-3">
+        ${alert.targetPrice.toFixed(2)}
+      </td>
+      <td className="hidden px-2 py-2 text-slate-200 break-all sm:table-cell sm:px-3">
+        {alert.email}
+      </td>
+      <td className="px-2 py-2 text-center sm:px-3">
+        <button
+          type="button"
+          data-testid={`delete-alert-${alert.id}`}
+          onClick={() => onDelete(alert.id)}
+          className="rounded-full border border-rose-500/50 bg-rose-500/15 px-2 py-1 text-xs font-semibold text-rose-300 transition hover:border-rose-500/70 hover:bg-rose-500/25"
+          aria-label={`Delete alert for ${alert.coinName}`}
+        >
+          ✕
+        </button>
+      </td>
+    </tr>
   );
 };
 
@@ -70,45 +126,7 @@ const AlertTable = ({
                 </td>
               </tr>
             ) : (
-              alerts.map((alert) => (
-                <tr key={alert.id} className="border-b border-white/5 last:border-b-0">
-                  <td className="px-2 py-2 text-slate-200 sm:px-3">
-                    <div className="flex items-center gap-2">
-                      <Image
-                        src={
-                          alert.coinImage ||
-                          `data:image/svg+xml;base64,${btoa(`<svg width="20" height="20" xmlns="http://www.w3.org/2000/svg"><circle cx="10" cy="10" r="8" fill="#64748b"/><text x="10" y="13" text-anchor="middle" font-family="Arial" font-size="6" fill="white">${alert.coinId.slice(0, 2).toUpperCase()}</text></svg>`)}`
-                        }
-                        alt={alert.coinName}
-                        width={20}
-                        height={20}
-                        className="h-5 w-5 shrink-0 rounded-full"
-                      />
-                      <span className="truncate">{alert.coinName}</span>
-                    </div>
-                    <div className="mt-1 truncate text-[11px] text-slate-500 sm:hidden">
-                      {alert.email}
-                    </div>
-                  </td>
-                  <td className="px-2 py-2 whitespace-nowrap text-slate-200 sm:px-3">
-                    ${alert.targetPrice.toFixed(2)}
-                  </td>
-                  <td className="hidden px-2 py-2 text-slate-200 break-all sm:table-cell sm:px-3">
-                    {alert.email}
-                  </td>
-                  <td className="px-2 py-2 text-center sm:px-3">
-                    <button
-                      type="button"
-                      data-testid={`delete-alert-${alert.id}`}
-                      onClick={() => onDelete(alert.id)}
-                      className="rounded-full border border-rose-500/50 bg-rose-500/15 px-2 py-1 text-xs font-semibold text-rose-300 transition hover:border-rose-500/70 hover:bg-rose-500/25"
-                      aria-label={`Delete alert for ${alert.coinName}`}
-                    >
-                      ✕
-                    </button>
-                  </td>
-                </tr>
-              ))
+              alerts.map((alert) => <AlertTableRow key={alert.id} alert={alert} onDelete={onDelete} />)
             )}
           </tbody>
         </table>
@@ -128,6 +146,13 @@ export const PriceAlertForm = ({
   coinImage: string;
   currentPrice: number;
 }) => {
+  const fallback = getFallbackCoinImage(coinId, "md");
+  const [imgSrc, setImgSrc] = useState(coinImage || fallback);
+
+  useEffect(() => {
+    setImgSrc(coinImage || fallback);
+  }, [coinImage, coinId, fallback]);
+
   const action = submitPriceAlert.bind(null, {
     coinId,
     coinName,
@@ -226,14 +251,12 @@ export const PriceAlertForm = ({
         </p>
         <div className="mt-2 flex items-center gap-2">
           <Image
-            src={
-              coinImage ||
-              `data:image/svg+xml;base64,${btoa(`<svg width="24" height="24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10" fill="#64748b"/><text x="12" y="16" text-anchor="middle" font-family="Arial" font-size="8" fill="white">${coinId.slice(0, 2).toUpperCase()}</text></svg>`)}`
-            }
+            src={imgSrc}
             alt={coinName}
             width={24}
             height={24}
             className="h-6 w-6 shrink-0 rounded-full"
+            onError={() => setImgSrc(fallback)}
           />
           <h3 className="break-words text-base font-semibold text-white sm:text-lg md:text-xl">
             Create Price Alert for {coinName}
