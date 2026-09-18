@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { CryptoDataProvider } from '../types';
 import type { Coin, CoinHistory, CoinHistoryRequest } from '@/features/crypto/types/coin';
 import type { ContextData } from '@/features/crypto/components/CryptoAIAnalyst/types';

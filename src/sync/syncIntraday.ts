@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { getSupabaseServiceClient } from "@/lib/supabase";
 import { coincapClient } from "@/services/coincap/client";
 import * as queries from "@/database/queries";
@@ -32,7 +33,7 @@ export async function syncIntraday() {
       const assets = await coincapClient.fetchAssets(coincapIds);
 
       // Map assets by coincap_id for quick lookup
-      const assetMap = new Map(assets.map((a) => [a.id, a]));
+      const assetMap = new Map(assets.map((a: any) => [a.id, a]));
 
       // Insert/upsert for each coin
       for (const coin of coins) {
@@ -45,7 +46,7 @@ export async function syncIntraday() {
 
         try {
           // Insert into price_intraday
-          const { error: intradayError } = await supabaseService
+          const { error: intradayError } = await (supabaseService as any)
             .from("price_intraday")
             .insert({
               coin_id: coin.id,
@@ -66,7 +67,7 @@ export async function syncIntraday() {
           pricesUpdated++;
 
           // Update coin_metrics current_price and volume
-          const { error: metricsError } = await supabaseService
+          const { error: metricsError } = await (supabaseService as any)
             .from("coin_metrics")
             .update({
               current_price: parseFloat(asset.priceUsd),

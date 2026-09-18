@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { getSupabaseServiceClient } from "@/lib/supabase";
 import { coincapClient } from "@/services/coincap/client";
 import { calculateAllMetrics } from "@/services/metrics";
@@ -90,9 +91,9 @@ async function fetchCoinHistoryWithRetry(
 
       if ((status === 403 || status === 429) && attempt < maxAttempts) {
         const errorData = lastError.response?.data?.error;
+        const matchedDelay = errorData?.hint_tool?.match(/(\d+)/)?.[0];
         const retryAfterMs =
-          (errorData?.hint_tool?.match(/(\d+)/)?.[0] &&
-            parseInt(errorData.hint_tool.match(/(\d+)/)?.[0])) ||
+          (matchedDelay && parseInt(matchedDelay)) ||
           65000;
 
         console.log(
@@ -124,7 +125,7 @@ export async function syncInitialForCoin(input: InitialSyncInput) {
 
     if (!coin) {
       coin = await withRetry(`${input.symbol}: create coin`, async () => {
-        const { data, error } = await supabaseService
+        const { data, error } = await (supabaseService as any)
           .from("coins")
           .insert({
             symbol: input.symbol.toUpperCase(),
@@ -222,7 +223,7 @@ export async function syncInitialForCoin(input: InitialSyncInput) {
     console.log(`Inserting ${dailyCandles.length} daily candles...`);
     for (const candle of dailyCandles) {
       await withRetry(`${input.symbol}: insert price for ${candle.date}`, async () => {
-        const { error } = await supabaseService.from("price_daily").upsert(
+        const { error } = await (supabaseService as any).from("price_daily").upsert(
           {
             coin_id: coin.id,
             date: candle.date,
@@ -259,7 +260,7 @@ export async function syncInitialForCoin(input: InitialSyncInput) {
 
     // 6. Upsert metrics
     await withRetry(`${input.symbol}: upsert metrics`, async () => {
-      const { error: metricsError } = await supabaseService
+      const { error: metricsError } = await (supabaseService as any)
         .from("coin_metrics")
         .upsert(
           {

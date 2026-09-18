@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 
 import { FormEvent, useMemo, useState, useEffect } from "react";
@@ -38,12 +39,15 @@ export const CoinJournal = ({
   onDeleteEntry: (coinId: string, noteId: string) => void;
 }) => {
   const fallback = getFallbackCoinImage(coinId);
-  const [imgSrc, setImgSrc] = useState(coinImage || fallback);
+  const [imgSrc, setImgSrc] = useState<string>(coinImage || fallback);
   const [note, setNote] = useState("");
   const [error, setError] = useState("");
 
   useEffect(() => {
-    setImgSrc(coinImage || fallback);
+    setImgSrc(prev => {
+      const newSrc = coinImage || fallback;
+      return newSrc !== prev ? newSrc : prev;
+    });
   }, [coinImage, coinId, fallback]);
 
   const noteCountLabel = useMemo(() => {

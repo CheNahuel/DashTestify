@@ -9,7 +9,7 @@ test("sync-daily endpoint requires valid secret header", async () => {
       headers: {
         "Content-Type": "application/json",
       },
-    })
+    }) as any
   );
 
   expect(response.status).toBe(401);
@@ -31,7 +31,7 @@ test("sync-daily endpoint rejects incorrect secret", async () => {
           Authorization: "Bearer wrong-secret",
           "Content-Type": "application/json",
         },
-      })
+      }) as any
     );
 
     expect(response.status).toBe(401);
@@ -50,7 +50,7 @@ test("sync-intraday endpoint requires valid secret header", async () => {
       headers: {
         "Content-Type": "application/json",
       },
-    })
+    }) as any
   );
 
   expect(response.status).toBe(401);
@@ -72,7 +72,7 @@ test("sync-intraday endpoint rejects incorrect secret", async () => {
           Authorization: "Bearer wrong-secret",
           "Content-Type": "application/json",
         },
-      })
+      }) as any
     );
 
     expect(response.status).toBe(401);
@@ -97,7 +97,7 @@ test("sync endpoints missing secret in env returns 401", async () => {
           Authorization: "Bearer any-secret",
           "Content-Type": "application/json",
         },
-      })
+      }) as any
     );
 
     expect(dailyResponse.status).toBe(401);
@@ -109,7 +109,7 @@ test("sync endpoints missing secret in env returns 401", async () => {
           Authorization: "Bearer any-secret",
           "Content-Type": "application/json",
         },
-      })
+      }) as any
     );
 
     expect(intradayResponse.status).toBe(401);
@@ -132,7 +132,7 @@ test("sync endpoints handle missing authorization header", async () => {
         headers: {
           "Content-Type": "application/json",
         },
-      })
+      }) as any
     );
 
     expect(dailyResponse.status).toBe(401);
@@ -143,7 +143,7 @@ test("sync endpoints handle missing authorization header", async () => {
         headers: {
           "Content-Type": "application/json",
         },
-      })
+      }) as any
     );
 
     expect(intradayResponse.status).toBe(401);

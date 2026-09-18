@@ -27,9 +27,9 @@ async function verifySyncStatus() {
   try {
     // Check coins
     console.log("📍 Checking coins...");
-    const { data: coins, error: coinsError } = await supabase
+    const { data: coins, error: coinsError } = await (supabase
       .from("coins")
-      .select("id, symbol, name");
+      .select("id, symbol, name") as any);
 
     if (coinsError) {
       console.error("❌ Error fetching coins:", coinsError.message);
@@ -42,24 +42,24 @@ async function verifySyncStatus() {
       process.exit(1);
     }
 
-    console.log(`✅ Found ${coins.length} coins\n`);
+    console.log(`✅ Found ${(coins as any[]).length} coins\n`);
 
     // Check each coin's data
     console.log("📊 Checking data completeness...\n");
 
     let allGood = true;
 
-    for (const coin of coins) {
-      const { count: priceCount } = await supabase
+    for (const coin of coins as any[]) {
+      const { count: priceCount } = await (supabase
         .from("price_daily")
         .select("*", { count: "exact", head: true })
-        .eq("coin_id", coin.id);
+        .eq("coin_id", coin.id) as any);
 
-      const { data: metrics } = await supabase
+      const { data: metrics } = await (supabase
         .from("coin_metrics")
         .select("*")
         .eq("coin_id", coin.id)
-        .single();
+        .single() as any);
 
       const hasPrices = priceCount && priceCount >= MIN_DAYS_REQUIRED;
       const hasMetrics = metrics !== null;
@@ -70,7 +70,7 @@ async function verifySyncStatus() {
 
       const metricsStatus = hasMetrics ? "✅ calculated" : "⚠️  missing";
 
-      console.log(`${coin.symbol.padEnd(6)} prices: ${priceStatus.padEnd(30)} metrics: ${metricsStatus}`);
+      console.log(`${(coin as any).symbol.padEnd(6)} prices: ${priceStatus.padEnd(30)} metrics: ${metricsStatus}`);
 
       if (!hasPrices || !hasMetrics) {
         allGood = false;

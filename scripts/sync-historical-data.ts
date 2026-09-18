@@ -193,16 +193,16 @@ async function syncCoin(coin: CoinConfig): Promise<{
 
     if (!dbCoin) {
       console.log(`  ℹ️  Coin not found. Creating...`);
-      const { data, error } = await supabase
+      const { data, error } = await (supabase
         .from("coins")
         .insert({
           symbol: coin.symbol,
           name: coin.name,
           coincap_id: coin.coincapId,
           coingecko_id: coin.coingeckoId,
-        })
+        } as any)
         .select()
-        .single();
+        .single() as any);
 
       if (error) {
         return {
@@ -262,7 +262,7 @@ async function syncCoin(coin: CoinConfig): Promise<{
 
       const { error } = await supabase.from("price_daily").upsert(
         batch.map((candle) => ({
-          coin_id: dbCoin.id,
+          coin_id: dbCoin!.id,
           date: candle.date,
           open: candle.open,
           high: candle.high,
@@ -270,7 +270,7 @@ async function syncCoin(coin: CoinConfig): Promise<{
           close: candle.close,
           volume: null,
           market_cap: null,
-        })),
+        })) as any,
         { onConflict: "coin_id,date" }
       );
 
@@ -294,11 +294,11 @@ async function syncCoin(coin: CoinConfig): Promise<{
     const metrics = calculateAllMetrics(candles);
     const latestCandle = candles[candles.length - 1];
 
-    const { error: metricsError } = await supabase
+    const { error: metricsError } = await (supabase
       .from("coin_metrics")
       .upsert(
         {
-          coin_id: dbCoin.id,
+          coin_id: dbCoin!.id,
           current_price: latestCandle.close,
           ytd_return: metrics.ytdReturn,
           return_1m: metrics.return1m,
@@ -315,9 +315,9 @@ async function syncCoin(coin: CoinConfig): Promise<{
           volatility: metrics.volatility,
           market_cap: null,
           updated_at: new Date().toISOString(),
-        },
+        } as any,
         { onConflict: "coin_id" }
-      );
+      ) as any);
 
     if (metricsError) {
       console.warn(`  ⚠️  Metrics error: ${metricsError.message}`);

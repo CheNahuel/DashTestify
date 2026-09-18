@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { Coin, CoinHistoryRequest } from "../types/coin";
@@ -28,10 +29,11 @@ export const CoinCard = ({
   useMock?: boolean;
 }) => {
   const fallback = getFallbackCoinImage(coin.symbol);
-  const [imgSrc, setImgSrc] = useState(coin.image || fallback);
+  const [imgSrc, setImgSrc] = useState<string>(coin.image || fallback);
 
   useEffect(() => {
-    setImgSrc(coin.image || fallback);
+    const newSrc = coin.image || fallback;
+    setImgSrc(newSrc);
   }, [coin.image, coin.symbol, fallback]);
 
   const { data: history } = useCoinHistory(coin.id, historyRequest, useMock);

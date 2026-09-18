@@ -92,6 +92,7 @@ class CoinCapCache {
       entry.inFlightPromise = promise;
     } else {
       this.cache.set(key, {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         data: undefined as any,
         fetchedAt: Date.now(),
         inFlightPromise: promise,

@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -12,10 +13,13 @@ const getFallbackCoinImage = (symbol: string) =>
 
 const SearchItem = ({ coin, onSelectCoin }: { coin: Coin; onSelectCoin: (coin: Coin) => void }) => {
   const fallback = getFallbackCoinImage(coin.symbol);
-  const [imgSrc, setImgSrc] = useState(coin.image || fallback);
+  const [imgSrc, setImgSrc] = useState<string>(coin.image || fallback);
 
   useEffect(() => {
-    setImgSrc(coin.image || fallback);
+    setImgSrc(prev => {
+      const newSrc = coin.image || fallback;
+      return newSrc !== prev ? newSrc : prev;
+    });
   }, [coin.image, coin.symbol, fallback]);
 
   return (

@@ -18,7 +18,7 @@ export function createMockProvider(): CryptoDataProvider {
       return getMockCoinHistory(assetId, request);
     },
 
-    async fetchMarketData(query: string): Promise<{ context: ContextData; endpoints: string[] }> {
+    async fetchMarketData(_query: string): Promise<{ context: ContextData; endpoints: string[] }> {
       // Mock provider doesn't support AI analyst queries
       // This should only be called if Supabase/CoinCap fail, which would already be an error
       throw new Error('Mock provider does not support market data queries');
