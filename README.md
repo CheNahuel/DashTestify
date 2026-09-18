@@ -8,16 +8,15 @@ Perfect for learning modern testing practices, CI/CD pipelines, and production-g
 
 ## 🚀 Quick Links
 
-| Link                                                                     | Purpose                                |
-| ------------------------------------------------------------------------ | -------------------------------------- |
-| 🌐 **[Live Dashboard](https://dash-testify.vercel.app/)**                | View the live cryptocurrency dashboard |
-| 📊 **[QA Analytics](https://dash-testify.vercel.app/quality-analytics)** | Test metrics & failure analysis        |
-| 🧪 **[Test Report](https://chenahuel.github.io/DashTestify/)**           | Playwright HTML test reports           |
+| Link | Purpose |
+|------|---------|
+| 🌐 **[Live Dashboard](https://dash-testify.vercel.app/)** | View the live cryptocurrency dashboard |
+| 📊 **[QA Analytics](https://dash-testify.vercel.app/quality-analytics)** | Test metrics & failure analysis |
+| 🧪 **[Test Report](https://chenahuel.github.io/DashTestify/)** | Playwright HTML test reports |
 
 ## ✨ Features
 
 ### 💰 Cryptocurrency Dashboard
-
 - **Real-time & Mock Modes**: Live CoinCap API v3 data or deterministic mock data
 - **Interactive Charts**: 9 timeframes (1H to 5M) with Recharts
 - **Smart Search**: Filter by coin name or symbol
@@ -26,19 +25,14 @@ Perfect for learning modern testing practices, CI/CD pipelines, and production-g
 - **Price Alerts**: Get notified when prices hit targets
 - **Trade Journal**: Keep per-coin trading notes
 
-### 🤖 AI-Powered Features
-
-- **Crypto AI Analyst**: Multi-provider cryptocurrency analysis with Claude, OpenAI, Gemini, Groq, DeepSeek, OpenRouter
-  - Markdown-formatted responses for better readability
-  - Smart suggested prompts that adapt to user queries
-  - Real-time data from Supabase or CoinCap
-- **QA Failure Analysis**: Auto-analyze test failures with AI
+### 🤖 AI-Powered QA Analytics (Local Dev)
+- **AI Failure Analysis**: Auto-analyze test failures with Claude, OpenAI, Gemini, etc.
 - **Suggested Fixes**: AI generates code patches for failing tests
 - **Flaky Test Detection**: Identify unstable tests
 - **Top Failures**: Aggregate and track failure patterns
+- **Confidence Scoring**: Trust metrics for AI suggestions
 
 ### 📊 Production Analytics (with Supabase)
-
 - **Historical Metrics**: Track test trends over time
 - **Branch Health**: Monitor code quality per branch
 - **Test Runs**: Complete audit of all test executions
@@ -105,16 +99,16 @@ AI tools were used to support test case generation, code review, and test valida
 
 ## 🛠 Tech Stack
 
-| Layer            | Technology              | Purpose                                 |
-| ---------------- | ----------------------- | --------------------------------------- |
-| **Framework**    | Next.js 16 (App Router) | Full-stack React with server components |
-| **Language**     | TypeScript              | Type-safe JavaScript                    |
-| **Styling**      | Tailwind CSS            | Utility-first CSS framework             |
-| **State & Data** | TanStack Query          | Server state management & caching       |
-| **Charts**       | Recharts                | Interactive React charts                |
-| **Testing**      | Playwright              | Browser automation & E2E tests          |
-| **API**          | Axios                   | HTTP client for API calls               |
-| **Data Source**  | CoinCap API v3          | Live cryptocurrency market data         |
+| Layer | Technology | Purpose |
+|-------|-----------|---------|
+| **Framework** | Next.js 16 (App Router) | Full-stack React with server components |
+| **Language** | TypeScript | Type-safe JavaScript |
+| **Styling** | Tailwind CSS | Utility-first CSS framework |
+| **State & Data** | TanStack Query | Server state management & caching |
+| **Charts** | Recharts | Interactive React charts |
+| **Testing** | Playwright | Browser automation & E2E tests |
+| **API** | Axios | HTTP client for API calls |
+| **Data Source** | CoinCap API v3 | Live cryptocurrency market data |
 
 ### 📂 Project Structure
 
@@ -191,12 +185,7 @@ npm install
 ### 2. Run the Application
 
 ```bash
-# Default (uses DATA_SOURCE env var, falls back to mock data)
 npm run dev
-
-# Or specify a data source explicitly:
-npm run dev:supabase    # Use Supabase backend
-npm run dev:coincap     # Use CoinCap API directly
 ```
 
 Open **[http://localhost:3000](http://localhost:3000)** in your browser.
@@ -205,11 +194,11 @@ Open **[http://localhost:3000](http://localhost:3000)** in your browser.
 
 ### 3. Explore the App
 
-| Route                  | What You'll See                                      |
-| ---------------------- | ---------------------------------------------------- |
-| `/`                    | Cryptocurrency dashboard with live prices and charts |
-| `/quality-analytics`   | Test results, AI failure analysis, metrics           |
-| `/ai-failure-analysis` | Detailed AI-powered debugging suggestions            |
+| Route | What You'll See |
+|-------|-----------------|
+| `/` | Cryptocurrency dashboard with live prices and charts |
+| `/quality-analytics` | Test results, AI failure analysis, metrics |
+| `/ai-failure-analysis` | Detailed AI-powered debugging suggestions |
 
 ### 4. Run Tests (Optional)
 
@@ -229,11 +218,9 @@ npm run test:e2e:report
 ## 📚 For Beginners
 
 ### What is E2E Testing?
-
 **End-to-End (E2E) testing** simulates real user interactions by controlling a browser. Instead of unit tests that test code in isolation, E2E tests verify that the entire application works correctly from a user's perspective.
 
 **Example**: An E2E test might:
-
 1. Click the search box
 2. Type "bitcoin"
 3. Verify that bitcoin appears in results
@@ -241,16 +228,13 @@ npm run test:e2e:report
 5. Verify the price chart loads
 
 ### Why Playwright?
-
 - **Fast & reliable**: Runs tests in parallel with minimal flakiness
 - **Multi-browser**: Test in Chrome, Firefox, Safari
 - **Great debugging**: Built-in inspector, screenshots, traces
 - **No setup headaches**: Works out of the box
 
 ### Why AI for Failure Analysis?
-
 When a test fails, the AI analyzes:
-
 - The error message
 - The code that was running
 - The test file context
@@ -287,7 +271,7 @@ OPENROUTER_API_KEY=your_key       # Auto-selects free models if left empty
 CLAUDE_MODEL=claude-haiku-4-5
 OPENAI_MODEL=gpt-4o-mini
 GEMINI_MODEL=gemini-2.0-flash-lite
-GROQ_MODEL=openai/gpt-oss-20b
+GROQ_MODEL=llama-3.3-70b-versatile
 DEEPSEEK_MODEL=deepseek-chat
 ```
 
@@ -349,9 +333,9 @@ The project includes a **QA Analytics Dashboard** for analyzing test results, in
 
 ### Access Routes
 
-| URL                    | Mode           | Purpose                                               |
-| ---------------------- | -------------- | ----------------------------------------------------- |
-| `/quality-analytics`   | Auto-detected  | Main dashboard (local dev / live production)          |
+| URL | Mode | Purpose |
+|-----|------|---------|
+| `/quality-analytics` | Auto-detected | Main dashboard (local dev / live production) |
 | `/ai-failure-analysis` | Local dev only | AI-powered failure analysis (redirects in production) |
 
 ### Local Mode (Development)
@@ -369,20 +353,31 @@ Shows AI-powered analysis of your **most recent local test run**:
 
 **Requirements:** None — works immediately after running `npm run test:e2e`
 
+**AI Analysis Setup (Optional):**
 
-### Crypto AI Analyst
+To enable AI-powered failure analysis, add an API key from your preferred provider to `.env`:
 
-**Available at:** [http://localhost:3000/](http://localhost:3000/) (integrated into main dashboard)
+```bash
+# Choose one or more:
+CLAUDE_API_KEY=your_key           # (Recommended) Fast & free tier available
+OPENAI_API_KEY=your_key
+GEMINI_API_KEY=your_key
+GROQ_API_KEY=your_key
+DEEPSEEK_API_KEY=your_key
+OPENROUTER_API_KEY=your_key       # (Tip) Auto-selects free models if left empty
+```
 
-Interactive cryptocurrency analysis powered by 6 AI providers:
+Each provider has sensible defaults. Optionally override the model:
 
-- **Multi-Provider Support**: Claude, OpenAI, Gemini, Groq, DeepSeek, OpenRouter
-- **Markdown Rendering**: Beautiful, formatted responses with tables, code, and lists
-- **Smart Suggestions**: Contextual follow-up questions based on your queries
-- **Real-time Data**: Fetches from Supabase (preferred) or CoinCap API
-- **Error Recovery**: Clear error messages with dismissible state
+```bash
+CLAUDE_MODEL=claude-haiku-4-5
+OPENAI_MODEL=gpt-4o-mini
+GEMINI_MODEL=gemini-2.0-flash-lite
+GROQ_MODEL=llama-3.3-70b-versatile
+DEEPSEEK_MODEL=deepseek-chat
+```
 
-**Setup:** Add any AI provider API key to `.env` (see Environment Variables below). Uses sensible defaults if model not specified.
+> **Tip:** Claude (Haiku) and Groq offer free/cheap tiers and are excellent for local testing.
 
 ### Live Mode (Production)
 
@@ -411,87 +406,37 @@ NEXT_PUBLIC_SUPABASE_KEY=your_supabase_key
 
 > **Note:** Without Supabase, local analytics still work perfectly. Live metrics are only available on production with Supabase configured.
 
-## 📊 Crypto Data Synchronization
-
-For development or self-hosted deployments, sync historical cryptocurrency data to Supabase:
-
-### Scripts
-
-| Script                       | Purpose                                              |
-| ---------------------------- | ---------------------------------------------------- |
-| `init-crypto-coins.ts`       | Initialize 10 crypto coins in Supabase              |
-| `sync-historical-data.ts`    | Sync ~1 year of OHLC data for each coin (primary)   |
-| `verify-sync.ts`             | Check if sync is complete and valid                 |
-
-### Quick Start
-
-```bash
-# 1. Initialize coins (one-time)
-npx tsx scripts/init-crypto-coins.ts
-
-# 2. Sync historical data (one-time)
-npx tsx scripts/sync-historical-data.ts
-
-# 3. Verify sync completed
-npx tsx scripts/verify-sync.ts
-```
-
-### Data Strategy
-
-- **Primary Source**: CoinGecko (unlimited free API)
-- **Fallback**: CoinCap (if CoinGecko unavailable)
-- **Scope**: 365 days of daily OHLC candles per coin
-- **Metrics**: Price, ATH, drawdown, EMA, RSI, volatility, returns (YTD, 1m, 3m, 6m, 1y)
-
-### Requirements
-
-```bash
-SUPABASE_URL=your_supabase_url
-SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
-```
-
-> **Tip:** Without Supabase, the app works fine with mock data. Sync is only needed for production deployments.
-
 ## 🔧 Troubleshooting
 
 ### "Port 3000 already in use"
-
 ```bash
 # Use a different port
 npm run dev -- -p 3001
 ```
 
 ### "Tests fail with timeout errors"
-
 ```bash
 # Increase the timeout
 npm run test:e2e -- --timeout=60000
 ```
 
 ### "Mock data not loading"
-
 Restart the dev server:
-
 ```bash
 npm run dev
 ```
 
 ### "TypeScript errors in IDE"
-
 Your IDE might be cached. Try:
-
 ```bash
 npm run build
 ```
 
 ### "Need live CoinCap data?"
-
 Get a free API key from [rest.coincap.io](https://rest.coincap.io), add it to `.env`:
-
 ```bash
 COINCAP_API_KEY=your_key_here
 ```
-
 Then restart with `npm run dev`.
 
 ---
@@ -511,7 +456,6 @@ Then restart with `npm run dev`.
 ## ⚙️ CI/CD Pipeline
 
 This project uses **GitHub Actions** to:
-
 - Run tests on every push and pull request
 - Act as a quality gate before merging
 - Deploy to Vercel on successful builds

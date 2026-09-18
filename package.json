@@ -4,8 +4,6 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "dev:supabase": "DATA_SOURCE=supabase next dev",
-    "dev:coincap": "DATA_SOURCE=coincap next dev",
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
@@ -30,7 +28,6 @@
     "openai": "^6.39.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
-    "react-markdown": "^9.1.0",
     "recharts": "^3.8.1",
     "simple-git": "^3.36.0"
   },
