@@ -1,6 +1,6 @@
-import { apiClient } from '@/lib/api-client';
-import { coincapCache } from './cache';
-import { detectIntent, extractCoinIds } from './intent-detector';
+import { apiClient } from "@/lib/api-client";
+import { coincapCache } from "./cache";
+import { detectIntent } from "./intent-detector";
 
 export interface ContextData {
   assets?: unknown[];
@@ -16,25 +16,25 @@ export interface FetchResult {
 
 interface DateRange {
   start?: number; // Epoch milliseconds
-  end?: number;   // Epoch milliseconds
+  end?: number; // Epoch milliseconds
 }
 
 class CoinCapClient {
   async fetchAssets(ids?: string[]): Promise<unknown[]> {
-    const cacheKey = ids ? `assets:${ids.join(',')}` : 'assets';
+    const cacheKey = ids ? `assets:${ids.join(",")}` : "assets";
     return coincapCache.getOrFetch(cacheKey, async () => {
       const params: Record<string, unknown> = { limit: 50 };
       if (ids && ids.length > 0) {
-        params.ids = ids.join(',');
+        params.ids = ids.join(",");
       }
-      const response = await apiClient.get<{ data: unknown[] }>('/assets', { params });
+      const response = await apiClient.get<{ data: unknown[] }>("/assets", { params });
       return response.data.data;
     });
   }
 
   async fetchRates(): Promise<unknown[]> {
-    return coincapCache.getOrFetch('rates', async () => {
-      const response = await apiClient.get<{ data: unknown[] }>('/rates', {
+    return coincapCache.getOrFetch("rates", async () => {
+      const response = await apiClient.get<{ data: unknown[] }>("/rates", {
         params: { limit: 5 },
       });
       return response.data.data;
@@ -42,8 +42,8 @@ class CoinCapClient {
   }
 
   async fetchMarkets(): Promise<unknown[]> {
-    return coincapCache.getOrFetch('markets', async () => {
-      const response = await apiClient.get<{ data: unknown[] }>('/exchanges', {
+    return coincapCache.getOrFetch("markets", async () => {
+      const response = await apiClient.get<{ data: unknown[] }>("/exchanges", {
         params: { limit: 20 },
       });
       return response.data.data;
@@ -52,20 +52,19 @@ class CoinCapClient {
 
   async fetchCoinHistory(
     coinId: string,
-    interval: string = 'd1',
+    interval: string = "d1",
     limit: number = 365,
-    range?: DateRange
+    range?: DateRange,
   ): Promise<unknown[]> {
-    const rangeStr = range ? `:${range.start}:${range.end}` : '';
+    const rangeStr = range ? `:${range.start}:${range.end}` : "";
     const key = `history:${coinId}:${interval}:${limit}${rangeStr}`;
     return coincapCache.getOrFetch(key, async () => {
       const params: Record<string, unknown> = { interval, limit };
       if (range?.start) params.start = range.start;
       if (range?.end) params.end = range.end;
-      const response = await apiClient.get<{ data: unknown[] }>(
-        `/assets/${coinId}/history`,
-        { params }
-      );
+      const response = await apiClient.get<{ data: unknown[] }>(`/assets/${coinId}/history`, {
+        params,
+      });
       return response.data.data;
     });
   }
@@ -76,17 +75,17 @@ class CoinCapClient {
     const endpointsUsed: Set<string> = new Set();
 
     console.log(
-      `[CoinCap] Detected intent: ${intent.reason} (coins: ${intent.targetCoinIds.join(', ')})`
+      `[CoinCap] Detected intent: ${intent.reason} (coins: ${intent.targetCoinIds.join(", ")})`,
     );
 
     try {
       if (intent.needsAssets) {
         try {
           context.assets = await this.fetchAssets();
-          endpointsUsed.add('/assets');
-          console.log('✓ Fetched assets from CoinCap');
+          endpointsUsed.add("/assets");
+          console.log("✓ Fetched assets from CoinCap");
         } catch (error) {
-          console.warn('Failed to fetch assets:', error);
+          console.warn("Failed to fetch assets:", error);
         }
       }
 
@@ -94,7 +93,7 @@ class CoinCapClient {
         context.history = {};
         for (const coinId of intent.targetCoinIds) {
           try {
-            const histData = await this.fetchCoinHistory(coinId, 'd1', 365);
+            const histData = await this.fetchCoinHistory(coinId, "d1", 365);
             context.history[coinId] = histData;
             endpointsUsed.add(`/assets/${coinId}/history`);
             console.log(`✓ Fetched history for ${coinId}`);
@@ -107,29 +106,27 @@ class CoinCapClient {
       if (intent.needsMarkets) {
         try {
           context.markets = await this.fetchMarkets();
-          endpointsUsed.add('/exchanges');
-          console.log('✓ Fetched market data from CoinCap');
+          endpointsUsed.add("/exchanges");
+          console.log("✓ Fetched market data from CoinCap");
         } catch (error) {
-          console.warn('Failed to fetch markets:', error);
+          console.warn("Failed to fetch markets:", error);
         }
       }
 
       if (intent.needsRates) {
         try {
           context.rates = await this.fetchRates();
-          endpointsUsed.add('/rates');
-          console.log('✓ Fetched exchange rates from CoinCap');
+          endpointsUsed.add("/rates");
+          console.log("✓ Fetched exchange rates from CoinCap");
         } catch (error) {
-          console.warn('Failed to fetch rates:', error);
+          console.warn("Failed to fetch rates:", error);
         }
       }
     } catch (error) {
-      console.error('Error fetching CoinCap data:', error);
+      console.error("Error fetching CoinCap data:", error);
     }
 
-    console.log(
-      `Successfully fetched ${endpointsUsed.size} endpoints for query: "${userQuery}"`
-    );
+    console.log(`Successfully fetched ${endpointsUsed.size} endpoints for query: "${userQuery}"`);
 
     return {
       context,

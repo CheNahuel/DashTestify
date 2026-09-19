@@ -1,7 +1,6 @@
-/* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 
-import { FormEvent, useMemo, useState, useEffect } from "react";
+import { FormEvent, useMemo, useState } from "react";
 import Image from "next/image";
 
 export type CoinJournalEntry = {
@@ -39,16 +38,10 @@ export const CoinJournal = ({
   onDeleteEntry: (coinId: string, noteId: string) => void;
 }) => {
   const fallback = getFallbackCoinImage(coinId);
-  const [imgSrc, setImgSrc] = useState<string>(coinImage || fallback);
+  const [hasImageError, setHasImageError] = useState(false);
+  const imgSrc = hasImageError ? fallback : coinImage || fallback;
   const [note, setNote] = useState("");
   const [error, setError] = useState("");
-
-  useEffect(() => {
-    setImgSrc(prev => {
-      const newSrc = coinImage || fallback;
-      return newSrc !== prev ? newSrc : prev;
-    });
-  }, [coinImage, coinId, fallback]);
 
   const noteCountLabel = useMemo(() => {
     if (entries.length === 1) {
@@ -82,12 +75,13 @@ export const CoinJournal = ({
           </p>
           <div className="mt-2 flex items-center gap-2">
             <Image
+              key={coinId}
               src={imgSrc}
               alt={coinName}
               width={24}
               height={24}
               className="h-6 w-6 shrink-0 rounded-full"
-              onError={() => setImgSrc(fallback)}
+              onError={() => setHasImageError(true)}
             />
             <h3 className="break-words text-base font-semibold text-white sm:text-lg md:text-xl">
               Notes for {coinName}

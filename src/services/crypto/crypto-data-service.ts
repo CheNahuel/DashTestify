@@ -1,10 +1,10 @@
-import type { CryptoDataProvider } from './types';
-import type { Coin, CoinHistory, CoinHistoryRequest } from '@/features/crypto/types/coin';
-import type { ContextData } from '@/features/crypto/components/CryptoAIAnalyst/types';
-import { isValidDataSource, type DataSource } from './types';
-import { createCoinCapProvider } from './providers/coincap-provider';
-import { createSupabaseProvider } from './providers/supabase-provider';
-import { createMockProvider } from './providers/mock-provider';
+import type { CryptoDataProvider } from "./types";
+import type { Coin, CoinHistory, CoinHistoryRequest } from "@/features/crypto/types/coin";
+import type { ContextData } from "@/features/crypto/components/CryptoAIAnalyst/types";
+import { isValidDataSource, type DataSource } from "./types";
+import { createCoinCapProvider } from "./providers/coincap-provider";
+import { createSupabaseProvider } from "./providers/supabase-provider";
+import { createMockProvider } from "./providers/mock-provider";
 
 let cachedCoinCapProvider: CryptoDataProvider | null = null;
 let cachedSupabaseProvider: CryptoDataProvider | null = null;
@@ -32,11 +32,9 @@ function getMockProvider(): CryptoDataProvider {
 }
 
 export function getDataSource(): DataSource {
-  const raw = process.env.DATA_SOURCE ?? 'supabase';
+  const raw = process.env.DATA_SOURCE ?? "supabase";
   if (!isValidDataSource(raw)) {
-    throw new Error(
-      `Invalid DATA_SOURCE "${raw}". Must be "coincap" or "supabase".`
-    );
+    throw new Error(`Invalid DATA_SOURCE "${raw}". Must be "coincap" or "supabase".`);
   }
   return raw;
 }
@@ -53,7 +51,7 @@ export interface CryptoDataWithMeta {
  */
 export function getCryptoDataProvider(): CryptoDataProvider {
   const source = getDataSource();
-  return source === 'supabase' ? getSupabaseProvider() : getCoinCapProvider();
+  return source === "supabase" ? getSupabaseProvider() : getCoinCapProvider();
 }
 
 /**
@@ -61,13 +59,13 @@ export function getCryptoDataProvider(): CryptoDataProvider {
  * Returns both the data and a flag indicating if we fell back to mock.
  */
 export async function getCryptoDataWithFallback<T>(
-  primaryFetch: () => Promise<T>
+  primaryFetch: () => Promise<T>,
 ): Promise<{ data: T; fallback: boolean; fallbackReason?: string }> {
   try {
     const data = await primaryFetch();
     return { data, fallback: false };
   } catch (error) {
-    console.warn('Primary provider failed, falling back to mock:', error);
+    console.warn("Primary provider failed, falling back to mock:", error);
     const mockProvider = getMockProvider();
 
     // Reconstruct the call using mock provider
@@ -79,9 +77,9 @@ export async function getCryptoDataWithFallback<T>(
       return {
         data,
         fallback: true,
-        fallbackReason: 'Primary data source unavailable, using cached/mock data'
+        fallbackReason: "Primary data source unavailable, using cached/mock data",
       };
-    } catch (fallbackError) {
+    } catch {
       // If even mock fails, re-throw the original error
       throw error;
     }
@@ -107,7 +105,7 @@ export async function getAsset(id: string): Promise<Coin | null> {
  */
 export async function getHistory(
   assetId: string,
-  request: CoinHistoryRequest
+  request: CoinHistoryRequest,
 ): Promise<CoinHistory> {
   return getCryptoDataProvider().getHistory(assetId, request);
 }
@@ -116,7 +114,7 @@ export async function getHistory(
  * Fetch market data for AI analyst queries (no automatic fallback for fetchMarketData).
  */
 export async function fetchMarketData(
-  query: string
+  query: string,
 ): Promise<{ context: ContextData; endpoints: string[] }> {
   return getCryptoDataProvider().fetchMarketData(query);
 }

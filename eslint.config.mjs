@@ -32,6 +32,9 @@ export default defineConfig([
     },
     rules: {
       ...playwright.configs.recommended.rules,
+      "playwright/no-conditional-expect": "off",
+      "playwright/no-conditional-in-test": "off",
+      "playwright/no-skipped-test": "off",
       "playwright/no-wait-for-timeout": "warn",
       "playwright/prefer-locator": "warn",
     },
