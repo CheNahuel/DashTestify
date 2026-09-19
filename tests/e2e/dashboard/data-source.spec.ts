@@ -7,7 +7,8 @@ test("data source toggle is visible", async ({ dashboardData, dashboardPage }) =
   await dashboardPage.goto(dashboardData.urls.home);
   await waitForDashboardData(dashboardPage.page);
 
-  await expect(dashboardPage.dataSourceToggle).toBeVisible();
+  await expect(dashboardPage.dataSourceMock).toBeVisible();
+  await expect(dashboardPage.dataSourceLive).toBeVisible();
 });
 
 test("toggle shows 'Mock data' when mockData=1 is in URL", async ({
@@ -17,8 +18,7 @@ test("toggle shows 'Mock data' when mockData=1 is in URL", async ({
   await dashboardPage.goto(dashboardData.urls.home);
   await waitForDashboardData(dashboardPage.page);
 
-  await expect(dashboardPage.dataSourceToggle).toHaveText("Mock");
-  await expect(dashboardPage.dataSourceToggle).toHaveAttribute("aria-pressed", "true");
+  await expect(dashboardPage.dataSourceMock).toHaveClass(/bg-slate-800/);
 });
 
 test("mock mode preserves dashboard params on load", async ({ dashboardPage }) => {
@@ -27,8 +27,7 @@ test("mock mode preserves dashboard params on load", async ({ dashboardPage }) =
   );
   await waitForDashboardData(dashboardPage.page);
 
-  await expect(dashboardPage.dataSourceToggle).toHaveText("Mock");
-  await expect(dashboardPage.dataSourceToggle).toHaveAttribute("aria-pressed", "true");
+  await expect(dashboardPage.dataSourceMock).toHaveClass(/bg-slate-800/);
   await expect(dashboardPage.page).toHaveURL(/mockData=1/);
   await expect(dashboardPage.page).toHaveURL(/sort=price-desc/);
   await expect(dashboardPage.page).toHaveURL(/trend=gainers/);

@@ -6,7 +6,13 @@ import ReactMarkdown from 'react-markdown';
 import type { AiProviderName } from '../../../../../scripts/ai/types';
 import type { CryptoChatMessage } from './types';
 
-const PROVIDER_OPTIONS: Array<{
+type ProviderStatus = {
+  name: AiProviderName;
+  label: string;
+  configured: boolean;
+};
+
+const DEFAULT_PROVIDER_OPTIONS: Array<{
   value: AiProviderName;
   label: string;
 }> = [
@@ -80,7 +86,25 @@ export function CryptoAIAnalyst() {
   const [provider, setProvider] = useState<AiProviderName>('claude');
   const [suggestedQuestions, setSuggestedQuestions] = useState(DEFAULT_SUGGESTED_QUESTIONS.slice(0, 4));
   const [lastUserQuery, setLastUserQuery] = useState<string | null>(null);
+  const [providerStatuses, setProviderStatuses] = useState<ProviderStatus[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Fetch provider configuration status
+  useEffect(() => {
+    const fetchProviderStatus = async () => {
+      try {
+        const response = await fetch('/api/ai-providers-status');
+        if (response.ok) {
+          const data = await response.json();
+          setProviderStatuses(data.providers || []);
+        }
+      } catch (err) {
+        console.error('Failed to fetch provider status:', err);
+      }
+    };
+
+    void fetchProviderStatus();
+  }, []);
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -185,11 +209,22 @@ export function CryptoAIAnalyst() {
             onChange={(e) => setProvider(e.target.value as AiProviderName)}
             className="mt-2 sm:mt-0 w-full sm:w-auto rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-sm text-white transition hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-cyan-300"
           >
-            {PROVIDER_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
+            {providerStatuses.length > 0
+              ? providerStatuses.map((status) => (
+                  <option
+                    key={status.name}
+                    value={status.name}
+                    disabled={!status.configured}
+                  >
+                    {status.label}
+                    {!status.configured && ' — Not configured'}
+                  </option>
+                ))
+              : DEFAULT_PROVIDER_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
           </select>
         </div>
       </div>
