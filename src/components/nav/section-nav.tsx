@@ -18,42 +18,34 @@ export function SectionNav({ showQANavigation = true }: { showQANavigation?: boo
     }`;
 
   return (
-    <nav className="border-b border-white/10 bg-slate-950/70 backdrop-blur">
+    <nav className="sticky top-0 z-50 border-b border-white/10 bg-slate-950/90 backdrop-blur">
       <div className="mx-auto max-w-7xl px-4 py-3 sm:px-6 lg:px-8">
-        <div className="flex flex-wrap items-center justify-start gap-2 sm:gap-4">
+        <div className="flex min-h-10 items-center gap-4">
           <div className="flex items-center gap-2 font-semibold text-white">
             <span className="text-lg">DashTestify</span>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-            {/* Crypto Dashboard */}
-            <Link
-              href="/"
-              className={navLinkClass(isHome, "text-cyan-300")}
-            >
-              Crypto Dashboard
-            </Link>
+          {showQANavigation && (
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+              <Link href="/" className={navLinkClass(isHome, "text-cyan-300")}>
+                Crypto Dashboard
+              </Link>
 
-            {/* Quality Analytics - hidden in production */}
-            {showQANavigation && (
-              <>
-                <Link
-                  href="/quality-analytics"
-                  className={navLinkClass(isQualityAnalytics, "text-purple-300")}
-                >
-                  Quality Analytics
-                </Link>
+              <Link
+                href="/quality-analytics"
+                className={navLinkClass(isQualityAnalytics, "text-purple-300")}
+              >
+                Quality Analytics
+              </Link>
 
-                {/* AI Failure Analysis - hidden in production */}
-                <Link
-                  href="/ai-failure-analysis"
-                  className={navLinkClass(isAiFailure, "text-purple-300")}
-                >
-                  AI Failure Analysis
-                </Link>
-              </>
-            )}
-          </div>
+              <Link
+                href="/ai-failure-analysis"
+                className={navLinkClass(isAiFailure, "text-purple-300")}
+              >
+                AI Failure Analysis
+              </Link>
+            </div>
+          )}
         </div>
       </div>
     </nav>
