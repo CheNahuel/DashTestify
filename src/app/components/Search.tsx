@@ -1,4 +1,3 @@
-/* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -13,14 +12,8 @@ const getFallbackCoinImage = (symbol: string) =>
 
 const SearchItem = ({ coin, onSelectCoin }: { coin: Coin; onSelectCoin: (coin: Coin) => void }) => {
   const fallback = getFallbackCoinImage(coin.symbol);
-  const [imgSrc, setImgSrc] = useState<string>(coin.image || fallback);
-
-  useEffect(() => {
-    setImgSrc(prev => {
-      const newSrc = coin.image || fallback;
-      return newSrc !== prev ? newSrc : prev;
-    });
-  }, [coin.image, coin.symbol, fallback]);
+  const [hasImageError, setHasImageError] = useState(false);
+  const imgSrc = hasImageError ? fallback : coin.image || fallback;
 
   return (
     <button
@@ -30,18 +23,17 @@ const SearchItem = ({ coin, onSelectCoin }: { coin: Coin; onSelectCoin: (coin: C
       className="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-slate-800/90"
     >
       <Image
+        key={coin.id}
         src={imgSrc}
         alt={coin.name}
         width={28}
         height={28}
         className="h-7 w-7 shrink-0 rounded-full"
-        onError={() => setImgSrc(fallback)}
+        onError={() => setHasImageError(true)}
       />
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-semibold text-white">{coin.name}</p>
-        <p className="truncate text-xs uppercase tracking-wider text-slate-400">
-          {coin.symbol}
-        </p>
+        <p className="truncate text-xs uppercase tracking-wider text-slate-400">{coin.symbol}</p>
       </div>
       <p className="shrink-0 text-sm font-semibold text-cyan-100">
         {currencyFormatter.format(coin.current_price)}

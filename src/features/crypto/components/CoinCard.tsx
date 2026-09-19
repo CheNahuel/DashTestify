@@ -1,5 +1,4 @@
-/* eslint-disable react-hooks/exhaustive-deps */
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import { Coin, CoinHistoryRequest } from "../types/coin";
 import { compactFormatter, currencyFormatter } from "@/lib/formatters";
@@ -29,12 +28,8 @@ export const CoinCard = ({
   useMock?: boolean;
 }) => {
   const fallback = getFallbackCoinImage(coin.symbol);
-  const [imgSrc, setImgSrc] = useState<string>(coin.image || fallback);
-
-  useEffect(() => {
-    const newSrc = coin.image || fallback;
-    setImgSrc(newSrc);
-  }, [coin.image, coin.symbol, fallback]);
+  const [hasImageError, setHasImageError] = useState(false);
+  const imgSrc = hasImageError ? fallback : coin.image || fallback;
 
   const { data: history } = useCoinHistory(coin.id, historyRequest, useMock);
 
@@ -67,12 +62,13 @@ export const CoinCard = ({
           className="flex min-w-0 flex-1 items-center gap-2 text-left sm:gap-3"
         >
           <Image
+            key={coin.id}
             src={imgSrc}
             alt={coin.name}
             width={40}
             height={40}
             className="h-8 w-8 shrink-0 rounded-full sm:h-10 sm:w-10"
-            onError={() => setImgSrc(fallback)}
+            onError={() => setHasImageError(true)}
           />
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold sm:text-base">{coin.name}</p>

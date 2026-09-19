@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import type { TooltipProps } from "recharts";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
@@ -61,7 +60,6 @@ function formatDateOnly(value: string) {
 }
 
 export function MetricsPage() {
-  const router = useRouter();
   const [runs, setRuns] = useState<TestRun[]>([]);
   const [trendData, setTrendData] = useState<TrendPoint[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -175,14 +173,6 @@ export function MetricsPage() {
                 ) : (
                   "Refresh"
                 )}
-              </button>
-              <button
-                type="button"
-                data-testid="back-to-home-button"
-                onClick={() => router.push("/")}
-                className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 rounded-full border border-slate-600/40 bg-slate-800/60 px-3 py-2 text-xs font-bold uppercase tracking-widest text-slate-400 transition hover:border-slate-500/60 hover:text-slate-300 sm:px-5 sm:py-3 sm:text-[13px]"
-              >
-                <span className="hidden sm:inline">Back to</span> Home
               </button>
             </div>
           </div>
