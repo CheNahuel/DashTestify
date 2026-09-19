@@ -49,7 +49,7 @@ Provide your analysis using appropriate markdown structure and formatting.`;
 
 type GenericApiResponse = Record<string, unknown>;
 
-function extractResponseText(data: GenericApiResponse, providerName: AiProviderName): string {
+function extractResponseText(data: GenericApiResponse): string {
   // Claude: data.content[0].text
   if (Array.isArray(data.content)) {
     const textBlock = (data.content as Array<{ type: string; text?: string }>).find(
@@ -111,7 +111,7 @@ async function queryClaudeProvider(query: string, systemPrompt: string): Promise
     throw new Error(`Claude error: ${(data.error as Record<string, unknown>).message}`);
   }
 
-  const text = extractResponseText(data, "claude");
+  const text = extractResponseText(data);
   if (!text) throw new Error("Claude returned empty response");
   return text;
 }
@@ -145,7 +145,7 @@ async function queryOpenAiProvider(query: string, systemPrompt: string): Promise
     throw new Error(`OpenAI error: ${(data.error as Record<string, unknown>).message}`);
   }
 
-  const text = extractResponseText(data, "openai");
+  const text = extractResponseText(data);
   if (!text) throw new Error("OpenAI returned empty response");
   return text;
 }
@@ -177,7 +177,7 @@ async function queryGeminiProvider(query: string, systemPrompt: string): Promise
 
   if (!response.ok) {
     const errorBody = await response.text();
-    throw new Error(`Gemini API error: ${response.status} ${response.statusText}`);
+    throw new Error(`Gemini API error: ${response.status} ${response.statusText} - ${errorBody}`);
   }
 
   const data = (await response.json()) as GenericApiResponse;
@@ -223,7 +223,7 @@ async function queryGroqProvider(query: string, systemPrompt: string): Promise<s
   }
 
   const data = (await response.json()) as GenericApiResponse;
-  const text = extractResponseText(data, "groq");
+  const text = extractResponseText(data);
   if (!text) throw new Error("Groq returned empty response");
   return text;
 }
@@ -256,7 +256,7 @@ async function queryDeepSeekProvider(query: string, systemPrompt: string): Promi
   }
 
   const data = (await response.json()) as GenericApiResponse;
-  const text = extractResponseText(data, "deepseek");
+  const text = extractResponseText(data);
   if (!text) throw new Error("DeepSeek returned empty response");
   return text;
 }
@@ -293,7 +293,7 @@ async function queryOpenRouterProvider(query: string, systemPrompt: string): Pro
   }
 
   const data = (await response.json()) as GenericApiResponse;
-  const text = extractResponseText(data, "openrouter");
+  const text = extractResponseText(data);
   if (!text) throw new Error("OpenRouter returned empty response");
   return text;
 }

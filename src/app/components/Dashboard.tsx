@@ -115,7 +115,10 @@ const PriceAlertFormLoading = () => (
 );
 
 const PriceAlertFormClient = dynamic(
-  () => import("@/features/crypto/components/PriceAlertForm").then((mod) => ({ default: mod.PriceAlertForm })),
+  () =>
+    import("@/features/crypto/components/PriceAlertForm").then((mod) => ({
+      default: mod.PriceAlertForm,
+    })),
   {
     ssr: false,
     loading: () => <PriceAlertFormLoading />,
@@ -150,6 +153,7 @@ export const Dashboard = ({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  void dataSource;
 
   const { data: coins = initialCoins, isFetching, error } = useCoins(initialCoins, useMock);
   const [selectedCoinId, setSelectedCoinId] = useState<string | null>(
@@ -391,9 +395,7 @@ export const Dashboard = ({
 
           <div className="flex w-full gap-2 md:w-auto">
             <div
-              title={
-                !isLiveAvailable ? "Set COINCAP_API_KEY to enable live data" : undefined
-              }
+              title={!isLiveAvailable ? "Set COINCAP_API_KEY to enable live data" : undefined}
               className={`flex gap-1 rounded-full border p-1 ${
                 !isLiveAvailable
                   ? "border-slate-700/40 bg-slate-900/60 cursor-not-allowed opacity-50"
@@ -406,9 +408,7 @@ export const Dashboard = ({
                 onClick={() => !useMock && isLiveAvailable && toggleDataSource()}
                 disabled={!isLiveAvailable}
                 className={`flex-1 md:flex-none inline-flex items-center justify-center gap-2 rounded-full px-3 py-2 text-xs font-bold uppercase tracking-widest transition md:px-4 md:py-2 ${
-                  useMock
-                    ? "bg-slate-800 text-slate-100"
-                    : "text-slate-400 hover:text-slate-200"
+                  useMock ? "bg-slate-800 text-slate-100" : "text-slate-400 hover:text-slate-200"
                 }`}
               >
                 Mock
@@ -472,7 +472,9 @@ export const Dashboard = ({
                 </select>
               </label>
 
-              <label className={`grid gap-2 text-sm ${favoritesOnly ? "text-slate-500" : "text-slate-300"}`}>
+              <label
+                className={`grid gap-2 text-sm ${favoritesOnly ? "text-slate-500" : "text-slate-300"}`}
+              >
                 Trend
                 <select
                   data-testid="trend-select"
@@ -610,12 +612,17 @@ const MainDashboard = ({
   onAddJournalEntry: (coinId: string, note: string) => void;
   onDeleteJournalEntry: (coinId: string, entryId: string) => void;
 }) => {
-  const { data: history, isLoading: isHistoryLoading, error } =
-    useCoinHistory(coin.id, historyRequest, useMock);
+  const {
+    data: history,
+    isLoading: isHistoryLoading,
+    error,
+  } = useCoinHistory(coin.id, historyRequest, useMock);
 
   const historyPrices = history?.prices.map(([, price]) => price) ?? [];
-  const selectedRangeHigh = historyPrices.length > 0 ? Math.max(...historyPrices) : coin.current_price;
-  const selectedRangeLow = historyPrices.length > 0 ? Math.min(...historyPrices) : coin.current_price;
+  const selectedRangeHigh =
+    historyPrices.length > 0 ? Math.max(...historyPrices) : coin.current_price;
+  const selectedRangeLow =
+    historyPrices.length > 0 ? Math.min(...historyPrices) : coin.current_price;
   const selectedRangeChange =
     historyPrices.length > 0
       ? ((coin.current_price - historyPrices[0]) / historyPrices[0]) * 100
@@ -679,7 +686,9 @@ const MainDashboard = ({
 
         {error ? (
           <div className="flex h-[200px] items-center justify-center rounded-2xl border border-rose-500/30 bg-rose-500/10 px-4 text-center text-sm text-rose-100 sm:h-[240px] sm:rounded-3xl md:h-[260px]">
-            {error instanceof Error ? error.message : "We couldn&apos;t load historical data for this coin."}
+            {error instanceof Error
+              ? error.message
+              : "We couldn&apos;t load historical data for this coin."}
           </div>
         ) : isHistoryLoading ? (
           <div className="flex h-[200px] items-center justify-center rounded-2xl border border-white/10 bg-slate-950/40 text-sm text-slate-400 sm:h-[240px] sm:rounded-3xl md:h-[260px]">

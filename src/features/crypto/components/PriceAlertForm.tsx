@@ -1,4 +1,3 @@
-/* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 
 import { useActionState, useEffect, useRef, useState, startTransition } from "react";
@@ -42,31 +41,33 @@ const SubmitButton = () => {
   );
 };
 
-const AlertTableRow = ({ alert, onDelete }: { alert: PriceAlert; onDelete: (id: string) => void }) => {
+const AlertTableRow = ({
+  alert,
+  onDelete,
+}: {
+  alert: PriceAlert;
+  onDelete: (id: string) => void;
+}) => {
   const fallback = getFallbackCoinImage(alert.coinId, "sm");
-  const [imgSrc, setImgSrc] = useState(alert.coinImage || fallback);
-
-  useEffect(() => {
-    setImgSrc(alert.coinImage || fallback);
-  }, [alert.coinImage, alert.coinId, fallback]);
+  const [hasImageError, setHasImageError] = useState(false);
+  const imgSrc = hasImageError ? fallback : alert.coinImage || fallback;
 
   return (
     <tr className="border-b border-white/5 last:border-b-0">
       <td className="px-2 py-2 text-slate-200 sm:px-3">
         <div className="flex items-center gap-2">
           <Image
+            key={alert.id}
             src={imgSrc}
             alt={alert.coinName}
             width={20}
             height={20}
             className="h-5 w-5 shrink-0 rounded-full"
-            onError={() => setImgSrc(fallback)}
+            onError={() => setHasImageError(true)}
           />
           <span className="truncate">{alert.coinName}</span>
         </div>
-        <div className="mt-1 truncate text-[11px] text-slate-500 sm:hidden">
-          {alert.email}
-        </div>
+        <div className="mt-1 truncate text-[11px] text-slate-500 sm:hidden">{alert.email}</div>
       </td>
       <td className="px-2 py-2 whitespace-nowrap text-slate-200 sm:px-3">
         ${alert.targetPrice.toFixed(2)}
@@ -126,7 +127,9 @@ const AlertTable = ({
                 </td>
               </tr>
             ) : (
-              alerts.map((alert) => <AlertTableRow key={alert.id} alert={alert} onDelete={onDelete} />)
+              alerts.map((alert) => (
+                <AlertTableRow key={alert.id} alert={alert} onDelete={onDelete} />
+              ))
             )}
           </tbody>
         </table>
@@ -147,11 +150,8 @@ export const PriceAlertForm = ({
   currentPrice: number;
 }) => {
   const fallback = getFallbackCoinImage(coinId, "md");
-  const [imgSrc, setImgSrc] = useState(coinImage || fallback);
-
-  useEffect(() => {
-    setImgSrc(coinImage || fallback);
-  }, [coinImage, coinId, fallback]);
+  const [hasImageError, setHasImageError] = useState(false);
+  const imgSrc = hasImageError ? fallback : coinImage || fallback;
 
   const action = submitPriceAlert.bind(null, {
     coinId,
@@ -251,12 +251,13 @@ export const PriceAlertForm = ({
         </p>
         <div className="mt-2 flex items-center gap-2">
           <Image
+            key={coinId}
             src={imgSrc}
             alt={coinName}
             width={24}
             height={24}
             className="h-6 w-6 shrink-0 rounded-full"
-            onError={() => setImgSrc(fallback)}
+            onError={() => setHasImageError(true)}
           />
           <h3 className="break-words text-base font-semibold text-white sm:text-lg md:text-xl">
             Create Price Alert for {coinName}
