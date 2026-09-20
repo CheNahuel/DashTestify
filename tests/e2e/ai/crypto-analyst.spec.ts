@@ -91,6 +91,39 @@ const mockHistory = {
   ],
 };
 
+async function withMockedClaude<T>(callback: () => Promise<T>): Promise<T> {
+  const originalFetch = globalThis.fetch;
+  const originalClaudeApiKey = process.env.CLAUDE_API_KEY;
+
+  process.env.CLAUDE_API_KEY = "test-claude-key";
+  globalThis.fetch = async (input, init) => {
+    const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+
+    if (url === "https://api.anthropic.com/v1/messages") {
+      return new Response(
+        JSON.stringify({
+          content: [{ type: "text", text: "Mocked crypto analysis response" }],
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      );
+    }
+
+    return originalFetch(input, init);
+  };
+
+  try {
+    return await callback();
+  } finally {
+    globalThis.fetch = originalFetch;
+
+    if (originalClaudeApiKey === undefined) {
+      delete process.env.CLAUDE_API_KEY;
+    } else {
+      process.env.CLAUDE_API_KEY = originalClaudeApiKey;
+    }
+  }
+}
+
 test("supabase provider returns context for bitcoin price query", async () => {
   // Mock the database functions
   try {
@@ -126,9 +159,7 @@ test("supabase provider handles intent detection for historical queries", async 
     const { createSupabaseProvider: createProvider } = await import("@/services/crypto");
     const provider = createProvider();
 
-    const result = await provider.fetchMarketData(
-      "How has Bitcoin performed over the last year?"
-    );
+    const result = await provider.fetchMarketData("How has Bitcoin performed over the last year?");
 
     if (!result) {
       expect(true).toBe(true);
@@ -148,9 +179,7 @@ test("supabase provider handles intent detection for comparison queries", async 
     const { createSupabaseProvider: createProvider } = await import("@/services/crypto");
     const provider = createProvider();
 
-    const result = await provider.fetchMarketData(
-      "Compare Bitcoin and Ethereum market caps"
-    );
+    const result = await provider.fetchMarketData("Compare Bitcoin and Ethereum market caps");
 
     if (!result) {
       expect(true).toBe(true);
@@ -180,29 +209,21 @@ test("crypto analyst system prompt mentions data source", async () => {
     },
   };
 
-  try {
-    const analysis = await analyzeCryptoQuery(
+  const analysis = await withMockedClaude(() =>
+    analyzeCryptoQuery(
       {
         query: "What is the price of Bitcoin?",
         context: mockContext,
         endpoints: ["/assets"],
         dataSource: "Supabase",
       },
-      "claude"
-    );
+      "claude",
+    ),
+  );
 
-    // Verify response format
-    expect(analysis).toBeDefined();
-    expect(analysis.answer).toBeDefined();
-    expect(analysis.sources).toBeDefined();
-    expect(Array.isArray(analysis.sources)).toBe(true);
-  } catch (error) {
-    // API key missing or other config issue, skip
-    if (error instanceof Error && error.message.includes("API_KEY")) {
-      test.skip();
-    }
-    throw error;
-  }
+  expect(analysis).toBeDefined();
+  expect(analysis.answer).toBe("Mocked crypto analysis response");
+  expect(analysis.sources).toEqual(["/assets"]);
 });
 
 test("crypto analyst accepts dataSource parameter", async () => {
@@ -220,38 +241,30 @@ test("crypto analyst accepts dataSource parameter", async () => {
     },
   };
 
-  try {
-    // Test with Supabase as source
-    const analysisSupabase = await analyzeCryptoQuery(
+  const analysisSupabase = await withMockedClaude(() =>
+    analyzeCryptoQuery(
       {
         query: "Tell me about Ethereum",
         context: mockContext,
         endpoints: ["/assets"],
         dataSource: "Supabase",
       },
-      "claude"
-    );
+      "claude",
+    ),
+  );
 
-    expect(analysisSupabase.answer).toBeDefined();
-    expect(analysisSupabase.answer.length > 0).toBe(true);
-
-    // Test with CoinCap as source
-    const analysisCoinCap = await analyzeCryptoQuery(
+  const analysisCoinCap = await withMockedClaude(() =>
+    analyzeCryptoQuery(
       {
         query: "Tell me about Ethereum",
         context: mockContext,
         endpoints: ["/assets"],
         dataSource: "CoinCap",
       },
-      "claude"
-    );
+      "claude",
+    ),
+  );
 
-    expect(analysisCoinCap.answer).toBeDefined();
-    expect(analysisCoinCap.answer.length > 0).toBe(true);
-  } catch (error) {
-    if (error instanceof Error && error.message.includes("API_KEY")) {
-      test.skip();
-    }
-    throw error;
-  }
+  expect(analysisSupabase.answer).toBe("Mocked crypto analysis response");
+  expect(analysisCoinCap.answer).toBe("Mocked crypto analysis response");
 });
