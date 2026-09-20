@@ -6,13 +6,14 @@ Professional GitHub Actions reporting for Playwright tests using **artifacts**, 
 
 ## Start here
 
-| Doc | Purpose |
-|-----|---------|
-| [QUICK_START.md](./QUICK_START.md) | Get reports working fast |
-| [ARTIFACT_BASED_REPORTING.md](./ARTIFACT_BASED_REPORTING.md) | How artifact reports work |
-| [WORKFLOW_REFERENCE.md](./WORKFLOW_REFERENCE.md) | Workflow steps reference |
-| [PLAYWRIGHT_SETUP_CHECKLIST.md](./PLAYWRIGHT_SETUP_CHECKLIST.md) | Setup checklist |
-| [DATABASE_SETUP.md](./DATABASE_SETUP.md) | Supabase metrics tables |
+| Doc                                                              | Purpose                          |
+| ---------------------------------------------------------------- | -------------------------------- |
+| [QUICK_START.md](./QUICK_START.md)                               | Get reports working fast         |
+| [ARTIFACT_BASED_REPORTING.md](./ARTIFACT_BASED_REPORTING.md)     | How artifact reports work        |
+| [WORKFLOW_REFERENCE.md](./WORKFLOW_REFERENCE.md)                 | Workflow steps reference         |
+| [PLAYWRIGHT_SETUP_CHECKLIST.md](./PLAYWRIGHT_SETUP_CHECKLIST.md) | Setup checklist                  |
+| [DATABASE_SETUP.md](./DATABASE_SETUP.md)                         | Supabase metrics tables          |
+| [CRYPTO_AI_ANALYST.md](./CRYPTO_AI_ANALYST.md)                   | Floating crypto market assistant |
 
 ## What the workflow does
 
@@ -30,7 +31,15 @@ Professional GitHub Actions reporting for Playwright tests using **artifacts**, 
 
 ## Related app routes
 
-| Route | Purpose |
-|-------|---------|
-| `/quality-analytics` | Historical metrics (Supabase) |
-| `/ai-failure-analysis` | Local AI analysis + run tests (development only) |
+| Route                  | Purpose                                                                              |
+| ---------------------- | ------------------------------------------------------------------------------------ |
+| `/`                    | Crypto dashboard with Mock/Live data and the floating Crypto AI Analyst in Live mode |
+| `/quality-analytics`   | Historical metrics (Supabase)                                                        |
+| `/ai-failure-analysis` | Local AI analysis + run tests (development only)                                     |
+
+The application uses Next.js route groups under `src/app/(dashboard)` and
+`src/app/(qa)`; the parentheses are organizational and do not appear in URLs.
+
+Local QA APIs that run tests or apply AI patches are guarded and return `403`
+outside development. See [CRYPTO_AI_ANALYST.md](./CRYPTO_AI_ANALYST.md) for the
+separate market-analysis assistant flow.

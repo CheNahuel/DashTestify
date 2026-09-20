@@ -34,4 +34,16 @@ Actions → run → Artifacts → download `playwright-report-{run_id}` → open
 
 - [ARTIFACT_BASED_REPORTING.md](./ARTIFACT_BASED_REPORTING.md)
 - [QUICK_START.md](./QUICK_START.md)
+- [CRYPTO_AI_ANALYST.md](./CRYPTO_AI_ANALYST.md)
 - [archive/](./archive/) — historical Pages notes only
+
+## Application architecture
+
+- `/` is implemented by `src/app/(dashboard)` and contains the crypto dashboard.
+- `/quality-analytics` and `/ai-failure-analysis` are implemented by
+  `src/app/(qa)`.
+- The floating market assistant is implemented in
+  `src/features/crypto/components/CryptoAIAnalyst/` and calls
+  `/api/crypto-ai-analyst`.
+- QA APIs that run tests or apply patches are development-only and guarded by
+  `src/lib/qa-api-guard.ts`.

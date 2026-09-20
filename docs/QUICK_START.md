@@ -29,12 +29,24 @@ npm run test:e2e
 npm run test:e2e:report
 ```
 
+## Dashboard and Crypto AI Analyst
+
+Run `npm run dev` and open [http://localhost:3000](http://localhost:3000).
+Without `COINCAP_API_KEY`, the dashboard uses deterministic mock data. With a
+live data source enabled, open the fixed Sparkles button in the bottom-right to
+use the floating Crypto AI Analyst.
+
+The assistant supports six providers and keeps conversation state when the panel
+is closed. Configure one or more provider keys in `.env`; provider status and
+availability are shown in the panel header. See
+[CRYPTO_AI_ANALYST.md](./CRYPTO_AI_ANALYST.md) for details.
+
 ## App routes
 
-| Route | When |
-|-------|------|
-| `/quality-analytics` | Metrics from Supabase (local or production) |
-| `/ai-failure-analysis` | AI failure analysis — **development only** |
+| Route                  | When                                        |
+| ---------------------- | ------------------------------------------- |
+| `/quality-analytics`   | Metrics from Supabase (local or production) |
+| `/ai-failure-analysis` | AI failure analysis — **development only**  |
 
 ## More detail
 

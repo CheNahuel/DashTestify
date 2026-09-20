@@ -24,8 +24,16 @@ npm run test:e2e:report
 
 ## App QA routes
 
+- [ ] `/` — crypto dashboard and floating Crypto AI Analyst in Live mode
 - [ ] `/quality-analytics` — metrics (needs Supabase for real data)
 - [ ] `/ai-failure-analysis` — local AI tools only (blocked in production)
+
+## Crypto AI Analyst checks
+
+- [ ] Provider status loads and configured providers are selectable
+- [ ] Suggested question and manual query flows return mocked responses in E2E tests
+- [ ] Conversation state persists after closing and reopening the floating panel
+- [ ] Error/Dismiss behavior restores the default suggested questions
 
 ## Troubleshooting
 

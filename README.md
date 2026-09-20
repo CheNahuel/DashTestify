@@ -1,6 +1,6 @@
 # DashTestify — Crypto Dashboard + Playwright E2E Testing
 
-A modern cryptocurrency dashboard built with **Next.js** and **TypeScript**, featuring real-time data visualization, comprehensive **Playwright E2E testing**, and an AI-powered QA analytics dashboard for failure analysis.
+A modern cryptocurrency dashboard built with **Next.js** and **TypeScript**, featuring real-time data visualization, a floating Crypto AI Analyst, comprehensive **Playwright E2E testing**, and an AI-powered QA analytics dashboard for failure analysis.
 
 Perfect for learning modern testing practices, CI/CD pipelines, and production-grade web development.
 
@@ -8,15 +8,16 @@ Perfect for learning modern testing practices, CI/CD pipelines, and production-g
 
 ## 🚀 Quick Links
 
-| Link | Purpose |
-|------|---------|
-| 🌐 **[Live Dashboard](https://dash-testify.vercel.app/)** | View the live cryptocurrency dashboard |
-| 📊 **[QA Metrics](https://dash-testify.vercel.app/quality-analytics)** | Historical test metrics (Supabase) |
-| 🧪 **Test reports** | Download `playwright-report-{run_id}` artifacts from GitHub Actions |
+| Link                                                                   | Purpose                                                             |
+| ---------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| 🌐 **[Live Dashboard](https://dash-testify.vercel.app/)**              | View the live cryptocurrency dashboard                              |
+| 📊 **[QA Metrics](https://dash-testify.vercel.app/quality-analytics)** | Historical test metrics (Supabase)                                  |
+| 🧪 **Test reports**                                                    | Download `playwright-report-{run_id}` artifacts from GitHub Actions |
 
 ## ✨ Features
 
 ### 💰 Cryptocurrency Dashboard
+
 - **Real-time & Mock Modes**: Live CoinCap API v3 data or deterministic mock data
 - **Interactive Charts**: 9 timeframes (1H to 5M) with Recharts
 - **Smart Search**: Filter by coin name or symbol
@@ -25,14 +26,25 @@ Perfect for learning modern testing practices, CI/CD pipelines, and production-g
 - **Price Alerts**: Get notified when prices hit targets
 - **Trade Journal**: Keep per-coin trading notes
 
+### 🤖 Crypto AI Analyst
+
+- **Floating assistant**: Open the AI panel from the fixed Sparkles launcher without leaving the dashboard
+- **Six providers**: Claude, OpenAI, Gemini, Groq, DeepSeek, and OpenRouter with credential-aware selection
+- **Live market context**: Queries use the configured CoinCap or Supabase data source with source citations
+- **Compact chat experience**: Conversation history, Markdown responses, loading/error states, and suggested questions
+- **Live mode only**: The assistant is available when live data is enabled; mock dashboard mode remains deterministic
+
 ### 🤖 AI-Powered QA Analytics (Local Dev)
+
 - **AI Failure Analysis**: Auto-analyze test failures with Claude, OpenAI, Gemini, etc.
 - **Suggested Fixes**: AI generates code patches for failing tests
 - **Flaky Test Detection**: Identify unstable tests
 - **Top Failures**: Aggregate and track failure patterns
 - **Confidence Scoring**: Trust metrics for AI suggestions
+- **Production guards**: Local test-running and AI patch APIs are blocked outside development
 
 ### 📊 Production Analytics (with Supabase)
+
 - **Historical Metrics**: Track test trends over time
 - **Branch Health**: Monitor code quality per branch
 - **Test Runs**: Complete audit of all test executions
@@ -58,6 +70,9 @@ Create a `.env` file at the project root (it is git-ignored):
 
 ```bash
 COINCAP_API_KEY=your_api_key_here
+
+# Optional: choose the primary market data source (supabase or coincap)
+DATA_SOURCE=supabase
 ```
 
 Restart the dev server after adding the key. The app detects the key at startup; no code change is needed.
@@ -99,71 +114,43 @@ AI tools were used to support test case generation, code review, and test valida
 
 ## 🛠 Tech Stack
 
-| Layer | Technology | Purpose |
-|-------|-----------|---------|
-| **Framework** | Next.js 16 (App Router) | Full-stack React with server components |
-| **Language** | TypeScript | Type-safe JavaScript |
-| **Styling** | Tailwind CSS | Utility-first CSS framework |
-| **State & Data** | TanStack Query | Server state management & caching |
-| **Charts** | Recharts | Interactive React charts |
-| **Testing** | Playwright | Browser automation & E2E tests |
-| **API** | Axios | HTTP client for API calls |
-| **Data Source** | CoinCap API v3 | Live cryptocurrency market data |
+| Layer            | Technology              | Purpose                                 |
+| ---------------- | ----------------------- | --------------------------------------- |
+| **Framework**    | Next.js 16 (App Router) | Full-stack React with server components |
+| **Language**     | TypeScript              | Type-safe JavaScript                    |
+| **Styling**      | Tailwind CSS            | Utility-first CSS framework             |
+| **State & Data** | TanStack Query          | Server state management & caching       |
+| **Charts**       | Recharts                | Interactive React charts                |
+| **Testing**      | Playwright              | Browser automation & E2E tests          |
+| **API**          | Axios                   | HTTP client for API calls               |
+| **Data Source**  | CoinCap API v3          | Live cryptocurrency market data         |
 
 ### 📂 Project Structure
 
 ```
 src/
 ├── app/
-│   ├── page.tsx                       # Main crypto dashboard
-│   ├── quality-analytics/             # Supabase metrics dashboard
-│   ├── ai-failure-analysis/           # Local AI analysis (dev-only, redirects in prod)
-│   ├── api/
-│   │   ├── coins/markets/             # CoinCap proxy — GET /api/coins/markets[?mock=1]
-│   │   ├── coins/[coinId]/history/    # History proxy — GET /api/coins/:id/history
-│   │   └── quality-analytics/         # QA analytics API routes
-│   ├── actions.ts                     # Price alert server action
-│   ├── globals.css
-│   ├── layout.tsx
-│   └── layout.tsx
-├── components/
-│   ├── Container.tsx
-│   └── quality-analytics/
-│       ├── metrics-page.tsx           # Main QA dashboard view
-│       ├── ai-failure-analysis-page.tsx # AI analysis & fixes UI
-│       ├── branch-health-widget.tsx   # Branch health metrics
-│       ├── flaky-tests-widget.tsx     # Flaky test detection
-│       ├── top-failures-widget.tsx    # Top failures list
-│       └── types.ts
-├── lib/
-│   └── quality-analytics/             # QA analytics utilities
-└── features/crypto/
-    ├── api/                           # Client-side fetch helpers
-    ├── components/                    # CryptoDashboard, CoinCard, CoinChart, etc.
-    ├── hooks/                         # useCoins, useCoinHistory (TanStack Query)
-    ├── server/
-    │   ├── getCoinsFromCoinCap.ts     # Live CoinCap API fetcher
-    │   ├── getCoinHistoryFromCoinCap.ts # Live history fetcher
-    │   └── mockCryptoData.ts          # Offline mock data (20 top coins)
-    └── types/
+│   ├── (dashboard)/                    # Crypto dashboard route group
+│   ├── (qa)/                            # Quality Analytics and local AI routes
+│   ├── api/                             # Market, analyst, sync, and QA APIs
+│   ├── components/Dashboard.tsx         # Dashboard orchestration
+│   └── globals.css
+├── components/quality-analytics/        # Metrics and local AI QA surfaces
+├── features/crypto/
+│   ├── components/CryptoAIAnalyst/      # Floating AI chat assistant
+│   ├── hooks/                           # TanStack Query hooks
+│   ├── server/                          # CoinCap server fetchers
+│   └── types/                           # Crypto domain types
+├── lib/ai/crypto-analyst.ts             # Provider-agnostic market analysis
+├── services/crypto/                     # CoinCap/Supabase/mock data providers
+└── sync/                                # Historical and intraday sync services
 
 tests/
-├── e2e/
-│   ├── dashboard/
-│   │   ├── data.spec.ts               # Price, chart, stat rendering
-│   │   ├── data-source.spec.ts        # Mock ↔ Live toggle
-│   │   ├── error.spec.ts              # Error & unavailable states
-│   │   ├── interactions.spec.ts       # Sorting, alerts, watchlist
-│   │   ├── search.spec.ts             # Search & filtering
-│   │   └── smoke.spec.ts              # Basic render tests
-│   ├── analytics/
-│   │   └── analytics.spec.ts          # QA dashboard tests
-│   ├── fixtures/testSetup.ts          # Playwright setup & route mocking
-│   ├── pages/DashboardPage.ts         # Page Object Model
-│   ├── data/testData.json             # Mock test data
-│   └── utils/
-│       ├── commonUtils.ts
-│       └── dateUtils.ts
+├── e2e/dashboard/                       # Dashboard and AI assistant flows
+├── e2e/ai/                              # Provider and analyst integration tests
+├── e2e/security/                        # Local QA production-guard tests
+├── fixtures/                            # Playwright fixtures and test data
+└── pages/                               # Page Object Model classes
 ```
 
 ## 🚀 Quick Start
@@ -194,11 +181,11 @@ Open **[http://localhost:3000](http://localhost:3000)** in your browser.
 
 ### 3. Explore the App
 
-| Route | What You'll See |
-|-------|-----------------|
-| `/` | Cryptocurrency dashboard with live prices and charts |
-| `/quality-analytics` | Historical metrics from Supabase (trends, flaky tests, branch health) |
-| `/ai-failure-analysis` | Local AI failure analysis & run Playwright (development only) |
+| Route                  | What You'll See                                                                         |
+| ---------------------- | --------------------------------------------------------------------------------------- |
+| `/`                    | Cryptocurrency dashboard with live prices, charts, and floating AI Analyst in Live mode |
+| `/quality-analytics`   | Historical metrics from Supabase (trends, flaky tests, branch health)                   |
+| `/ai-failure-analysis` | Local AI failure analysis & run Playwright (development only)                           |
 
 ### 4. Run Tests (Optional)
 
@@ -218,9 +205,11 @@ npm run test:e2e:report
 ## 📚 For Beginners
 
 ### What is E2E Testing?
+
 **End-to-End (E2E) testing** simulates real user interactions by controlling a browser. Instead of unit tests that test code in isolation, E2E tests verify that the entire application works correctly from a user's perspective.
 
 **Example**: An E2E test might:
+
 1. Click the search box
 2. Type "bitcoin"
 3. Verify that bitcoin appears in results
@@ -228,13 +217,16 @@ npm run test:e2e:report
 5. Verify the price chart loads
 
 ### Why Playwright?
+
 - **Fast & reliable**: Runs tests in parallel with minimal flakiness
 - **Multi-browser**: Test in Chrome, Firefox, Safari
 - **Great debugging**: Built-in inspector, screenshots, traces
 - **No setup headaches**: Works out of the box
 
 ### Why AI for Failure Analysis?
+
 When a test fails, the AI analyzes:
+
 - The error message
 - The code that was running
 - The test file context
@@ -274,6 +266,21 @@ GEMINI_MODEL=gemini-2.0-flash-lite
 GROQ_MODEL=llama-3.3-70b-versatile
 DEEPSEEK_MODEL=deepseek-chat
 ```
+
+## 🤖 Crypto AI Analyst
+
+The dashboard includes a floating assistant in Live mode. Open the Sparkles
+launcher in the bottom-right corner, choose a configured provider, and ask about
+the current crypto market. Conversation state is preserved when the panel is
+closed and reopened.
+
+The analyst combines the question with market context from the configured CoinCap
+or Supabase provider, then returns concise Markdown responses with source
+citations. It supports Claude, OpenAI, Gemini, Groq, DeepSeek, and OpenRouter.
+Provider keys remain server-side and are never exposed to the browser.
+
+See [docs/CRYPTO_AI_ANALYST.md](docs/CRYPTO_AI_ANALYST.md) for the request flow,
+data-source behavior, response formatting, and test coverage.
 
 ### Live Metrics (Production with Supabase)
 
@@ -333,9 +340,9 @@ The project includes two related QA surfaces:
 
 ### Access Routes
 
-| URL | Mode | Purpose |
-|-----|------|---------|
-| `/quality-analytics` | Local or production | Historical metrics from Supabase |
+| URL                    | Mode                   | Purpose                                                                                |
+| ---------------------- | ---------------------- | -------------------------------------------------------------------------------------- |
+| `/quality-analytics`   | Local or production    | Historical metrics from Supabase                                                       |
 | `/ai-failure-analysis` | Local development only | AI failure analysis + run Playwright (redirects to `/quality-analytics` in production) |
 
 ### Metrics (`/quality-analytics`)
@@ -410,34 +417,43 @@ NEXT_PUBLIC_SUPABASE_KEY=your_supabase_key
 ## 🔧 Troubleshooting
 
 ### "Port 3000 already in use"
+
 ```bash
 # Use a different port
 npm run dev -- -p 3001
 ```
 
 ### "Tests fail with timeout errors"
+
 ```bash
 # Increase the timeout
 npm run test:e2e -- --timeout=60000
 ```
 
 ### "Mock data not loading"
+
 Restart the dev server:
+
 ```bash
 npm run dev
 ```
 
 ### "TypeScript errors in IDE"
+
 Your IDE might be cached. Try:
+
 ```bash
 npm run build
 ```
 
 ### "Need live CoinCap data?"
+
 Get a free API key from [rest.coincap.io](https://rest.coincap.io), add it to `.env`:
+
 ```bash
 COINCAP_API_KEY=your_key_here
 ```
+
 Then restart with `npm run dev`.
 
 ---
@@ -457,6 +473,7 @@ Then restart with `npm run dev`.
 ## ⚙️ CI/CD Pipeline
 
 This project uses **GitHub Actions** to:
+
 - Run tests on every push and pull request
 - Act as a quality gate before merging
 - Deploy to Vercel on successful builds
