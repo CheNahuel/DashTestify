@@ -163,7 +163,7 @@ jobs:
               issue_number: context.issue.number,
             });
 
-            const botComment = comments.find(comment => comment.user.type === 'Bot' && comment.body.includes('Playwright Test Report'));
+            const botComment = comments.find(comment => comment.user.type === 'Bot' && comment.body.includes('Playwright Test Results'));
 
             if (botComment) {
               await github.rest.issues.updateComment({
