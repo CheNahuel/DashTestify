@@ -135,3 +135,33 @@ test("successful suggested questions refresh and exclude the submitted question"
     page.getByRole("button", { name: "Compare Bitcoin and Ethereum over the last 6 months." }),
   ).toBeVisible();
 });
+
+test("blocks chat input when no provider is configured", async ({
+  dashboardData,
+  dashboardPage,
+}) => {
+  const { page } = dashboardPage;
+
+  await page.route("**/api/ai-providers-status", async (route) => {
+    await route.fulfill({
+      json: {
+        providers: [
+          { name: "claude", label: "Claude", configured: false },
+          { name: "openai", label: "OpenAI", configured: false },
+        ],
+      },
+    });
+  });
+
+  await dashboardPage.goto(dashboardData.urls.home.replace("mockData=1&", ""));
+  await waitForDashboardData(page);
+  await page.getByTestId("crypto-ai-launcher").click();
+
+  const providerSelect = page.getByRole("combobox", { name: "AI Provider" });
+  const input = page.getByPlaceholder("Select a configured provider first");
+  const sendButton = page.getByRole("button", { name: "Send" });
+
+  await expect(providerSelect).toHaveValue("");
+  await expect(input).toBeDisabled();
+  await expect(sendButton).toBeDisabled();
+});

@@ -109,6 +109,10 @@ export function CryptoAIAnalyst() {
         return;
       }
 
+      if (!providerIsReady) {
+        return;
+      }
+
       // Add user message
       const userMessage: CryptoChatMessage = {
         id: `msg-${Date.now()}`,
@@ -159,7 +163,7 @@ export function CryptoAIAnalyst() {
         setIsLoading(false);
       }
     },
-    [input, provider],
+    [input, provider, providerIsReady],
   );
 
   return (
@@ -202,6 +206,9 @@ export function CryptoAIAnalyst() {
               onChange={(e) => setProvider(e.target.value as AiProviderName)}
               className="w-[190px] max-w-full rounded-md border border-cyan-500/30 bg-slate-800/90 px-2.5 py-1.5 text-sm font-medium text-slate-200 transition hover:border-cyan-400/60 hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-cyan-300"
             >
+              <option value="" disabled>
+                -- Select provider --
+              </option>
               {providerStatuses.length > 0
                 ? [...providerStatuses]
                     .sort((a, b) => Number(b.configured) - Number(a.configured))
@@ -408,13 +415,17 @@ export function CryptoAIAnalyst() {
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask about crypto market..."
-              disabled={isLoading}
-              className="min-w-0 flex-1 bg-transparent px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none disabled:opacity-50"
+              placeholder={
+                providerIsReady
+                  ? "Ask about crypto market..."
+                  : "Select a configured provider first"
+              }
+              disabled={isLoading || !providerIsReady}
+              className="min-w-0 flex-1 bg-transparent px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
             />
             <button
               type="submit"
-              disabled={isLoading || !input.trim()}
+              disabled={isLoading || !input.trim() || !providerIsReady}
               className="rounded-lg bg-cyan-500 px-3 py-2 text-xs font-semibold text-slate-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <span>{isLoading ? "..." : "Send"}</span>
