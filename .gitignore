@@ -5,3 +5,6 @@ playwright-report
 .env
 *.tsbuildinfo
 .DS_Store
+evals/.output
+.output
+.promptfoo

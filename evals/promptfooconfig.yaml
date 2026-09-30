@@ -1,0 +1,31 @@
+# Crypto AI Analyst — LLM eval v1
+#
+# Layer 1 (this file): deterministic grounding regression (heuristic).
+#   Fast, keyless, CI-safe. Checks supported values and obvious unsupported
+#   market-stat patterns. Not a complete hallucination detector.
+#
+# Layer 2 (not implemented): semantic grounding / LLM-as-a-judge.
+#   Catch paraphrased unsupported claims. Add later without replacing layer 1.
+#
+# This suite does not prove that a hosted LLM cannot hallucinate.
+
+description: >-
+  Deterministic grounding regression (heuristic) for Crypto AI Analyst.
+  Not semantic hallucination detection. Not proof that a hosted LLM cannot hallucinate.
+
+prompts:
+  - "{{query}}"
+
+providers:
+  - file://providers/crypto-analyst-provider.ts
+
+defaultTest:
+  metadata:
+    evaluationKind: deterministic-grounding-heuristic
+    evaluationLayer: deterministic-grounding
+    semanticEvaluation: not-implemented-in-v1
+
+tests: datasets/grounding.json
+
+outputPath: evals/.output/latest.json
+sharing: false

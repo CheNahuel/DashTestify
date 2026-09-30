@@ -93,6 +93,10 @@ The mocked Playwright suite covers the floating assistant in
 Provider response parsing and analyzer integration tests are in
 `tests/e2e/ai/crypto-analyst.spec.ts`.
 
+Deterministic Promptfoo grounding regressions (heuristic, keyless) live in
+`evals/`. They are not a semantic hallucination detector. Run with
+`npm run test:llm`. See `evals/README.md`.
+
 Run the focused tests with:
 
 ```bash

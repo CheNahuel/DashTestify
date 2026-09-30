@@ -1,0 +1,38 @@
+[
+  {
+    "description": "Deterministic grounding regression (heuristic): BTC price from supplied context; reject obvious unsupported market-stat strings. Not a semantic hallucination detector and not proof that a hosted LLM cannot hallucinate.",
+    "vars": {
+      "query": "What is the price of BTC?",
+      "dataSource": "market data",
+      "context": {
+        "assets": [
+          {
+            "symbol": "BTC",
+            "name": "Bitcoin",
+            "priceUsd": "115000"
+          },
+          {
+            "symbol": "ETH",
+            "name": "Ethereum",
+            "priceUsd": "4200"
+          }
+        ]
+      },
+      "grounding": {
+        "expectedPriceMentions": ["115000", "115,000", "$115,000"],
+        "unsupportedClaims": ["2.5T", "$2.5T", "+4.2%", "4.2%", "50B", "$50B"]
+      }
+    },
+    "assert": [
+      {
+        "type": "javascript",
+        "value": "file://assertions/unsupported-market-data.ts"
+      }
+    ],
+    "metadata": {
+      "evaluationKind": "deterministic-grounding-heuristic",
+      "evaluationLayer": "deterministic-grounding",
+      "semanticEvaluation": "not-implemented-in-v1"
+    }
+  }
+]

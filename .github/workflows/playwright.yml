@@ -62,6 +62,9 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Run deterministic LLM grounding eval
+        run: npm run test:llm
+
       - name: Build app
         run: npm run build
         env:
