@@ -51,3 +51,22 @@ Optional:
 If the evaluator is not configured, this command prints `LLM_EVAL_STATUS=SKIPPED` and exits `2`. It does not report a pass.
 
 Do not add Layer 2 to default CI until a judge key is intentionally provisioned.
+
+### 3. Live analyst grounding (opt-in)
+
+Calls production `analyzeCryptoQuery` with the same fixture context and question as Layer 1, then grades the **live** answer with the existing semantic judge. Analyst and judge providers are separate env vars.
+
+```bash
+npm run test:llm:live-grounding
+```
+
+Required:
+
+- `CRYPTO_ANALYST_EVAL_PROVIDER` — live analyst (`claude` | `openai` | `gemini` | `groq` | `deepseek` | `openrouter`), not `deterministic`
+- Matching analyst API key
+- `LLM_EVAL_JUDGE_PROVIDER` and matching judge API key (same as Layer 2)
+
+`npm run test:llm` always forces `CRYPTO_ANALYST_EVAL_PROVIDER=deterministic` so Layer 1 stays keyless even if a live provider is set in `.env`.
+
+If analyst or judge is not configured, this command prints `LLM_EVAL_STATUS=SKIPPED` and exits `2`. A live model that invents unsupported market facts will fail the judge; the suite is not tuned to force a pass.
+

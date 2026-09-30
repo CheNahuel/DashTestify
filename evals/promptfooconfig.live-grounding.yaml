@@ -1,0 +1,32 @@
+# Crypto AI Analyst — live analyst grounding (opt-in)
+#
+# Roles:
+#   vars.context     = supplied market context (source of truth)
+#   vars.query       = user question (not evidence)
+#   provider output  = generated answer from production analyzeCryptoQuery
+#   judges/*         = evaluator / LLM-as-a-judge (separate provider)
+#
+# Does not replace Layer 1 or fixture Layer 2.
+# Requires CRYPTO_ANALYST_EVAL_PROVIDER and LLM_EVAL_JUDGE_PROVIDER.
+
+description: >-
+  Live Crypto AI Analyst completions graded by the existing semantic judge.
+  Opt-in. Analyst and judge providers are configured separately via env.
+
+prompts:
+  - "{{query}}"
+
+providers:
+  - file://providers/crypto-analyst-provider.ts
+
+defaultTest:
+  metadata:
+    evaluationKind: live-analyst-semantic-grounding
+    evaluationLayer: live-analyst-grounding
+    fixtureSemanticSuite: unchanged-separate-suite
+    deterministicLayer: unchanged-separate-suite
+
+tests: datasets/live-grounding.json
+
+outputPath: evals/.output/live-grounding-latest.json
+sharing: false

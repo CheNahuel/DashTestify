@@ -1,0 +1,40 @@
+[
+  {
+    "description": "Live Crypto AI Analyst grounding: same fixture context/query as Layer 1, graded by the existing semantic judge. Not a fixture answer.",
+    "vars": {
+      "query": "What is the price of BTC?",
+      "dataSource": "market data",
+      "expectedJudgePass": true,
+      "context": {
+        "assets": [
+          {
+            "symbol": "BTC",
+            "name": "Bitcoin",
+            "priceUsd": "115000"
+          },
+          {
+            "symbol": "ETH",
+            "name": "Ethereum",
+            "priceUsd": "4200"
+          }
+        ]
+      }
+    },
+    "assert": [
+      {
+        "type": "javascript",
+        "value": "file://judges/semantic-grounding-assert.ts"
+      }
+    ],
+    "metadata": {
+      "evaluationKind": "live-analyst-semantic-grounding",
+      "evaluationLayer": "live-analyst-grounding",
+      "role": {
+        "marketContext": "vars.context",
+        "userQuestion": "vars.query",
+        "generatedAnswer": "live analyzeCryptoQuery output",
+        "evaluator": "evals/judges/semantic-grounding-judge.ts"
+      }
+    }
+  }
+]

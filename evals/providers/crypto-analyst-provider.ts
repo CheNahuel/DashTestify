@@ -1,5 +1,6 @@
-import { buildCryptoSystemPrompt } from "../../src/lib/ai/crypto-analyst";
+import { analyzeCryptoQuery, buildCryptoSystemPrompt } from "../../src/lib/ai/crypto-analyst";
 import { DETERMINISTIC_GROUNDING_DISCLAIMER } from "../assertions/unsupported-market-data";
+import { getLiveAnalystConfigStatus } from "./analyst-eval-config";
 
 type ProviderContext = {
   vars?: {
@@ -56,6 +57,7 @@ function completeDeterministically(context: Record<string, unknown>): string {
 
 /**
  * Eval-only adapter. Default completion is keyless and deterministic.
+ * Live mode calls production analyzeCryptoQuery when CRYPTO_ANALYST_EVAL_PROVIDER is a real provider.
  * Does not add a mock provider to production AiProviderName routing.
  */
 export default class CryptoAnalystEvalProvider {
@@ -70,28 +72,51 @@ export default class CryptoAnalystEvalProvider {
     const dataSource = typeof vars.dataSource === "string" ? vars.dataSource : "market data";
     const providerMode = process.env.CRYPTO_ANALYST_EVAL_PROVIDER ?? "deterministic";
 
-    // Production prompt construction (same function the app uses). v1 does not send this to a hosted LLM.
     const systemPrompt = buildCryptoSystemPrompt(marketContext, dataSource);
 
-    if (providerMode !== "deterministic") {
+    if (providerMode === "deterministic" || !providerMode.trim()) {
       return {
-        error:
-          `Unsupported CRYPTO_ANALYST_EVAL_PROVIDER="${providerMode}". ` +
-          `v1 only supports "deterministic" (no API key). Real providers can be added later on this adapter.`,
+        output: completeDeterministically(marketContext),
+        metadata: {
+          evaluationKind: "deterministic-grounding-heuristic",
+          evaluationLayer: "deterministic-grounding",
+          disclaimer: DETERMINISTIC_GROUNDING_DISCLAIMER,
+          systemPromptLength: systemPrompt.length,
+          usedProductionSystemPrompt: true,
+        },
       };
     }
 
-    void query;
+    const liveStatus = getLiveAnalystConfigStatus();
+    if (!liveStatus.configured) {
+      return { error: liveStatus.reason };
+    }
 
-    return {
-      output: completeDeterministically(marketContext),
-      metadata: {
-        evaluationKind: "deterministic-grounding-heuristic",
-        evaluationLayer: "deterministic-grounding",
-        disclaimer: DETERMINISTIC_GROUNDING_DISCLAIMER,
-        systemPromptLength: systemPrompt.length,
-        usedProductionSystemPrompt: true,
-      },
-    };
+    try {
+      const analysis = await analyzeCryptoQuery(
+        {
+          query,
+          context: marketContext,
+          endpoints: ["eval-fixture-context"],
+        },
+        liveStatus.provider,
+      );
+
+      return {
+        output: analysis.answer,
+        metadata: {
+          evaluationKind: "live-analyst-semantic-grounding",
+          evaluationLayer: "live-analyst-grounding",
+          analystProvider: analysis.provider,
+          usedProductionAnalyzeCryptoQuery: true,
+          usedProductionSystemPrompt: true,
+          systemPromptLength: systemPrompt.length,
+          notTheJudge: true,
+        },
+      };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      return { error: message };
+    }
   }
 }
