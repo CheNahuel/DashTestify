@@ -12,6 +12,7 @@
     "test:e2e:ui": "COINCAP_API_KEY= playwright test --ui",
     "test:e2e:report": "playwright show-report",
     "test:llm": "promptfoo eval -c evals/promptfooconfig.yaml --no-cache",
+    "test:llm:semantic": "tsx evals/run-semantic.ts",
     "setup:db": "tsx scripts/setup-db.ts",
     "upload:test-results": "tsx scripts/upload-results.ts",
     "analyze:failures": "tsx scripts/analyze-failures.ts",

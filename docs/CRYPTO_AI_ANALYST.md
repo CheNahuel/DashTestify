@@ -95,7 +95,8 @@ Provider response parsing and analyzer integration tests are in
 
 Deterministic Promptfoo grounding regressions (heuristic, keyless) live in
 `evals/`. They are not a semantic hallucination detector. Run with
-`npm run test:llm`. See `evals/README.md`.
+`npm run test:llm`. Opt-in LLM-as-a-judge: `npm run test:llm:semantic`
+(skipped with exit 2 when no judge is configured). See `evals/README.md`.
 
 Run the focused tests with:
 
