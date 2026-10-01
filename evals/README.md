@@ -26,6 +26,8 @@ Limits: this is **not** a complete hallucination detector. Paraphrased unsupport
 npm run test:llm
 ```
 
+That command also runs **prompt regression** (keyless): the production `buildCryptoSystemPrompt` still contains grounding rules and embeds the fixture BTC/ETH context. No API key. Not a hallucination detector.
+
 A passing Layer 1 run is **not** proof that a hosted LLM cannot hallucinate.
 
 ### 2. Semantic grounding / LLM-as-a-judge (opt-in)

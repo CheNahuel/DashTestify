@@ -11,7 +11,7 @@
     "test:e2e:live": "playwright test",
     "test:e2e:ui": "COINCAP_API_KEY= playwright test --ui",
     "test:e2e:report": "playwright show-report",
-    "test:llm": "CRYPTO_ANALYST_EVAL_PROVIDER=deterministic promptfoo eval -c evals/promptfooconfig.yaml --no-cache",
+    "test:llm": "CRYPTO_ANALYST_EVAL_PROVIDER=deterministic promptfoo eval -c evals/promptfooconfig.yaml --no-cache && CRYPTO_ANALYST_EVAL_PROVIDER=deterministic promptfoo eval -c evals/promptfooconfig.prompt-regression.yaml --no-cache",
     "test:llm:semantic": "tsx evals/run-semantic.ts",
     "test:llm:live-grounding": "tsx evals/run-live-grounding.ts",
     "setup:db": "tsx scripts/setup-db.ts",

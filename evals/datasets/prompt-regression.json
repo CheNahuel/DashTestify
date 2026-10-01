@@ -1,0 +1,66 @@
+[
+  {
+    "description": "Prompt regression: production system prompt still contains grounding rules (keyless).",
+    "vars": {
+      "query": "What is the price of BTC?",
+      "dataSource": "market data",
+      "promptCheck": "grounding-rules",
+      "context": {
+        "assets": [
+          {
+            "symbol": "BTC",
+            "name": "Bitcoin",
+            "priceUsd": "115000"
+          },
+          {
+            "symbol": "ETH",
+            "name": "Ethereum",
+            "priceUsd": "4200"
+          }
+        ]
+      }
+    },
+    "assert": [
+      {
+        "type": "javascript",
+        "value": "file://assertions/system-prompt-regression.ts"
+      }
+    ],
+    "metadata": {
+      "evaluationKind": "prompt-regression",
+      "evaluationLayer": "prompt-regression"
+    }
+  },
+  {
+    "description": "Prompt regression: production system prompt embeds the fixture market context (keyless).",
+    "vars": {
+      "query": "What is the price of BTC?",
+      "dataSource": "market data",
+      "promptCheck": "embedded-context",
+      "context": {
+        "assets": [
+          {
+            "symbol": "BTC",
+            "name": "Bitcoin",
+            "priceUsd": "115000"
+          },
+          {
+            "symbol": "ETH",
+            "name": "Ethereum",
+            "priceUsd": "4200"
+          }
+        ]
+      }
+    },
+    "assert": [
+      {
+        "type": "javascript",
+        "value": "file://assertions/system-prompt-regression.ts"
+      }
+    ],
+    "metadata": {
+      "evaluationKind": "prompt-regression",
+      "evaluationLayer": "prompt-regression"
+    }
+  }
+]
