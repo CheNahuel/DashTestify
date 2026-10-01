@@ -1,6 +1,7 @@
 import { analyzeCryptoQuery, buildCryptoSystemPrompt } from "../../src/lib/ai/crypto-analyst";
 import { DETERMINISTIC_GROUNDING_DISCLAIMER } from "../assertions/unsupported-market-data";
 import { getLiveAnalystConfigStatus } from "./analyst-eval-config";
+import { completeDeterministically } from "./deterministic-completer";
 
 type ProviderContext = {
   vars?: {
@@ -10,49 +11,12 @@ type ProviderContext = {
   };
 };
 
-type AssetLike = {
-  symbol?: unknown;
-  name?: unknown;
-  priceUsd?: unknown;
-};
-
 function asRecord(value: unknown): Record<string, unknown> {
   if (value && typeof value === "object" && !Array.isArray(value)) {
     return value as Record<string, unknown>;
   }
 
   return {};
-}
-
-function formatUsd(priceUsd: string): string {
-  const numeric = Number(priceUsd.replace(/,/g, ""));
-  if (!Number.isFinite(numeric)) {
-    return priceUsd;
-  }
-
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 0,
-  }).format(numeric);
-}
-
-function completeDeterministically(context: Record<string, unknown>): string {
-  const assets = Array.isArray(context.assets) ? context.assets : [];
-  const btc = assets.find((asset): asset is AssetLike => {
-    if (!asset || typeof asset !== "object") {
-      return false;
-    }
-
-    return String((asset as AssetLike).symbol).toUpperCase() === "BTC";
-  });
-
-  const priceUsd = typeof btc?.priceUsd === "string" ? btc.priceUsd : undefined;
-  if (!priceUsd) {
-    return "The supplied market data does not include a BTC price.";
-  }
-
-  return `Bitcoin (BTC) is priced at **${formatUsd(priceUsd)}**.`;
 }
 
 /**
@@ -76,7 +40,7 @@ export default class CryptoAnalystEvalProvider {
 
     if (providerMode === "deterministic" || !providerMode.trim()) {
       return {
-        output: completeDeterministically(marketContext),
+        output: completeDeterministically(query, marketContext),
         metadata: {
           evaluationKind: "deterministic-grounding-heuristic",
           evaluationLayer: "deterministic-grounding",

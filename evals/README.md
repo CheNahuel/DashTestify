@@ -13,10 +13,13 @@ These layers are additive. Semantic evaluation must not replace the deterministi
 
 ### 1. Deterministic grounding (CI, default)
 
-Structural/heuristic checks:
+Structural/heuristic checks on about 15 fixture cases:
 
-- Known supported values are present when expected (for example the BTC price in the fixture context).
-- Obvious unsupported market-stat patterns are flagged (denylisted strings; market cap / 24h / volume phrasing plus a number not in context).
+- Grounding, accuracy, calculations, temporal correctness, relevance, and formatting
+- Deterministic assertions where structure is enough (prices, 15%, $110,800, no Markdown tables)
+- Semantic LLM-as-a-judge (Layer 2) where meaning or paraphrase matters
+
+They detect different failure classes. A passing Layer 1 run is **not** proof that a hosted LLM cannot hallucinate.
 
 Properties: deterministic, fast, no API key, suitable for CI.
 
@@ -32,7 +35,7 @@ A passing Layer 1 run is **not** proof that a hosted LLM cannot hallucinate.
 
 ### 2. Semantic grounding / LLM-as-a-judge (opt-in)
 
-Detects unsupported factual market claims even when paraphrased. Reuses the same grounding context and question as Layer 1, with fixture generated answers (including a numeric unsupported market-cap claim and a paraphrased comparison).
+Detects unsupported factual market claims even when paraphrased. Covers the regression cases marked `semantic` or `both` (including invented market cap, paraphrased cap comparison, and treating current price as yesterday). Fixture answers are graded; this is not live CoinCap/Supabase data.
 
 The judge is configured only via environment variables. It does not use production `analyzeCryptoQuery` or Promptfoo's built-in OpenAI provider in yaml.
 
