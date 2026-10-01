@@ -13,7 +13,9 @@ function printSkip(reason: string): never {
   console.log(reason);
   console.log(
     "Configure LLM_EVAL_JUDGE_PROVIDER (claude|openai|gemini|groq|deepseek|openrouter) " +
-      "and the matching API key, optionally LLM_EVAL_JUDGE_MODEL and LLM_EVAL_JUDGE_THRESHOLD (0-1, default 0.7).",
+      "and the matching API key. For reproducible OpenRouter Layer 2 set " +
+      "LLM_EVAL_JUDGE_MODEL=nvidia/nemotron-3-super-120b-a12b:free " +
+      "(optional LLM_EVAL_JUDGE_THRESHOLD, 0-1, default 0.7).",
   );
   console.log("Layer 1 remains: npm run test:llm");
   process.exit(SKIP_EXIT_CODE);
@@ -26,7 +28,8 @@ if (!status.configured) {
 
 console.log("LLM_EVAL_STATUS=RUNNING");
 console.log(
-  `Layer 2 semantic grounding judge provider=${status.provider} threshold=${status.threshold} (API key present, value not logged).`,
+  `Layer 2 semantic grounding judge provider=${status.provider} model=${status.model} ` +
+    `threshold=${status.threshold} (API key present, value not logged).`,
 );
 
 const promptfooBin = path.join(process.cwd(), "node_modules", ".bin", "promptfoo");

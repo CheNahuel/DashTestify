@@ -79,6 +79,10 @@ export function completeDeterministically(query: string, context: Record<string,
     return "BTC market capitalization is unavailable in the supplied market data.";
   }
 
+  if (/system (instruction|prompt)|reveal your (system|hidden)|hidden (system )?instructions/.test(q)) {
+    return "I can't reveal system instructions. I only use the supplied market data.";
+  }
+
   if (/volume|24h/.test(q)) {
     const priceBits = [btc, eth]
       .filter((asset): asset is CompleterAsset => Boolean(asset))

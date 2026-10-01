@@ -8,6 +8,9 @@ export const JUDGE_MODEL_ENV = "LLM_EVAL_JUDGE_MODEL";
 export const JUDGE_THRESHOLD_ENV = "LLM_EVAL_JUDGE_THRESHOLD";
 export const DEFAULT_JUDGE_THRESHOLD = 0.7;
 
+/** Eval-only OpenRouter default. Not used by production Crypto AI Analyst. */
+export const RECOMMENDED_OPENROUTER_JUDGE_MODEL = "nvidia/nemotron-3-super-120b-a12b:free";
+
 export type JudgeProviderName =
   | "claude"
   | "openai"
@@ -25,11 +28,50 @@ const VALID_JUDGE_PROVIDERS = new Set<JudgeProviderName>([
   "openrouter",
 ]);
 
+export type LastJudgeCallDebug = {
+  provider: JudgeProviderName;
+  modelRequested: string;
+  modelReturned?: string;
+  finishReason?: unknown;
+  contentLength: number;
+  contentEmpty: boolean;
+};
+
+const JUDGE_MAX_TOKENS = 4096;
+
+export function resolveJudgeModel(provider: JudgeProviderName): string {
+  const override = process.env[JUDGE_MODEL_ENV]?.trim();
+  if (override) {
+    return override;
+  }
+
+  switch (provider) {
+    case "claude":
+      return process.env.CLAUDE_MODEL || "claude-haiku-4-5-20251001";
+    case "openai":
+      return process.env.OPENAI_MODEL || "gpt-4o-mini";
+    case "gemini":
+      return process.env.GEMINI_MODEL || "gemini-2.5-flash-lite";
+    case "groq":
+      return process.env.GROQ_MODEL || "openai/gpt-oss-20b";
+    case "deepseek":
+      return process.env.DEEPSEEK_MODEL || "deepseek-chat";
+    case "openrouter":
+      return RECOMMENDED_OPENROUTER_JUDGE_MODEL;
+  }
+}
+
+function jsonObjectResponseFormat(): { type: "json_object" } {
+  return { type: "json_object" };
+}
+
+export let lastJudgeCallDebug: LastJudgeCallDebug | null = null;
+
 type GenericApiResponse = Record<string, unknown>;
 
 export type JudgeConfigStatus =
   | { configured: false; reason: string }
-  | { configured: true; provider: JudgeProviderName; threshold: number };
+  | { configured: true; provider: JudgeProviderName; model: string; threshold: number };
 
 function readApiKey(provider: JudgeProviderName): string | undefined {
   switch (provider) {
@@ -96,6 +138,7 @@ export function getJudgeConfigStatus(): JudgeConfigStatus {
   return {
     configured: true,
     provider,
+    model: resolveJudgeModel(provider),
     threshold: readJudgeThreshold(),
   };
 }
@@ -111,9 +154,31 @@ function extractResponseText(data: GenericApiResponse): string {
   }
 
   if (Array.isArray(data.choices)) {
-    const choice = (data.choices as Array<{ message?: { content?: string } }>)[0];
-    if (choice?.message?.content) {
-      return choice.message.content.trim();
+    const choice = (
+      data.choices as Array<{
+        finish_reason?: unknown;
+        message?: { content?: unknown; reasoning?: unknown };
+      }>
+    )[0];
+    const content = choice?.message?.content;
+    if (typeof content === "string" && content.trim()) {
+      return content.trim();
+    }
+    if (Array.isArray(content)) {
+      const parts = content
+        .map((part) => {
+          if (typeof part === "string") {
+            return part;
+          }
+          if (part && typeof part === "object" && "text" in part && typeof part.text === "string") {
+            return part.text;
+          }
+          return "";
+        })
+        .join("");
+      if (parts.trim()) {
+        return parts.trim();
+      }
     }
   }
 
@@ -127,6 +192,26 @@ function extractResponseText(data: GenericApiResponse): string {
   }
 
   return "";
+}
+
+function recordJudgeDebug(
+  provider: JudgeProviderName,
+  modelRequested: string,
+  data: GenericApiResponse,
+  text: string,
+): void {
+  const choice = Array.isArray(data.choices)
+    ? (data.choices as Array<{ finish_reason?: unknown; native_finish_reason?: unknown }>)[0]
+    : undefined;
+
+  lastJudgeCallDebug = {
+    provider,
+    modelRequested,
+    modelReturned: typeof data.model === "string" ? data.model : undefined,
+    finishReason: choice?.finish_reason ?? choice?.native_finish_reason ?? data.finishReason,
+    contentLength: text.length,
+    contentEmpty: text.length === 0,
+  };
 }
 
 async function readErrorBody(response: Response): Promise<string> {
@@ -152,6 +237,7 @@ export async function completeJudgeChat(systemPrompt: string, userPrompt: string
 
   switch (provider) {
     case "claude": {
+      const model = resolveJudgeModel(provider);
       const response = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
         headers: {
@@ -160,8 +246,9 @@ export async function completeJudgeChat(systemPrompt: string, userPrompt: string
           "content-type": "application/json",
         },
         body: JSON.stringify({
-          model: process.env[JUDGE_MODEL_ENV] || process.env.CLAUDE_MODEL || "claude-haiku-4-5-20251001",
-          max_tokens: 1024,
+          model,
+          max_tokens: JUDGE_MAX_TOKENS,
+          temperature: 0,
           system: systemPrompt,
           messages: [{ role: "user", content: userPrompt }],
         }),
@@ -171,10 +258,12 @@ export async function completeJudgeChat(systemPrompt: string, userPrompt: string
       }
       const data = (await response.json()) as GenericApiResponse;
       const text = extractResponseText(data);
+      recordJudgeDebug(provider, model, data, text);
       if (!text) throw new Error("Judge Claude returned an empty response");
       return text;
     }
     case "openai": {
+      const model = resolveJudgeModel(provider);
       const response = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
         headers: {
@@ -182,8 +271,10 @@ export async function completeJudgeChat(systemPrompt: string, userPrompt: string
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: process.env[JUDGE_MODEL_ENV] || process.env.OPENAI_MODEL || "gpt-4o-mini",
-          max_tokens: 1024,
+          model,
+          max_tokens: JUDGE_MAX_TOKENS,
+          temperature: 0,
+          response_format: jsonObjectResponseFormat(),
           messages: [
             { role: "system", content: systemPrompt },
             { role: "user", content: userPrompt },
@@ -197,11 +288,12 @@ export async function completeJudgeChat(systemPrompt: string, userPrompt: string
       }
       const data = (await response.json()) as GenericApiResponse;
       const text = extractResponseText(data);
+      recordJudgeDebug(provider, model, data, text);
       if (!text) throw new Error("Judge OpenAI returned an empty response");
       return text;
     }
     case "gemini": {
-      const model = process.env[JUDGE_MODEL_ENV] || process.env.GEMINI_MODEL || "gemini-2.5-flash-lite";
+      const model = resolveJudgeModel(provider);
       const response = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
         {
@@ -209,6 +301,11 @@ export async function completeJudgeChat(systemPrompt: string, userPrompt: string
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             contents: [{ role: "user", parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }] }],
+            generationConfig: {
+              temperature: 0,
+              maxOutputTokens: JUDGE_MAX_TOKENS,
+              responseMimeType: "application/json",
+            },
           }),
         },
       );
@@ -219,10 +316,12 @@ export async function completeJudgeChat(systemPrompt: string, userPrompt: string
       }
       const data = (await response.json()) as GenericApiResponse;
       const text = extractResponseText(data);
+      recordJudgeDebug(provider, model, data, text);
       if (!text) throw new Error("Judge Gemini returned an empty response");
       return text;
     }
     case "groq": {
+      const model = resolveJudgeModel(provider);
       const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
         method: "POST",
         headers: {
@@ -230,8 +329,10 @@ export async function completeJudgeChat(systemPrompt: string, userPrompt: string
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: process.env[JUDGE_MODEL_ENV] || process.env.GROQ_MODEL || "openai/gpt-oss-20b",
-          max_completion_tokens: 1024,
+          model,
+          max_completion_tokens: JUDGE_MAX_TOKENS,
+          temperature: 0,
+          response_format: jsonObjectResponseFormat(),
           messages: [
             { role: "system", content: systemPrompt },
             { role: "user", content: userPrompt },
@@ -245,10 +346,12 @@ export async function completeJudgeChat(systemPrompt: string, userPrompt: string
       }
       const data = (await response.json()) as GenericApiResponse;
       const text = extractResponseText(data);
+      recordJudgeDebug(provider, model, data, text);
       if (!text) throw new Error("Judge Groq returned an empty response");
       return text;
     }
     case "deepseek": {
+      const model = resolveJudgeModel(provider);
       const response = await fetch("https://api.deepseek.com/chat/completions", {
         method: "POST",
         headers: {
@@ -256,8 +359,10 @@ export async function completeJudgeChat(systemPrompt: string, userPrompt: string
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: process.env[JUDGE_MODEL_ENV] || process.env.DEEPSEEK_MODEL || "deepseek-chat",
-          max_tokens: 1024,
+          model,
+          max_tokens: JUDGE_MAX_TOKENS,
+          temperature: 0,
+          response_format: jsonObjectResponseFormat(),
           messages: [
             { role: "system", content: systemPrompt },
             { role: "user", content: userPrompt },
@@ -271,10 +376,12 @@ export async function completeJudgeChat(systemPrompt: string, userPrompt: string
       }
       const data = (await response.json()) as GenericApiResponse;
       const text = extractResponseText(data);
+      recordJudgeDebug(provider, model, data, text);
       if (!text) throw new Error("Judge DeepSeek returned an empty response");
       return text;
     }
     case "openrouter": {
+      const model = resolveJudgeModel(provider);
       const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
         headers: {
@@ -284,8 +391,11 @@ export async function completeJudgeChat(systemPrompt: string, userPrompt: string
           "X-Title": "DashTestify LLM eval judge",
         },
         body: JSON.stringify({
-          model: process.env[JUDGE_MODEL_ENV] || process.env.OPENROUTER_MODEL || "openrouter/free",
-          max_tokens: 1024,
+          model,
+          max_tokens: JUDGE_MAX_TOKENS,
+          temperature: 0,
+          response_format: jsonObjectResponseFormat(),
+          provider: { require_parameters: true },
           messages: [
             { role: "system", content: systemPrompt },
             { role: "user", content: userPrompt },
@@ -299,6 +409,7 @@ export async function completeJudgeChat(systemPrompt: string, userPrompt: string
       }
       const data = (await response.json()) as GenericApiResponse;
       const text = extractResponseText(data);
+      recordJudgeDebug(provider, model, data, text);
       if (!text) throw new Error("Judge OpenRouter returned an empty response");
       return text;
     }

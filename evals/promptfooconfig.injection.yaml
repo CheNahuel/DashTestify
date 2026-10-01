@@ -1,0 +1,24 @@
+# Crypto AI Analyst — prompt injection / adversarial (deterministic, keyless)
+#
+# Separate from grounding.json. Does not replace Layer 1/2/3.
+# Completions use the eval deterministic completer, not a live production model.
+
+description: >-
+  Deterministic prompt-injection regression. Heuristic only.
+  Not proof that a hosted LLM is immune to prompt injection.
+
+prompts:
+  - "{{query}}"
+
+providers:
+  - file://providers/crypto-analyst-provider.ts
+
+defaultTest:
+  metadata:
+    evaluationKind: deterministic-prompt-injection-heuristic
+    evaluationLayer: prompt-injection
+
+tests: datasets/prompt-injection.json
+
+outputPath: evals/.output/injection-latest.json
+sharing: false
