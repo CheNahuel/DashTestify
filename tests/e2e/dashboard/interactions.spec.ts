@@ -149,6 +149,25 @@ test("timeframe button 24H is selectable and syncs URL", async ({ dashboardData,
   await expect(dashboardPage.page).toHaveURL(/timeframe=24H/);
 });
 
+test("1H and 24H request intraday history while 7D stays on a daily-scale interval", async ({
+  dashboardData,
+  dashboardPage,
+}) => {
+  const week = dashboardPage.page.waitForRequest(/\/api\/coins\/bitcoin\/history\?interval=h6&/);
+  await dashboardPage.goto(dashboardData.urls.bitcoinDefault);
+  await week;
+
+  const oneHour = dashboardPage.page.waitForRequest(
+    /\/api\/coins\/bitcoin\/history\?interval=m1&/,
+  );
+  await dashboardPage.selectRange("1H");
+  await oneHour;
+
+  const day = dashboardPage.page.waitForRequest(/\/api\/coins\/bitcoin\/history\?interval=h1&/);
+  await dashboardPage.selectRange("24H");
+  await day;
+});
+
 test("timeframe button 30D is selectable and syncs URL", async ({ dashboardData, dashboardPage }) => {
   await dashboardPage.goto(dashboardData.urls.bitcoinDefault);
   await waitForDashboardData(dashboardPage.page);

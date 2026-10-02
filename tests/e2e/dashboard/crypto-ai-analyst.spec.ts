@@ -1,5 +1,26 @@
 import { expect, test, waitForDashboardData } from "@tests/fixtures/testSetup";
 
+test("closed crypto AI panel does not block timeframe buttons", async ({
+  dashboardData,
+  dashboardPage,
+}) => {
+  await dashboardPage.goto(
+    dashboardData.urls.bitcoinDefault.replace("mockData=1&", ""),
+  );
+  await waitForDashboardData(dashboardPage.page);
+
+  await expect(dashboardPage.page.getByTestId("crypto-ai-panel")).toHaveAttribute(
+    "aria-hidden",
+    "true",
+  );
+
+  for (const timeframe of ["24H", "7D", "1Y", "1H", "30D"]) {
+    await dashboardPage.selectRange(timeframe);
+    await dashboardPage.expectRangeSelected(timeframe);
+    await expect(dashboardPage.page).toHaveURL(new RegExp(`timeframe=${timeframe}`));
+  }
+});
+
 test("floating crypto AI assistant stays fixed and preserves its conversation", async ({
   dashboardData,
   dashboardPage,

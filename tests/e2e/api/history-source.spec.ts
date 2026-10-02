@@ -1,0 +1,122 @@
+import { expect, test } from "@playwright/test";
+import { readPriceHistory, usesIntradayHistory } from "../../../src/services/crypto/providers/history-source";
+import { pointsFromMarketChart } from "../../../src/sync/intraday-points";
+
+const NOW = Date.parse("2026-10-02T18:00:00.000Z");
+const HOUR = 60 * 60 * 1000;
+
+test("1H and 24H read price_intraday while longer ranges stay on price_daily", async () => {
+  expect(usesIntradayHistory("m1")).toBe(true);
+  expect(usesIntradayHistory("h1")).toBe(true);
+  expect(usesIntradayHistory("h6")).toBe(false);
+  expect(usesIntradayHistory("h12")).toBe(false);
+  expect(usesIntradayHistory("d1")).toBe(false);
+});
+
+test("1H history maps intraday timestamps and ignores daily closes", async () => {
+  const calls: string[] = [];
+  const history = await readPriceHistory(
+    "coin-btc",
+    { interval: "m1", start: NOW - HOUR, end: NOW },
+    {
+      getPriceDailyForCoin: async () => {
+        calls.push("daily");
+        return [{ date: "2026-10-02", close: "1" }];
+      },
+      getPriceIntradayForCoin: async () => {
+        calls.push("intraday");
+        return [{ timestamp: "2026-10-02T17:05:00.000Z", price: "100.5" }];
+      },
+    },
+  );
+
+  expect(calls).toEqual(["intraday"]);
+  expect(history.prices).toEqual([[Date.parse("2026-10-02T17:05:00.000Z"), 100.5]]);
+});
+
+test("24H history reads price_intraday across the requested window", async () => {
+  let range: { start: number; end: number } | null = null;
+  const history = await readPriceHistory(
+    "coin-eth",
+    { interval: "h1", start: NOW - 24 * HOUR, end: NOW },
+    {
+      getPriceDailyForCoin: async () => [{ date: "2026-10-01", close: "9" }],
+      getPriceIntradayForCoin: async (_coinId, start, end) => {
+        range = { start: start.getTime(), end: end.getTime() };
+        return [
+          { timestamp: "2026-10-01T18:00:00.000Z", price: 200 },
+          { timestamp: "2026-10-02T18:00:00.000Z", price: "210" },
+        ];
+      },
+    },
+  );
+
+  expect(range).toEqual({ start: NOW - 24 * HOUR, end: NOW });
+  expect(history.prices).toEqual([
+    [Date.parse("2026-10-01T18:00:00.000Z"), 200],
+    [Date.parse("2026-10-02T18:00:00.000Z"), 210],
+  ]);
+});
+
+test("7D and 1Y history keep using daily closes", async () => {
+  const calls: string[] = [];
+  const readers = {
+    getPriceDailyForCoin: async () => {
+      calls.push("daily");
+      return [{ date: "2026-10-01", close: "42" }];
+    },
+    getPriceIntradayForCoin: async () => {
+      calls.push("intraday");
+      return [{ timestamp: "2026-10-02T17:05:00.000Z", price: "1" }];
+    },
+  };
+
+  const week = await readPriceHistory(
+    "coin-btc",
+    { interval: "h6", start: NOW - 7 * 24 * HOUR, end: NOW },
+    readers,
+  );
+  const year = await readPriceHistory(
+    "coin-btc",
+    { interval: "d1", start: NOW - 365 * 24 * HOUR, end: NOW },
+    readers,
+  );
+
+  expect(calls).toEqual(["daily", "daily"]);
+  expect(week.prices).toEqual([[Date.parse("2026-10-01T00:00:00.000Z"), 42]]);
+  expect(year.prices[0][1]).toBe(42);
+});
+
+test("market chart backfill keeps the last 24 hours of five-minute points", () => {
+  const prices: Array<[number, number]> = [
+    [NOW - 25 * HOUR, 1],
+    [NOW - 30 * 60 * 1000, 2],
+    [NOW - 25 * 60 * 1000, 3],
+    [NOW - 25 * 60 * 1000, 3],
+    [NOW + 5 * 60 * 1000, 4],
+  ];
+
+  const points = pointsFromMarketChart(
+    {
+      prices,
+      market_caps: [[NOW - 30 * 60 * 1000, 500]],
+      total_volumes: [[NOW - 30 * 60 * 1000, 80]],
+    },
+    NOW,
+  );
+
+  expect(points).toEqual([
+    {
+      timestamp: new Date(NOW - 30 * 60 * 1000).toISOString(),
+      price: 2,
+      market_cap: 500,
+      volume_24h: 80,
+    },
+    {
+      timestamp: new Date(NOW - 25 * 60 * 1000).toISOString(),
+      price: 3,
+      market_cap: null,
+      volume_24h: null,
+    },
+  ]);
+});
