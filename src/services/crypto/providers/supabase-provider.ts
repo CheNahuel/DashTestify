@@ -5,6 +5,7 @@ import type { ContextData } from '@/features/crypto/components/CryptoAIAnalyst/t
 import { detectIntent } from '@/services/coincap/intent-detector';
 import * as repositories from '@/database/repositories';
 import * as queries from '@/database/queries';
+import { readPriceHistory } from './history-source';
 
 const COINCAP_ICON_BASE = 'https://assets.coincap.io/assets/icons';
 
@@ -60,17 +61,10 @@ export function createSupabaseProvider(): CryptoDataProvider {
         return { prices: [] };
       }
 
-      const startDate = new Date(request.start);
-      const endDate = new Date(request.end);
-
-      const priceHistory = await queries.getPriceDailyForCoin(coin.id, startDate, endDate);
-
-      const prices = priceHistory.map((p) => [
-        new Date(p.date).getTime(),
-        parseFloat(p.close),
-      ] as [number, number]);
-
-      return { prices };
+      return readPriceHistory(coin.id, request, {
+        getPriceDailyForCoin: queries.getPriceDailyForCoin,
+        getPriceIntradayForCoin: queries.getPriceIntradayForCoin,
+      });
     },
 
     async fetchMarketData(userQuery: string): Promise<{ context: ContextData; endpoints: string[] }> {

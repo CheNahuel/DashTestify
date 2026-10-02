@@ -167,7 +167,11 @@ export function CryptoAIAnalyst() {
   );
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 flex flex-col items-end gap-3 sm:bottom-6 sm:right-6">
+    <div
+      className={`fixed bottom-4 right-4 z-50 flex flex-col items-end gap-3 sm:bottom-6 sm:right-6 ${
+        isOpen ? "" : "pointer-events-none"
+      }`}
+    >
       <div
         data-testid="crypto-ai-panel"
         role="dialog"
@@ -440,7 +444,7 @@ export function CryptoAIAnalyst() {
         aria-label={isOpen ? "Close Crypto AI Analyst" : "Open Crypto AI Analyst"}
         aria-expanded={isOpen}
         onClick={() => setIsOpen((open) => !open)}
-        className="flex h-14 w-14 items-center justify-center rounded-full border border-cyan-200/60 bg-cyan-500 text-slate-950 shadow-[0_0_24px_rgba(34,211,238,0.35)] transition duration-200 hover:scale-105 hover:bg-cyan-300 hover:shadow-[0_0_32px_rgba(34,211,238,0.55)] focus:outline-none focus:ring-2 focus:ring-cyan-200 focus:ring-offset-2 focus:ring-offset-slate-950"
+        className="pointer-events-auto flex h-14 w-14 items-center justify-center rounded-full border border-cyan-200/60 bg-cyan-500 text-slate-950 shadow-[0_0_24px_rgba(34,211,238,0.35)] transition duration-200 hover:scale-105 hover:bg-cyan-300 hover:shadow-[0_0_32px_rgba(34,211,238,0.55)] focus:outline-none focus:ring-2 focus:ring-cyan-200 focus:ring-offset-2 focus:ring-offset-slate-950"
       >
         <svg
           aria-hidden="true"
