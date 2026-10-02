@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { analyzeCryptoQuery } from "@/lib/ai/crypto-analyst";
+import { analyzeCryptoQuery, buildCryptoSystemPrompt } from "@/lib/ai/crypto-analyst";
 
 // Mock data for testing
 const mockCoins = [
@@ -191,6 +191,19 @@ test("supabase provider handles intent detection for comparison queries", async 
     // Provider not available, test passes gracefully
     expect(true).toBe(true);
   }
+});
+
+test("crypto analyst system prompt embeds context and grounding rules", async () => {
+  const prompt = buildCryptoSystemPrompt(
+    {
+      assets: [{ symbol: "BTC", name: "Bitcoin", priceUsd: "115000" }],
+    },
+    "Supabase",
+  );
+
+  expect(prompt).toContain("Supabase");
+  expect(prompt).toContain("115000");
+  expect(prompt).toContain("Never invent prices, trends, percentages, rankings, or market information.");
 });
 
 test("crypto analyst system prompt mentions data source", async () => {

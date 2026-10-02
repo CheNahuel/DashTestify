@@ -1,0 +1,25 @@
+# Crypto AI Analyst — LLM eval Layer 1
+#
+# Deterministic / heuristic regression (keyless, CI).
+# Semantic judge lives in promptfooconfig.semantic.yaml.
+
+description: >-
+  Deterministic LLM regression for Crypto AI Analyst (grounding, accuracy,
+  calculations, temporal, relevance, formatting). Heuristic only.
+  Not proof that a hosted LLM cannot hallucinate.
+
+prompts:
+  - "{{query}}"
+
+providers:
+  - file://providers/crypto-analyst-provider.ts
+
+defaultTest:
+  metadata:
+    evaluationKind: deterministic-regression-heuristic
+    evaluationLayer: deterministic-grounding
+
+tests: datasets/grounding.json
+
+outputPath: evals/.output/latest.json
+sharing: false

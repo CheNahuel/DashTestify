@@ -93,6 +93,15 @@ The mocked Playwright suite covers the floating assistant in
 Provider response parsing and analyzer integration tests are in
 `tests/e2e/ai/crypto-analyst.spec.ts`.
 
+Deterministic Promptfoo grounding regressions (heuristic, keyless) live in
+`evals/`. They are not a semantic hallucination detector. Run with
+`npm run test:llm` (includes keyless prompt regression on the production
+system prompt). Opt-in LLM-as-a-judge: `npm run test:llm:semantic`
+(skipped with exit 2 when no judge is configured). Opt-in live provider
+benchmark (production `analyzeCryptoQuery`, independent judge, not a
+deployment gate): `npm run test:llm:live-grounding` (skipped with exit 2
+when analyst or judge is not configured). See `evals/README.md`.
+
 Run the focused tests with:
 
 ```bash

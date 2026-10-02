@@ -13,7 +13,7 @@ export interface CryptoAnalysisResponse {
   provider: AiProviderName;
 }
 
-function buildCryptoSystemPrompt(
+export function buildCryptoSystemPrompt(
   context: Record<string, unknown>,
   dataSource: string = "market data",
 ): string {
