@@ -18,7 +18,25 @@ const VALID_ANALYST_PROVIDERS = new Set<AiProviderName>([
 
 export type LiveAnalystConfigStatus =
   | { configured: false; reason: string }
-  | { configured: true; provider: AiProviderName };
+  | { configured: true; provider: AiProviderName; model: string };
+
+/** Same model env defaults as production src/lib/ai/crypto-analyst.ts. */
+export function resolveAnalystModel(provider: AiProviderName): string {
+  switch (provider) {
+    case "claude":
+      return process.env.CLAUDE_MODEL || "claude-haiku-4-5-20251001";
+    case "openai":
+      return process.env.OPENAI_MODEL || "gpt-4o-mini";
+    case "gemini":
+      return process.env.GEMINI_MODEL || "gemini-2.5-flash-lite";
+    case "groq":
+      return process.env.GROQ_MODEL || "openai/gpt-oss-20b";
+    case "deepseek":
+      return process.env.DEEPSEEK_MODEL || "deepseek-v4-flash:free";
+    case "openrouter":
+      return process.env.OPENROUTER_MODEL || "openrouter/free";
+  }
+}
 
 function readApiKey(provider: AiProviderName): string | undefined {
   switch (provider) {
@@ -68,5 +86,5 @@ export function getLiveAnalystConfigStatus(): LiveAnalystConfigStatus {
     };
   }
 
-  return { configured: true, provider };
+  return { configured: true, provider, model: resolveAnalystModel(provider) };
 }

@@ -12,7 +12,7 @@ function printSkip(reason: string): never {
   console.log("Layer 2 semantic grounding / LLM-as-a-judge was not run.");
   console.log(reason);
   console.log(
-    "Configure LLM_EVAL_JUDGE_PROVIDER (claude|openai|gemini|groq|deepseek|openrouter) " +
+    "Configure LLM_EVAL_JUDGE_PROVIDER (claude|openai|gemini|groq|deepseek|openrouter|ollama) " +
       "and the matching API key. For reproducible OpenRouter Layer 2 set " +
       "LLM_EVAL_JUDGE_MODEL=nvidia/nemotron-3-super-120b-a12b:free " +
       "(optional LLM_EVAL_JUDGE_THRESHOLD, 0-1, default 0.7).",

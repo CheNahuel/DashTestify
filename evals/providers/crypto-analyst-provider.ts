@@ -71,7 +71,10 @@ export default class CryptoAnalystEvalProvider {
         metadata: {
           evaluationKind: "live-analyst-semantic-grounding",
           evaluationLayer: "live-analyst-grounding",
+          dataset: "semantic-grounding-live-v1",
+          productionPath: "analyzeCryptoQuery",
           analystProvider: analysis.provider,
+          analystModel: liveStatus.model,
           usedProductionAnalyzeCryptoQuery: true,
           usedProductionSystemPrompt: true,
           systemPromptLength: systemPrompt.length,

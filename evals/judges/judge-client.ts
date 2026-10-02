@@ -17,7 +17,8 @@ export type JudgeProviderName =
   | "gemini"
   | "groq"
   | "deepseek"
-  | "openrouter";
+  | "openrouter"
+  | "ollama";
 
 const VALID_JUDGE_PROVIDERS = new Set<JudgeProviderName>([
   "claude",
@@ -26,6 +27,7 @@ const VALID_JUDGE_PROVIDERS = new Set<JudgeProviderName>([
   "groq",
   "deepseek",
   "openrouter",
+  "ollama",
 ]);
 
 export type LastJudgeCallDebug = {
@@ -58,6 +60,8 @@ export function resolveJudgeModel(provider: JudgeProviderName): string {
       return process.env.DEEPSEEK_MODEL || "deepseek-chat";
     case "openrouter":
       return RECOMMENDED_OPENROUTER_JUDGE_MODEL;
+    case "ollama":
+      return "";
   }
 }
 
@@ -87,6 +91,8 @@ function readApiKey(provider: JudgeProviderName): string | undefined {
       return process.env.DEEPSEEK_API_KEY;
     case "openrouter":
       return process.env.OPENROUTER_API_KEY;
+    case "ollama":
+      return undefined;
   }
 }
 
@@ -125,6 +131,23 @@ export function getJudgeConfigStatus(): JudgeConfigStatus {
   }
 
   const provider = rawProvider as JudgeProviderName;
+  if (provider === "ollama") {
+    const model = process.env[JUDGE_MODEL_ENV]?.trim();
+    if (!model) {
+      return {
+        configured: false,
+        reason:
+          `Evaluator provider "ollama" requires ${JUDGE_MODEL_ENV} (local model name). Layer 2 was not run.`,
+      };
+    }
+    return {
+      configured: true,
+      provider,
+      model,
+      threshold: readJudgeThreshold(),
+    };
+  }
+
   const apiKey = readApiKey(provider);
   if (!apiKey) {
     const keyHint =
@@ -191,7 +214,18 @@ function extractResponseText(data: GenericApiResponse): string {
     }
   }
 
+  if (data.message && typeof data.message === "object") {
+    const message = data.message as { content?: unknown };
+    if (typeof message.content === "string" && message.content.trim()) {
+      return message.content.trim();
+    }
+  }
+
   return "";
+}
+
+function ollamaHost(): string {
+  return (process.env.OLLAMA_HOST || "http://127.0.0.1:11434").replace(/\/$/, "");
 }
 
 function recordJudgeDebug(
@@ -230,8 +264,8 @@ export async function completeJudgeChat(systemPrompt: string, userPrompt: string
   }
 
   const provider = status.provider;
-  const apiKey = readApiKey(provider);
-  if (!apiKey) {
+  const apiKey = readApiKey(provider) ?? "";
+  if (provider !== "ollama" && !apiKey) {
     throw new Error("Evaluator API key is missing.");
   }
 
@@ -411,6 +445,33 @@ export async function completeJudgeChat(systemPrompt: string, userPrompt: string
       const text = extractResponseText(data);
       recordJudgeDebug(provider, model, data, text);
       if (!text) throw new Error("Judge OpenRouter returned an empty response");
+      return text;
+    }
+    case "ollama": {
+      const model = status.model;
+      const response = await fetch(`${ollamaHost()}/api/chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model,
+          stream: false,
+          format: "json",
+          options: { temperature: 0, num_predict: JUDGE_MAX_TOKENS },
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userPrompt },
+          ],
+        }),
+      });
+      if (!response.ok) {
+        throw new Error(
+          `Judge Ollama API error: ${response.status} ${response.statusText} ${await readErrorBody(response)}`,
+        );
+      }
+      const data = (await response.json()) as GenericApiResponse;
+      const text = extractResponseText(data);
+      recordJudgeDebug(provider, model, data, text);
+      if (!text) throw new Error("Judge Ollama returned an empty response");
       return text;
     }
   }
