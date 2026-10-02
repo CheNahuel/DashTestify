@@ -46,10 +46,15 @@
     "eslint-config-next": "16.3.8",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-playwright": "^2.10.2",
+    "jks-js": "file:npm-overrides/jks-js",
     "prettier": "^3.8.3",
     "promptfoo": "^0.123.1",
     "tailwindcss": "^4",
     "tsx": "^4.22.3",
     "typescript": "^5"
+  },
+  "overrides": {
+    "basic-ftp": "6.2.1",
+    "jks-js": "$jks-js"
   }
 }
