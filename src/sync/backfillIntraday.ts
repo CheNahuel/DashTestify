@@ -1,13 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { getSupabaseServiceClient } from "@/lib/supabase";
 import * as queries from "@/database/queries";
-import { pointsFromMarketChart, type IntradayPoint, type MarketChartResponse } from "./intraday-points";
+import {
+  intradayTailIsFresh,
+  pointsFromMarketChart,
+  type IntradayPoint,
+  type MarketChartResponse,
+} from "./intraday-points";
 
 const COINGECKO_MARKET_CHART = "https://api.coingecko.com/api/v3/coins";
 const DAY_MS = 24 * 60 * 60 * 1000;
 const BATCH_SIZE = 100;
-/** Skip the one-time fetch once a coin already has a usable 24h series. */
-const MIN_RECENT_POINTS = 48;
 
 export type IntradayBackfillResult = {
   symbol: string;
@@ -62,8 +65,22 @@ export async function backfillIntraday(): Promise<IntradayBackfillResult[]> {
       .eq("coin_id", coin.id)
       .gte("timestamp", windowStart);
 
-    if (!countError && (count ?? 0) >= MIN_RECENT_POINTS) {
-      console.log(`${coin.symbol}: ${count} recent intraday points, skipping backfill`);
+    let newestTimestamp: string | null = null;
+    if (!countError) {
+      const { data: latestRows, error: latestError } = await (supabase as any)
+        .from("price_intraday")
+        .select("timestamp")
+        .eq("coin_id", coin.id)
+        .order("timestamp", { ascending: false })
+        .limit(1);
+
+      if (!latestError) {
+        newestTimestamp = latestRows?.[0]?.timestamp ?? null;
+      }
+    }
+
+    if (!countError && intradayTailIsFresh(count ?? 0, newestTimestamp)) {
+      console.log(`${coin.symbol}: ${count} recent intraday points and a fresh tail, skipping backfill`);
       results.push({ symbol: coin.symbol, inserted: 0, skipped: true });
       continue;
     }

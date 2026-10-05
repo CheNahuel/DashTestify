@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { readPriceHistory, usesIntradayHistory } from "../../../src/services/crypto/providers/history-source";
-import { pointsFromMarketChart } from "../../../src/sync/intraday-points";
+import { intradayTailIsFresh, pointsFromMarketChart } from "../../../src/sync/intraday-points";
 
 const NOW = Date.parse("2026-10-02T18:00:00.000Z");
 const HOUR = 60 * 60 * 1000;
@@ -85,6 +85,17 @@ test("7D and 1Y history keep using daily closes", async () => {
   expect(calls).toEqual(["daily", "daily"]);
   expect(week.prices).toEqual([[Date.parse("2026-10-01T00:00:00.000Z"), 42]]);
   expect(year.prices[0][1]).toBe(42);
+});
+
+test("intraday refill runs when the last hour has gone stale", () => {
+  const fresh = new Date(NOW - 5 * 60 * 1000).toISOString();
+  const stale = new Date(NOW - 20 * 60 * 1000).toISOString();
+
+  expect(intradayTailIsFresh(48, fresh, NOW)).toBe(true);
+  expect(intradayTailIsFresh(48, stale, NOW)).toBe(false);
+  expect(intradayTailIsFresh(47, fresh, NOW)).toBe(false);
+  expect(intradayTailIsFresh(48, null, NOW)).toBe(false);
+  expect(intradayTailIsFresh(null, fresh, NOW)).toBe(false);
 });
 
 test("market chart backfill keeps the last 24 hours of five-minute points", () => {
