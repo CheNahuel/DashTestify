@@ -1,5 +1,25 @@
 const DAY_MS = 24 * 60 * 60 * 1000;
 
+/** Enough points to draw 24H. A fresh tail is still required for 1H. */
+export const MIN_RECENT_INTRADAY_POINTS = 48;
+export const INTRADAY_TAIL_MAX_AGE_MS = 15 * 60 * 1000;
+
+/**
+ * Skip the CoinGecko refill only when the last day is populated and the
+ * newest point is still inside the 1H window's useful tail.
+ */
+export function intradayTailIsFresh(
+  recentCount: number | null,
+  newestTimestamp: string | number | Date | null,
+  now = Date.now(),
+): boolean {
+  if (recentCount == null || recentCount < MIN_RECENT_INTRADAY_POINTS) return false;
+  if (newestTimestamp == null) return false;
+
+  const ageMs = now - new Date(newestTimestamp).getTime();
+  return Number.isFinite(ageMs) && ageMs < INTRADAY_TAIL_MAX_AGE_MS;
+}
+
 export type MarketChartResponse = {
   prices?: Array<[number, number]>;
   market_caps?: Array<[number, number]>;

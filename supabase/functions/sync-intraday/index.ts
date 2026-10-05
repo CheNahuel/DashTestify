@@ -23,6 +23,18 @@ interface CoinGeckoPrice {
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 const DAY_MS = 24 * 60 * 60 * 1000;
 const MIN_RECENT_POINTS = 48;
+const TAIL_MAX_AGE_MS = 15 * 60 * 1000;
+
+function intradayTailIsFresh(
+  recentCount: number | null,
+  newestTimestamp: string | null,
+  now = Date.now(),
+): boolean {
+  if (recentCount == null || recentCount < MIN_RECENT_POINTS) return false;
+  if (!newestTimestamp) return false;
+  const ageMs = now - new Date(newestTimestamp).getTime();
+  return Number.isFinite(ageMs) && ageMs < TAIL_MAX_AGE_MS;
+}
 
 async function backfillLastDay(coin: Coin) {
   const since = new Date(Date.now() - DAY_MS).toISOString();
@@ -36,7 +48,27 @@ async function backfillLastDay(coin: Coin) {
     console.warn(
       `[sync-intraday] ${coin.symbol}: could not count intraday rows: ${countError.message}`,
     );
-  } else if ((count ?? 0) >= MIN_RECENT_POINTS) {
+  }
+
+  let newestTimestamp: string | null = null;
+  if (!countError) {
+    const { data: latestRows, error: latestError } = await supabase
+      .from("price_intraday")
+      .select("timestamp")
+      .eq("coin_id", coin.id)
+      .order("timestamp", { ascending: false })
+      .limit(1);
+
+    if (latestError) {
+      console.warn(
+        `[sync-intraday] ${coin.symbol}: could not read newest intraday point: ${latestError.message}`,
+      );
+    } else {
+      newestTimestamp = latestRows?.[0]?.timestamp ?? null;
+    }
+  }
+
+  if (!countError && intradayTailIsFresh(count ?? 0, newestTimestamp)) {
     return;
   }
 
