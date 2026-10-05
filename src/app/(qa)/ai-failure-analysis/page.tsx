@@ -1,7 +1,9 @@
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import simpleGit from "simple-git";
 
 import { AiFailureAnalysisPage } from "@/components/quality-analytics/ai-failure-analysis-page";
+import { areLocalQaToolsEnabled } from "@/lib/runtime-env";
 
 export const dynamic = "force-dynamic";
 
@@ -21,9 +23,9 @@ async function getCurrentBranchName() {
 }
 
 export default async function Page() {
-  const isDeployedProduction = process.env.NODE_ENV === "production" || process.env.VERCEL === "1";
+  const requestHeaders = await headers();
 
-  if (isDeployedProduction) {
+  if (!areLocalQaToolsEnabled(process.env, requestHeaders)) {
     redirect("/quality-analytics");
   }
 

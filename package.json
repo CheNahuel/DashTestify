@@ -11,6 +11,10 @@
     "test:e2e:live": "playwright test",
     "test:e2e:ui": "COINCAP_API_KEY= playwright test --ui",
     "test:e2e:report": "playwright show-report",
+    "test:llm": "CRYPTO_ANALYST_EVAL_PROVIDER=deterministic promptfoo eval -c evals/promptfooconfig.yaml --no-cache && CRYPTO_ANALYST_EVAL_PROVIDER=deterministic promptfoo eval -c evals/promptfooconfig.prompt-regression.yaml --no-cache",
+    "test:llm:semantic": "tsx evals/run-semantic.ts",
+    "test:llm:live-grounding": "tsx evals/run-live-grounding.ts",
+    "test:llm:injection": "tsx evals/run-injection.ts",
     "setup:db": "tsx scripts/setup-db.ts",
     "upload:test-results": "tsx scripts/upload-results.ts",
     "analyze:failures": "tsx scripts/analyze-failures.ts",
@@ -24,13 +28,13 @@
     "@tanstack/react-query": "^5.99.2",
     "axios": "^1.15.1",
     "dotenv": "^17.4.2",
-    "next": "16.2.2",
+    "next": "16.3.8",
     "openai": "^6.39.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
+    "react-markdown": "^9.1.0",
     "recharts": "^3.8.1",
-    "simple-git": "^3.36.0",
-    "react-markdown": "^9.1.0"
+    "simple-git": "^3.36.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.59.1",
@@ -39,12 +43,18 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "16.2.2",
+    "eslint-config-next": "16.3.8",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-playwright": "^2.10.2",
+    "jks-js": "file:npm-overrides/jks-js",
     "prettier": "^3.8.3",
+    "promptfoo": "^0.123.1",
     "tailwindcss": "^4",
     "tsx": "^4.22.3",
     "typescript": "^5"
+  },
+  "overrides": {
+    "basic-ftp": "6.2.1",
+    "jks-js": "$jks-js"
   }
 }

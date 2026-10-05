@@ -1,5 +1,26 @@
 import { expect, test, waitForDashboardData } from "@tests/fixtures/testSetup";
 
+test("closed crypto AI panel does not block timeframe buttons", async ({
+  dashboardData,
+  dashboardPage,
+}) => {
+  await dashboardPage.goto(
+    dashboardData.urls.bitcoinDefault.replace("mockData=1&", ""),
+  );
+  await waitForDashboardData(dashboardPage.page);
+
+  await expect(dashboardPage.page.getByTestId("crypto-ai-panel")).toHaveAttribute(
+    "aria-hidden",
+    "true",
+  );
+
+  for (const timeframe of ["24H", "7D", "1Y", "1H", "30D"]) {
+    await dashboardPage.selectRange(timeframe);
+    await dashboardPage.expectRangeSelected(timeframe);
+    await expect(dashboardPage.page).toHaveURL(new RegExp(`timeframe=${timeframe}`));
+  }
+});
+
 test("floating crypto AI assistant stays fixed and preserves its conversation", async ({
   dashboardData,
   dashboardPage,
@@ -134,4 +155,34 @@ test("successful suggested questions refresh and exclude the submitted question"
   await expect(
     page.getByRole("button", { name: "Compare Bitcoin and Ethereum over the last 6 months." }),
   ).toBeVisible();
+});
+
+test("blocks chat input when no provider is configured", async ({
+  dashboardData,
+  dashboardPage,
+}) => {
+  const { page } = dashboardPage;
+
+  await page.route("**/api/ai-providers-status", async (route) => {
+    await route.fulfill({
+      json: {
+        providers: [
+          { name: "claude", label: "Claude", configured: false },
+          { name: "openai", label: "OpenAI", configured: false },
+        ],
+      },
+    });
+  });
+
+  await dashboardPage.goto(dashboardData.urls.home.replace("mockData=1&", ""));
+  await waitForDashboardData(page);
+  await page.getByTestId("crypto-ai-launcher").click();
+
+  const providerSelect = page.getByRole("combobox", { name: "AI Provider" });
+  const input = page.getByPlaceholder("Select a configured provider first");
+  const sendButton = page.getByRole("button", { name: "Send" });
+
+  await expect(providerSelect).toHaveValue("");
+  await expect(input).toBeDisabled();
+  await expect(sendButton).toBeDisabled();
 });

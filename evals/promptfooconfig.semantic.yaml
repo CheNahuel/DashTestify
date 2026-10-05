@@ -1,0 +1,35 @@
+# Crypto AI Analyst — LLM eval Layer 2 (semantic grounding / LLM-as-a-judge)
+#
+# Roles:
+#   vars.context           = supplied market context (source of truth)
+#   vars.query             = user question (not evidence)
+#   vars.generatedAnswer   = generated answer under evaluation (fixture; not the judge)
+#   judges/*               = evaluator / LLM-as-a-judge (opt-in, separate provider)
+#
+# Does not replace Layer 1 (evals/promptfooconfig.yaml).
+# Does not call production analyzeCryptoQuery.
+
+description: >-
+  Semantic grounding / LLM-as-a-judge for Crypto AI Analyst answers.
+  Opt-in. Requires LLM_EVAL_JUDGE_PROVIDER and the matching API key.
+
+prompts:
+  - |
+    Role: generated answer under evaluation (not the judge, not the analyst system prompt).
+    User question: {{query}}
+    Generated answer:
+    {{generatedAnswer}}
+
+providers:
+  - file://providers/fixture-answer-provider.ts
+
+defaultTest:
+  metadata:
+    evaluationKind: semantic-grounding-llm-judge
+    evaluationLayer: semantic-grounding
+    deterministicLayer: unchanged-separate-suite
+
+tests: datasets/semantic-grounding.json
+
+outputPath: evals/.output/semantic-latest.json
+sharing: false

@@ -1,0 +1,215 @@
+[
+  {
+    "description": "G1 semantic: supported BTC price only.",
+    "vars": {
+      "query": "What is the price of BTC?",
+      "dataSource": "market data",
+      "generatedAnswer": "Bitcoin (BTC) is priced at **$115,000**.",
+      "expectedJudgePass": true,
+      "context": {
+        "assets": [
+          { "symbol": "BTC", "name": "Bitcoin", "priceUsd": "115000" },
+          { "symbol": "ETH", "name": "Ethereum", "priceUsd": "4200" }
+        ]
+      }
+    },
+    "assert": [{ "type": "javascript", "value": "file://judges/semantic-grounding-assert.ts" }],
+    "metadata": {
+      "id": "g1-supported-btc-price",
+      "category": "grounding",
+      "evaluationStrategy": "both"
+    }
+  },
+  {
+    "description": "G2 semantic: invented BTC market cap must fail the judge.",
+    "vars": {
+      "query": "What is BTC's market capitalization?",
+      "dataSource": "market data",
+      "generatedAnswer": "BTC's market capitalization is $2.5T.",
+      "expectedJudgePass": false,
+      "context": {
+        "assets": [
+          { "symbol": "BTC", "name": "Bitcoin", "priceUsd": "115000" },
+          { "symbol": "ETH", "name": "Ethereum", "priceUsd": "4200" }
+        ]
+      }
+    },
+    "assert": [{ "type": "javascript", "value": "file://judges/semantic-grounding-assert.ts" }],
+    "metadata": {
+      "id": "g2-unsupported-market-cap",
+      "category": "grounding",
+      "evaluationStrategy": "both"
+    }
+  },
+  {
+    "description": "G3 semantic: prices answered; volume marked unavailable.",
+    "vars": {
+      "query": "Compare BTC and ETH prices and tell me their 24h volume.",
+      "dataSource": "market data",
+      "generatedAnswer": "BTC is $115,000 and ETH is $4,200. 24h volume is unavailable in the supplied market data.",
+      "expectedJudgePass": true,
+      "context": {
+        "assets": [
+          { "symbol": "BTC", "name": "Bitcoin", "priceUsd": "115000" },
+          { "symbol": "ETH", "name": "Ethereum", "priceUsd": "4200" }
+        ]
+      }
+    },
+    "assert": [{ "type": "javascript", "value": "file://judges/semantic-grounding-assert.ts" }],
+    "metadata": {
+      "id": "g3-mixed-prices-missing-volume",
+      "category": "grounding",
+      "evaluationStrategy": "both"
+    }
+  },
+  {
+    "description": "G4 semantic: paraphrased unsupported market-cap comparison must fail the judge.",
+    "vars": {
+      "query": "Does BTC have a larger market capitalization than ETH?",
+      "dataSource": "market data",
+      "generatedAnswer": "BTC has a significantly larger market capitalization than ETH.",
+      "expectedJudgePass": false,
+      "context": {
+        "assets": [
+          { "symbol": "BTC", "name": "Bitcoin", "priceUsd": "115000" },
+          { "symbol": "ETH", "name": "Ethereum", "priceUsd": "4200" }
+        ]
+      }
+    },
+    "assert": [{ "type": "javascript", "value": "file://judges/semantic-grounding-assert.ts" }],
+    "metadata": {
+      "id": "g4-paraphrased-market-cap-comparison",
+      "category": "grounding",
+      "evaluationStrategy": "both"
+    }
+  },
+  {
+    "description": "A1 semantic: BTC has the highest supplied price.",
+    "vars": {
+      "query": "Which asset has the highest price?",
+      "dataSource": "market data",
+      "generatedAnswer": "BTC has the highest price at $115,000.",
+      "expectedJudgePass": true,
+      "context": {
+        "assets": [
+          { "symbol": "BTC", "name": "Bitcoin", "priceUsd": "115000" },
+          { "symbol": "ETH", "name": "Ethereum", "priceUsd": "4200" },
+          { "symbol": "SOL", "name": "Solana", "priceUsd": "180" }
+        ]
+      }
+    },
+    "assert": [{ "type": "javascript", "value": "file://judges/semantic-grounding-assert.ts" }],
+    "metadata": {
+      "id": "a1-highest-priced-asset",
+      "category": "accuracy",
+      "evaluationStrategy": "both"
+    }
+  },
+  {
+    "description": "A2 semantic: SOL has the lowest supplied price.",
+    "vars": {
+      "query": "Which asset has the lowest price?",
+      "dataSource": "market data",
+      "generatedAnswer": "SOL has the lowest price at $180.",
+      "expectedJudgePass": true,
+      "context": {
+        "assets": [
+          { "symbol": "BTC", "name": "Bitcoin", "priceUsd": "115000" },
+          { "symbol": "ETH", "name": "Ethereum", "priceUsd": "4200" },
+          { "symbol": "SOL", "name": "Solana", "priceUsd": "180" }
+        ]
+      }
+    },
+    "assert": [{ "type": "javascript", "value": "file://judges/semantic-grounding-assert.ts" }],
+    "metadata": {
+      "id": "a2-lowest-priced-asset",
+      "category": "accuracy",
+      "evaluationStrategy": "both"
+    }
+  },
+  {
+    "description": "A3 semantic: ranking BTC then ETH then SOL.",
+    "vars": {
+      "query": "Rank BTC, ETH and SOL from highest price to lowest.",
+      "dataSource": "market data",
+      "generatedAnswer": "1. BTC $115,000 2. ETH $4,200 3. SOL $180",
+      "expectedJudgePass": true,
+      "context": {
+        "assets": [
+          { "symbol": "BTC", "name": "Bitcoin", "priceUsd": "115000" },
+          { "symbol": "ETH", "name": "Ethereum", "priceUsd": "4200" },
+          { "symbol": "SOL", "name": "Solana", "priceUsd": "180" }
+        ]
+      }
+    },
+    "assert": [{ "type": "javascript", "value": "file://judges/semantic-grounding-assert.ts" }],
+    "metadata": {
+      "id": "a3-price-ranking",
+      "category": "accuracy",
+      "evaluationStrategy": "both"
+    }
+  },
+  {
+    "description": "T2 semantic: presenting current price as yesterday's price must fail the judge.",
+    "vars": {
+      "query": "What was BTC's price yesterday?",
+      "dataSource": "market data",
+      "generatedAnswer": "Yesterday BTC was $115,000.",
+      "expectedJudgePass": false,
+      "context": {
+        "assets": [
+          { "symbol": "BTC", "name": "Bitcoin", "priceUsd": "115000", "asOf": "current" }
+        ]
+      }
+    },
+    "assert": [{ "type": "javascript", "value": "file://judges/semantic-grounding-assert.ts" }],
+    "metadata": {
+      "id": "t2-missing-historical-price",
+      "category": "temporal",
+      "evaluationStrategy": "both"
+    }
+  },
+  {
+    "description": "R1 semantic: direct highest-price answer from supplied prices.",
+    "vars": {
+      "query": "Please tell me which of these assets is the most expensive based on the supplied prices.",
+      "dataSource": "market data",
+      "generatedAnswer": "BTC is the most expensive at $115,000.",
+      "expectedJudgePass": true,
+      "context": {
+        "assets": [
+          { "symbol": "BTC", "name": "Bitcoin", "priceUsd": "115000" },
+          { "symbol": "ETH", "name": "Ethereum", "priceUsd": "4200" },
+          { "symbol": "SOL", "name": "Solana", "priceUsd": "180" }
+        ]
+      }
+    },
+    "assert": [{ "type": "javascript", "value": "file://judges/semantic-grounding-assert.ts" }],
+    "metadata": {
+      "id": "r1-direct-highest-price",
+      "category": "relevance",
+      "evaluationStrategy": "both"
+    }
+  },
+  {
+    "description": "R2 semantic: market cap unavailable rather than invented.",
+    "vars": {
+      "query": "What is the market cap of BTC?",
+      "dataSource": "market data",
+      "generatedAnswer": "BTC market cap is unavailable in the supplied market data.",
+      "expectedJudgePass": true,
+      "context": {
+        "assets": [
+          { "symbol": "BTC", "name": "Bitcoin", "priceUsd": "115000" },
+          { "symbol": "ETH", "name": "Ethereum", "priceUsd": "4200" }
+        ]
+      }
+    },
+    "assert": [{ "type": "javascript", "value": "file://judges/semantic-grounding-assert.ts" }],
+    "metadata": {
+      "id": "r2-unavailable-market-cap-relevance",
+      "category": "relevance",
+      "evaluationStrategy": "both"
+    }
+  }
+]

@@ -62,6 +62,9 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Run deterministic LLM grounding eval
+        run: npm run test:llm
+
       - name: Build app
         run: npm run build
         env:
@@ -163,7 +166,7 @@ jobs:
               issue_number: context.issue.number,
             });
 
-            const botComment = comments.find(comment => comment.user.type === 'Bot' && comment.body.includes('Playwright Test Report'));
+            const botComment = comments.find(comment => comment.user.type === 'Bot' && comment.body.includes('Playwright Test Results'));
 
             if (botComment) {
               await github.rest.issues.updateComment({

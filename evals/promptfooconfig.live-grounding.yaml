@@ -1,0 +1,35 @@
+# Crypto AI Analyst — live provider benchmark (opt-in)
+#
+# Roles:
+#   vars.context     = supplied market context (source of truth)
+#   vars.query       = user question (not evidence)
+#   provider output  = production analyzeCryptoQuery (buildCryptoSystemPrompt)
+#   judges/*         = independent evaluator (not the analyst)
+#
+# Dataset: same 10 queries/contexts as semantic-grounding.json, live answers.
+# Only CRYPTO_ANALYST_EVAL_PROVIDER / analyst model should change between runs.
+# Does not replace Layer 1 or fixture Layer 2. Not a deployment gate.
+
+description: >-
+  Live Crypto Analyst provider benchmark via production analyzeCryptoQuery,
+  graded by an independent semantic judge. Opt-in. No provider ranking.
+
+prompts:
+  - "{{query}}"
+
+providers:
+  - file://providers/crypto-analyst-provider.ts
+
+defaultTest:
+  metadata:
+    evaluationKind: live-analyst-semantic-grounding
+    evaluationLayer: live-analyst-grounding
+    dataset: semantic-grounding-live-v1
+    productionPath: analyzeCryptoQuery
+    fixtureSemanticSuite: unchanged-separate-suite
+    deterministicLayer: unchanged-separate-suite
+
+tests: datasets/live-grounding.json
+
+outputPath: evals/.output/live-grounding-latest.json
+sharing: false

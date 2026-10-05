@@ -1,0 +1,24 @@
+# Crypto AI Analyst — prompt regression (keyless)
+#
+# Grades the production system prompt from buildCryptoSystemPrompt.
+# Does not call a hosted LLM. Does not replace Layer 1 heuristic answer checks.
+
+description: >-
+  Prompt regression for Crypto AI Analyst system instructions.
+  Keyless. Not a hallucination detector.
+
+prompts:
+  - "{{query}}"
+
+providers:
+  - file://providers/system-prompt-provider.ts
+
+defaultTest:
+  metadata:
+    evaluationKind: prompt-regression
+    evaluationLayer: prompt-regression
+
+tests: datasets/prompt-regression.json
+
+outputPath: evals/.output/prompt-regression-latest.json
+sharing: false

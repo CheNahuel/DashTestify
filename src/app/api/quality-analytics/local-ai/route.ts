@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import path from "path";
 import simpleGit from "simple-git";
 
+import { rejectUnlessLocalQaTools } from "@/lib/qa-api-guard";
 import {
   appendLocalAnalyses,
   loadLocalAnalysesForRun,
@@ -47,6 +48,11 @@ async function getCurrentBranchName() {
 }
 
 export async function POST(request: Request) {
+  const denied = rejectUnlessLocalQaTools(request);
+  if (denied) {
+    return denied;
+  }
+
   try {
     const body = (await request.json().catch(() => null)) as AnalyzeRequestBody | null;
 

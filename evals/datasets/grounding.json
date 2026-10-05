@@ -1,0 +1,347 @@
+[
+  {
+    "description": "G1 supported BTC price (deterministic). Not a complete hallucination detector.",
+    "vars": {
+      "query": "What is the price of BTC?",
+      "dataSource": "market data",
+      "context": {
+        "assets": [
+          { "symbol": "BTC", "name": "Bitcoin", "priceUsd": "115000" },
+          { "symbol": "ETH", "name": "Ethereum", "priceUsd": "4200" }
+        ]
+      },
+      "grounding": {
+        "expectedPriceMentions": ["115000", "115,000", "$115,000"],
+        "unsupportedClaims": ["2.5T", "$2.5T", "+4.2%", "4.2%", "50B", "$50B"]
+      }
+    },
+    "assert": [{ "type": "javascript", "value": "file://assertions/unsupported-market-data.ts" }],
+    "metadata": {
+      "id": "g1-supported-btc-price",
+      "category": "grounding",
+      "evaluationStrategy": "both"
+    }
+  },
+  {
+    "description": "G2 BTC market cap is not in context; do not invent a value (deterministic).",
+    "vars": {
+      "query": "What is BTC's market capitalization?",
+      "dataSource": "market data",
+      "context": {
+        "assets": [
+          { "symbol": "BTC", "name": "Bitcoin", "priceUsd": "115000" },
+          { "symbol": "ETH", "name": "Ethereum", "priceUsd": "4200" }
+        ]
+      },
+      "checks": {
+        "requireUnavailable": true,
+        "forbidMentions": ["2.5T", "$2.5T", "50B"]
+      }
+    },
+    "assert": [{ "type": "javascript", "value": "file://assertions/regression-assert.ts" }],
+    "metadata": {
+      "id": "g2-unsupported-market-cap",
+      "category": "grounding",
+      "evaluationStrategy": "both"
+    }
+  },
+  {
+    "description": "G3 prices are available; 24h volume is not (deterministic).",
+    "vars": {
+      "query": "Compare BTC and ETH prices and tell me their 24h volume.",
+      "dataSource": "market data",
+      "context": {
+        "assets": [
+          { "symbol": "BTC", "name": "Bitcoin", "priceUsd": "115000" },
+          { "symbol": "ETH", "name": "Ethereum", "priceUsd": "4200" }
+        ]
+      },
+      "checks": {
+        "requireAllMentions": ["115000", "4200"],
+        "requireUnavailable": true,
+        "forbidMentions": ["50B", "$50B"]
+      }
+    },
+    "assert": [{ "type": "javascript", "value": "file://assertions/regression-assert.ts" }],
+    "metadata": {
+      "id": "g3-mixed-prices-missing-volume",
+      "category": "grounding",
+      "evaluationStrategy": "both"
+    }
+  },
+  {
+    "description": "G4 paraphrased market-cap comparison must not be invented (deterministic refusal).",
+    "vars": {
+      "query": "Does BTC have a larger market capitalization than ETH?",
+      "dataSource": "market data",
+      "context": {
+        "assets": [
+          { "symbol": "BTC", "name": "Bitcoin", "priceUsd": "115000" },
+          { "symbol": "ETH", "name": "Ethereum", "priceUsd": "4200" }
+        ]
+      },
+      "checks": {
+        "requireUnavailable": true,
+        "forbidMentions": ["2.5T"]
+      }
+    },
+    "assert": [{ "type": "javascript", "value": "file://assertions/regression-assert.ts" }],
+    "metadata": {
+      "id": "g4-paraphrased-market-cap-comparison",
+      "category": "grounding",
+      "evaluationStrategy": "both"
+    }
+  },
+  {
+    "description": "A1 highest-priced asset is BTC (deterministic).",
+    "vars": {
+      "query": "Which asset has the highest price?",
+      "dataSource": "market data",
+      "context": {
+        "assets": [
+          { "symbol": "BTC", "name": "Bitcoin", "priceUsd": "115000" },
+          { "symbol": "ETH", "name": "Ethereum", "priceUsd": "4200" },
+          { "symbol": "SOL", "name": "Solana", "priceUsd": "180" }
+        ]
+      },
+      "checks": {
+        "requireAllMentions": ["BTC", "115000"]
+      }
+    },
+    "assert": [{ "type": "javascript", "value": "file://assertions/regression-assert.ts" }],
+    "metadata": {
+      "id": "a1-highest-priced-asset",
+      "category": "accuracy",
+      "evaluationStrategy": "both"
+    }
+  },
+  {
+    "description": "A2 lowest-priced asset is SOL (deterministic).",
+    "vars": {
+      "query": "Which asset has the lowest price?",
+      "dataSource": "market data",
+      "context": {
+        "assets": [
+          { "symbol": "BTC", "name": "Bitcoin", "priceUsd": "115000" },
+          { "symbol": "ETH", "name": "Ethereum", "priceUsd": "4200" },
+          { "symbol": "SOL", "name": "Solana", "priceUsd": "180" }
+        ]
+      },
+      "checks": {
+        "requireAllMentions": ["SOL", "180"]
+      }
+    },
+    "assert": [{ "type": "javascript", "value": "file://assertions/regression-assert.ts" }],
+    "metadata": {
+      "id": "a2-lowest-priced-asset",
+      "category": "accuracy",
+      "evaluationStrategy": "both"
+    }
+  },
+  {
+    "description": "A3 rank BTC ETH SOL by price high to low (deterministic order).",
+    "vars": {
+      "query": "Rank BTC, ETH and SOL from highest price to lowest.",
+      "dataSource": "market data",
+      "context": {
+        "assets": [
+          { "symbol": "BTC", "name": "Bitcoin", "priceUsd": "115000" },
+          { "symbol": "ETH", "name": "Ethereum", "priceUsd": "4200" },
+          { "symbol": "SOL", "name": "Solana", "priceUsd": "180" }
+        ]
+      },
+      "checks": {
+        "requireSymbolOrder": ["BTC", "ETH", "SOL"],
+        "forbidPipeTables": true
+      }
+    },
+    "assert": [{ "type": "javascript", "value": "file://assertions/regression-assert.ts" }],
+    "metadata": {
+      "id": "a3-price-ranking",
+      "category": "accuracy",
+      "evaluationStrategy": "both"
+    }
+  },
+  {
+    "description": "C1 BTC increase from 100000 to 115000 is 15% (deterministic calculation).",
+    "vars": {
+      "query": "How much has BTC increased from $100,000 to $115,000?",
+      "dataSource": "market data",
+      "context": {
+        "assets": [
+          {
+            "symbol": "BTC",
+            "name": "Bitcoin",
+            "priceUsd": "115000",
+            "previousPriceUsd": "100000"
+          }
+        ]
+      },
+      "checks": {
+        "requireAnyMentions": ["15%", "15 %"]
+      }
+    },
+    "assert": [{ "type": "javascript", "value": "file://assertions/regression-assert.ts" }],
+    "metadata": {
+      "id": "c1-percentage-increase",
+      "category": "calculations",
+      "evaluationStrategy": "deterministic"
+    }
+  },
+  {
+    "description": "C2 BTC minus ETH is 110800 (deterministic calculation).",
+    "vars": {
+      "query": "What is the price difference between BTC and ETH?",
+      "dataSource": "market data",
+      "context": {
+        "assets": [
+          { "symbol": "BTC", "name": "Bitcoin", "priceUsd": "115000" },
+          { "symbol": "ETH", "name": "Ethereum", "priceUsd": "4200" }
+        ]
+      },
+      "checks": {
+        "requireAnyMentions": ["110800", "110,800"]
+      }
+    },
+    "assert": [{ "type": "javascript", "value": "file://assertions/regression-assert.ts" }],
+    "metadata": {
+      "id": "c2-absolute-price-difference",
+      "category": "calculations",
+      "evaluationStrategy": "deterministic"
+    }
+  },
+  {
+    "description": "C3 BTC is about 27.38 times ETH (deterministic calculation).",
+    "vars": {
+      "query": "How many times greater is BTC's price than ETH's price?",
+      "dataSource": "market data",
+      "context": {
+        "assets": [
+          { "symbol": "BTC", "name": "Bitcoin", "priceUsd": "115000" },
+          { "symbol": "ETH", "name": "Ethereum", "priceUsd": "4200" }
+        ]
+      },
+      "checks": {
+        "requireAnyMentions": ["27.38", "27.4"]
+      }
+    },
+    "assert": [{ "type": "javascript", "value": "file://assertions/regression-assert.ts" }],
+    "metadata": {
+      "id": "c3-percentage-comparison",
+      "category": "calculations",
+      "evaluationStrategy": "deterministic"
+    }
+  },
+  {
+    "description": "T1 current BTC price from supplied current value (deterministic).",
+    "vars": {
+      "query": "What is BTC's current price?",
+      "dataSource": "market data",
+      "context": {
+        "assets": [
+          { "symbol": "BTC", "name": "Bitcoin", "priceUsd": "115000", "asOf": "current" }
+        ]
+      },
+      "checks": {
+        "requireAnyMentions": ["115000", "115,000"]
+      }
+    },
+    "assert": [{ "type": "javascript", "value": "file://assertions/regression-assert.ts" }],
+    "metadata": {
+      "id": "t1-current-btc-price",
+      "category": "temporal",
+      "evaluationStrategy": "deterministic"
+    }
+  },
+  {
+    "description": "T2 yesterday's BTC price is not in context (deterministic).",
+    "vars": {
+      "query": "What was BTC's price yesterday?",
+      "dataSource": "market data",
+      "context": {
+        "assets": [
+          { "symbol": "BTC", "name": "Bitcoin", "priceUsd": "115000", "asOf": "current" }
+        ]
+      },
+      "checks": {
+        "requireUnavailable": true,
+        "forbidCurrentPriceAsYesterday": true
+      }
+    },
+    "assert": [{ "type": "javascript", "value": "file://assertions/regression-assert.ts" }],
+    "metadata": {
+      "id": "t2-missing-historical-price",
+      "category": "temporal",
+      "evaluationStrategy": "both"
+    }
+  },
+  {
+    "description": "R1 answer the highest-price question directly (deterministic).",
+    "vars": {
+      "query": "Please tell me which of these assets is the most expensive based on the supplied prices.",
+      "dataSource": "market data",
+      "context": {
+        "assets": [
+          { "symbol": "BTC", "name": "Bitcoin", "priceUsd": "115000" },
+          { "symbol": "ETH", "name": "Ethereum", "priceUsd": "4200" },
+          { "symbol": "SOL", "name": "Solana", "priceUsd": "180" }
+        ]
+      },
+      "checks": {
+        "requireAllMentions": ["BTC"]
+      }
+    },
+    "assert": [{ "type": "javascript", "value": "file://assertions/regression-assert.ts" }],
+    "metadata": {
+      "id": "r1-direct-highest-price",
+      "category": "relevance",
+      "evaluationStrategy": "both"
+    }
+  },
+  {
+    "description": "R2 market cap question must state unavailability rather than invent data (deterministic).",
+    "vars": {
+      "query": "What is the market cap of BTC?",
+      "dataSource": "market data",
+      "context": {
+        "assets": [
+          { "symbol": "BTC", "name": "Bitcoin", "priceUsd": "115000" },
+          { "symbol": "ETH", "name": "Ethereum", "priceUsd": "4200" }
+        ]
+      },
+      "checks": {
+        "requireUnavailable": true,
+        "forbidMentions": ["2.5T", "$2.5T"]
+      }
+    },
+    "assert": [{ "type": "javascript", "value": "file://assertions/regression-assert.ts" }],
+    "metadata": {
+      "id": "r2-unavailable-market-cap-relevance",
+      "category": "relevance",
+      "evaluationStrategy": "both"
+    }
+  },
+  {
+    "description": "F1 comparison must not use pipe-delimited Markdown tables (deterministic).",
+    "vars": {
+      "query": "Compare BTC and ETH prices.",
+      "dataSource": "market data",
+      "context": {
+        "assets": [
+          { "symbol": "BTC", "name": "Bitcoin", "priceUsd": "115000" },
+          { "symbol": "ETH", "name": "Ethereum", "priceUsd": "4200" }
+        ]
+      },
+      "checks": {
+        "requireAllMentions": ["BTC", "ETH"],
+        "forbidPipeTables": true
+      }
+    },
+    "assert": [{ "type": "javascript", "value": "file://assertions/regression-assert.ts" }],
+    "metadata": {
+      "id": "f1-no-markdown-tables",
+      "category": "formatting",
+      "evaluationStrategy": "deterministic"
+    }
+  }
+]

@@ -21,6 +21,132 @@ interface CoinGeckoPrice {
 }
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+const DAY_MS = 24 * 60 * 60 * 1000;
+const MIN_RECENT_POINTS = 48;
+const TAIL_MAX_AGE_MS = 15 * 60 * 1000;
+
+function intradayTailIsFresh(
+  recentCount: number | null,
+  newestTimestamp: string | null,
+  now = Date.now(),
+): boolean {
+  if (recentCount == null || recentCount < MIN_RECENT_POINTS) return false;
+  if (!newestTimestamp) return false;
+  const ageMs = now - new Date(newestTimestamp).getTime();
+  return Number.isFinite(ageMs) && ageMs < TAIL_MAX_AGE_MS;
+}
+
+async function backfillLastDay(coin: Coin) {
+  const since = new Date(Date.now() - DAY_MS).toISOString();
+  const { count, error: countError } = await supabase
+    .from("price_intraday")
+    .select("id", { count: "exact", head: true })
+    .eq("coin_id", coin.id)
+    .gte("timestamp", since);
+
+  if (countError) {
+    console.warn(
+      `[sync-intraday] ${coin.symbol}: could not count intraday rows: ${countError.message}`,
+    );
+  }
+
+  let newestTimestamp: string | null = null;
+  if (!countError) {
+    const { data: latestRows, error: latestError } = await supabase
+      .from("price_intraday")
+      .select("timestamp")
+      .eq("coin_id", coin.id)
+      .order("timestamp", { ascending: false })
+      .limit(1);
+
+    if (latestError) {
+      console.warn(
+        `[sync-intraday] ${coin.symbol}: could not read newest intraday point: ${latestError.message}`,
+      );
+    } else {
+      newestTimestamp = latestRows?.[0]?.timestamp ?? null;
+    }
+  }
+
+  if (!countError && intradayTailIsFresh(count ?? 0, newestTimestamp)) {
+    return;
+  }
+
+  let response: Response | null = null;
+  for (let attempt = 0; attempt < 4; attempt++) {
+    response = await fetch(
+      `${COINGECKO_BASE_URL}/coins/${coin.coingecko_id}/market_chart?vs_currency=usd&days=1`,
+    );
+    if (response.status !== 429) break;
+    await new Promise((resolve) => setTimeout(resolve, 15_000 * (attempt + 1)));
+  }
+
+  if (!response || !response.ok) {
+    console.warn(
+      `[sync-intraday] ${coin.symbol}: intraday backfill failed ${response?.status ?? "no response"}`,
+    );
+    return;
+  }
+
+  const data = await response.json();
+  const now = Date.now();
+  const start = now - DAY_MS;
+  const marketCaps = new Map<number, number>(
+    (data.market_caps ?? []).map((row: number[]) => [row[0], row[1]]),
+  );
+  const volumes = new Map<number, number>(
+    (data.total_volumes ?? []).map((row: number[]) => [row[0], row[1]]),
+  );
+
+  const { data: existing, error: existingError } = await supabase
+    .from("price_intraday")
+    .select("timestamp")
+    .eq("coin_id", coin.id)
+    .gte("timestamp", since)
+    .limit(1000);
+
+  if (existingError) {
+    console.warn(
+      `[sync-intraday] ${coin.symbol}: could not read intraday rows: ${existingError.message}`,
+    );
+    return;
+  }
+
+  const existingTimes = new Set(
+    (existing ?? []).map((row: { timestamp: string }) =>
+      new Date(row.timestamp).toISOString()
+    ),
+  );
+
+  const rows = ((data.prices ?? []) as number[][])
+    .filter(([time, price]) => time >= start && time <= now && Number.isFinite(price))
+    .map(([time, price]) => ({
+      coin_id: coin.id,
+      timestamp: new Date(time).toISOString(),
+      price,
+      market_cap: marketCaps.get(time) ?? null,
+      volume_24h: volumes.get(time) ?? null,
+      change_24h: null,
+    }))
+    .filter((row) => !existingTimes.has(row.timestamp));
+
+  for (let index = 0; index < rows.length; index += 100) {
+    const batch = rows.slice(index, index + 100);
+    const { error } = await supabase.from("price_intraday").insert(batch);
+    if (error) {
+      console.warn(
+        `[sync-intraday] ${coin.symbol}: backfill insert failed: ${error.message}`,
+      );
+      return;
+    }
+  }
+
+  if (rows.length > 0) {
+    console.log(
+      `[sync-intraday] ${coin.symbol}: backfilled ${rows.length} intraday points`,
+    );
+  }
+}
 
 async function getAllCoins(): Promise<Coin[]> {
   const { data, error } = await supabase
@@ -79,6 +205,12 @@ async function syncIntraday() {
 
   for (const coin of coins) {
     try {
+      try {
+        await backfillLastDay(coin);
+      } catch (error) {
+        console.warn(`[sync-intraday] ${coin.symbol}: backfill skipped:`, error);
+      }
+
       const priceInfo = pricesData[coin.coingecko_id];
       if (!priceInfo) {
         console.warn(`[sync-intraday] ${coin.symbol}: No price data`);
@@ -90,7 +222,7 @@ async function syncIntraday() {
       const volume24h = priceInfo.usd_24h_vol;
       const change24h = priceInfo.usd_24h_change;
 
-      // Insert price snapshot
+      // Insert price snapshot. This stays the ongoing tail after the one-time backfill.
       const { error: priceError } = await supabase
         .from("price_intraday")
         .insert({

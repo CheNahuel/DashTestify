@@ -1,99 +1,40 @@
-# Playwright Reporting Setup Checklist
+# Playwright setup checklist
 
-Complete this checklist to enable the full reporting experience.
+## Repository
 
-## Code Changes ✅
+- [ ] Workflow present: `.github/workflows/playwright.yml`
+- [ ] Secrets for Supabase upload (optional): `SUPABASE_URL`, `SUPABASE_KEY`
+- [ ] CoinCap key only needed for live crypto tests (`test:e2e:live`)
 
-- [x] **playwright.config.ts** — Added JUnit reporter
-- [x] **scripts/parse-test-results.js** — Created test results parser
-- [x] **.github/workflows/playwright.yml** — Updated with new steps and deploy job
-- [x] **docs/PLAYWRIGHT_REPORTING.md** — Documentation
+## Verify a run
 
-## Repository Settings ⚙️
+1. [ ] Push a branch / open a PR
+2. [ ] Actions run completes
+3. [ ] Artifact `playwright-report-{run_id}` is listed
+4. [ ] PR has a sticky comment titled **Playwright Test Results**
+5. [ ] JUnit check appears in the Checks UI
 
-### GitHub Pages Setup
-
-- [ ] Go to **Settings → Pages**
-- [ ] Set **Source** to: **Deploy from a branch**
-- [ ] Select **gh-pages** branch
-- [ ] Click **Save**
-- [ ] Wait ~1-2 minutes for initial setup
-- [ ] Verify Pages deployment in **Settings → Pages → Visit site**
-
-### Verify Permissions
-
-- [ ] Check **Settings → Actions → General → Workflow permissions**
-- [ ] Ensure **"Read and write permissions"** is selected
-- [ ] Or use custom permissions defined in the workflow
-
-## First Test Run
-
-1. [ ] Push code to `main` branch
-2. [ ] Wait for workflow to complete
-3. [ ] Check **Actions → Latest run → Summary**
-   - [ ] Job summary appears at top
-   - [ ] Test metrics display correctly
-4. [ ] Check **Settings → Pages**
-   - [ ] Deployment shows success
-   - [ ] URL is displayed
-5. [ ] Visit GitHub Pages URL: `https://{owner}.github.io/{repo}/`
-   - [ ] HTML report loads
-   - [ ] Navigation works
-   - [ ] Test details visible
-
-## Pull Request Test (Optional)
-
-1. [ ] Create a test PR
-2. [ ] Wait for workflow to complete
-3. [ ] Check **PR → Checks tab**
-   - [ ] "Playwright Test Results" check appears
-   - [ ] Failed tests listed (if any)
-4. [ ] Check **PR → Conversation tab**
-   - [ ] Sticky comment with test summary
-   - [ ] Links are clickable
-
-## Verification Commands
-
-Run these locally to verify setup:
+## Local
 
 ```bash
-# Check Playwright config
-npm list --depth=0 @playwright/test
-
-# Verify parser script works
-node scripts/parse-test-results.js
-
-# Run tests locally
+npm install
 npm run test:e2e
-
-# Check generated files
-ls -la test-results/
-ls -la playwright-report/
+npm run test:e2e:report
 ```
 
-## Common Issues
+## App QA routes
 
-| Issue | Solution |
-|-------|----------|
-| GitHub Pages shows "404" | Verify Pages is enabled in Settings |
-| No test results in summary | Check if `results.json` exists in test-results/ |
-| PR comment not appearing | Verify workflow permissions include `pull-requests: write` |
-| Pages deployment fails | Check branch protection rules on `gh-pages` |
+- [ ] `/` — crypto dashboard and floating Crypto AI Analyst in Live mode
+- [ ] `/quality-analytics` — metrics (needs Supabase for real data)
+- [ ] `/ai-failure-analysis` — local AI tools only (blocked in production)
 
-## Documentation
+## Crypto AI Analyst checks
 
-- [ ] Read [PLAYWRIGHT_REPORTING.md](./PLAYWRIGHT_REPORTING.md) for detailed info
-- [ ] Share with team
-- [ ] Update team wiki/docs
+- [ ] Provider status loads and configured providers are selectable
+- [ ] Suggested question and manual query flows return mocked responses in E2E tests
+- [ ] Conversation state persists after closing and reopening the floating panel
+- [ ] Error/Dismiss behavior restores the default suggested questions
 
-## Next Steps
+## Troubleshooting
 
-Once verified, consider:
-1. Adding Slack notifications for test failures
-2. Setting up performance budgets
-3. Creating dashboards for test trends
-4. Integrating with project management tools
-
----
-
-**Questions?** Check the documentation or GitHub Actions logs for detailed error messages.
+See [TROUBLESHOOTING_PAGES.md](./TROUBLESHOOTING_PAGES.md) (artifact-focused; Pages notes archived).
