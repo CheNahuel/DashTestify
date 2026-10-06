@@ -1,19 +1,30 @@
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-/** Enough points to draw 24H. A fresh tail is still required for 1H. */
-export const MIN_RECENT_INTRADAY_POINTS = 48;
+/**
+ * CoinGecko `days=1` is about one point every five minutes, so a full hour
+ * is ~12 points. Ten still draws 1H if a slot or two is missing.
+ * The count must be rows inside the last hour, not the last day: 48 older
+ * rows plus one fresh snapshot leave the 1H query empty.
+ */
+export const MIN_LAST_HOUR_POINTS = 10;
+
+/**
+ * Matches the intended 5-minute scheduler. A newest point older than this
+ * will fall out of the 1H window before the next run. This cannot keep 1H
+ * filled if the job itself only runs every couple of hours.
+ */
 export const INTRADAY_TAIL_MAX_AGE_MS = 15 * 60 * 1000;
 
 /**
- * Skip the CoinGecko refill only when the last day is populated and the
- * newest point is still inside the 1H window's useful tail.
+ * Skip the CoinGecko refill only when the current 1H window already has
+ * enough points and the newest one is still recent.
  */
 export function intradayTailIsFresh(
-  recentCount: number | null,
+  lastHourCount: number | null,
   newestTimestamp: string | number | Date | null,
   now = Date.now(),
 ): boolean {
-  if (recentCount == null || recentCount < MIN_RECENT_INTRADAY_POINTS) return false;
+  if (lastHourCount == null || lastHourCount < MIN_LAST_HOUR_POINTS) return false;
   if (newestTimestamp == null) return false;
 
   const ageMs = now - new Date(newestTimestamp).getTime();

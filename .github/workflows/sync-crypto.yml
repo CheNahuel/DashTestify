@@ -2,7 +2,10 @@ name: Sync Crypto Data
 
 on:
   schedule:
-    # Intraday sync: every 5 minutes
+    # Intended intraday cadence is every 5 minutes. GitHub Actions does not
+    # keep that interval: scheduled runs land hours apart, which leaves the
+    # 1H window empty. A continuous 1H series needs a scheduler that actually
+    # fires every 5 minutes, such as pg_cron in scripts/migrations/007_setup_pg_cron.sql.
     - cron: '*/5 * * * *'
     # Daily sync: 1 AM UTC
     - cron: '0 1 * * *'
