@@ -11,7 +11,7 @@ Migrations should be run in order:
 4. `004_create_price_daily.sql` - Creates the price_daily table for OHLC data
 5. `005_create_price_intraday.sql` - Creates the price_intraday table for recent prices
 6. `006_create_coin_metrics.sql` - Creates the coin_metrics table for pre-calculated metrics
-7. `007_setup_pg_cron.sql` - (Legacy, superseded by GitHub Actions) Enables pg_cron and schedules daily/intraday sync jobs
+7. `007_setup_pg_cron.sql` - Schedules sync-intraday every 5 minutes and sync-daily at 01:00 UTC via pg_cron
 8. `008_grant_public_read.sql` - Grants public read access to crypto tables (required for RLS policies to work)
 
 ## Tables
@@ -46,9 +46,9 @@ Stores individual test results for each test run. Linked to test_runs via foreig
 
 ## Running Migrations
 
-**Note:** Migrations 001-006 and 008 are always required. Migration 007 (`007_setup_pg_cron.sql`) is optional:
-- Use it if you want pg_cron + Edge Functions to handle daily/intraday syncs (Edge Functions fetch from CoinCap and write directly to Supabase)
-- Skip it if you prefer GitHub Actions-based scheduling (see [Scheduled Crypto Data Syncing](#scheduled-crypto-data-syncing) below)
+**Note:** Migrations 001-006 and 008 are always required. Migration 007 (`007_setup_pg_cron.sql`) is what keeps 1H/24H current:
+- `sync-intraday` is scheduled every 5 minutes. That cadence is required. The 1H chart only reads the last 60 minutes of `price_intraday`.
+- `.github/workflows/sync-crypto.yml` requests the same `*/5` cron, but GitHub Actions does not run it that often. Do not rely on it as the 5-minute clock.
 
 ### With Supabase CLI
 ```bash
@@ -207,9 +207,10 @@ the data backfill and daily sync scripts to successfully insert/update records.
 
 ## Scheduled Crypto Data Syncing
 
-Crypto data is kept fresh via GitHub Actions workflows that POST to the deployed app's internal
-sync endpoints (`/api/internal/sync-daily` and `/api/internal/sync-intraday`). No Supabase pg_cron
-configuration is required.
+Intraday prices need a scheduler that really runs every 5 minutes. That is pg_cron
+(`007_setup_pg_cron.sql`), which calls the `sync-intraday` Edge Function. The GitHub
+Actions workflow `.github/workflows/sync-crypto.yml` uses the same cron expression, but
+its scheduled runs are hours apart, so it cannot keep the 1H window filled.
 
 ### Setup
 
@@ -227,15 +228,13 @@ configuration is required.
    - Have already run migrations 001-006 and 008 (see [Running Migrations](#running-migrations))
    - Have granted service_role write permissions (see [Service Role Write Permissions](#service-role-write-permissions))
 
-2. **Daily refresh** (automatic via GitHub Actions):
-   - The workflow `.github/workflows/crypto-daily-sync.yml` runs daily at 1 AM UTC
-   - Requires two repo secrets:
-     - `APP_URL`: Your deployed Next.js app URL (e.g., `https://yourdomain.vercel.app`)
-     - `INTERNAL_SYNC_SECRET`: A secure random string (should match the value in your app's `INTERNAL_SYNC_SECRET` env var)
+2. **Keep 1H/24H current** with migration 007, after the Edge Functions are deployed.
+   `sync-crypto-intraday` must stay on `*/5 * * * *`. Confirm with
+   `select jobname, schedule from cron.job where jobname like 'sync-crypto%';`
+   `.github/workflows/sync-crypto.yml` is only a backup. Its `*/5` schedule does not
+   actually run every 5 minutes.
 
-3. **Monitor sync runs**:
-   - Check GitHub Actions > Crypto Daily Sync workflow runs
-   - Logs show which coins were synced and any errors
+3. **Monitor sync runs** in `cron.job_run_details` and in the `sync-intraday` Edge Function logs.
 
 ### Manual Verification
 
@@ -248,9 +247,9 @@ GROUP BY c.id, symbol;
 
 Each coin should have ~365 daily price records after initial sync.
 
-### Alternative: pg_cron + Edge Functions (Migration 007)
+### pg_cron + Edge Functions (Migration 007)
 
-If you prefer to use Supabase pg_cron for scheduled syncing instead of GitHub Actions:
+This is the scheduler that can actually run every 5 minutes:
 
 1. **Deploy Edge Functions to Supabase**:
    ```bash

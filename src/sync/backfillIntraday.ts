@@ -51,6 +51,7 @@ export async function backfillIntraday(): Promise<IntradayBackfillResult[]> {
   const coins = await queries.getAllCoins();
   const results: IntradayBackfillResult[] = [];
   const windowStart = new Date(Date.now() - DAY_MS).toISOString();
+  const hourStart = new Date(Date.now() - 60 * 60 * 1000).toISOString();
 
   for (const coin of coins) {
     if (!coin.coingecko_id) {
@@ -63,7 +64,7 @@ export async function backfillIntraday(): Promise<IntradayBackfillResult[]> {
       .from("price_intraday")
       .select("id", { count: "exact", head: true })
       .eq("coin_id", coin.id)
-      .gte("timestamp", windowStart);
+      .gte("timestamp", hourStart);
 
     let newestTimestamp: string | null = null;
     if (!countError) {
@@ -80,7 +81,7 @@ export async function backfillIntraday(): Promise<IntradayBackfillResult[]> {
     }
 
     if (!countError && intradayTailIsFresh(count ?? 0, newestTimestamp)) {
-      console.log(`${coin.symbol}: ${count} recent intraday points and a fresh tail, skipping backfill`);
+      console.log(`${coin.symbol}: ${count} points in the last hour and a fresh tail, skipping backfill`);
       results.push({ symbol: coin.symbol, inserted: 0, skipped: true });
       continue;
     }
