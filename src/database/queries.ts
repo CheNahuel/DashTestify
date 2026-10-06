@@ -156,6 +156,41 @@ export async function getPriceIntradayForCoin(
   return (data || []) as any[];
 }
 
+/**
+ * Full intraday series for ranges that can exceed PostgREST's 1000-row page.
+ * 1H and 24H keep using getPriceIntradayForCoin.
+ */
+export async function getPriceIntradaySeriesForCoin(
+  coinId: string,
+  startTimestamp: Date,
+  endTimestamp: Date,
+) {
+  const pageSize = 1000;
+  const rows: Array<{ timestamp: string; price: string | number }> = [];
+
+  for (let from = 0; from < pageSize * 20; from += pageSize) {
+    const { data, error } = await (supabase
+      .from("price_intraday")
+      .select("timestamp, price")
+      .eq("coin_id", coinId)
+      .gte("timestamp", startTimestamp.toISOString())
+      .lte("timestamp", endTimestamp.toISOString())
+      .order("timestamp", { ascending: true })
+      .range(from, from + pageSize - 1) as any);
+
+    if (error) {
+      console.error(`Error fetching intraday series for ${coinId}:`, error);
+      return [];
+    }
+
+    const page = (data || []) as Array<{ timestamp: string; price: string | number }>;
+    rows.push(...page);
+    if (page.length < pageSize) break;
+  }
+
+  return rows;
+}
+
 export async function compareCoinsMetrics(coinIds: string[]) {
   const { data, error } = await (supabase
     .from("coin_metrics")

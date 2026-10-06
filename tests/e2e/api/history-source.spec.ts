@@ -1,7 +1,11 @@
 import { expect, test } from "@playwright/test";
 import fs from "fs";
 import path from "path";
-import { readPriceHistory, usesIntradayHistory } from "../../../src/services/crypto/providers/history-source";
+import {
+  readPriceHistory,
+  usesIntradayHistory,
+  usesSixHourHistory,
+} from "../../../src/services/crypto/providers/history-source";
 import {
   MIN_LAST_HOUR_POINTS,
   intradayTailIsFresh,
@@ -11,12 +15,17 @@ import {
 const NOW = Date.parse("2026-10-02T18:00:00.000Z");
 const HOUR = 60 * 60 * 1000;
 
-test("1H and 24H read price_intraday while longer ranges stay on price_daily", async () => {
+test("1H and 24H read raw intraday rows, 7D buckets them, and 30D/1Y stay daily", async () => {
   expect(usesIntradayHistory("m1")).toBe(true);
   expect(usesIntradayHistory("h1")).toBe(true);
   expect(usesIntradayHistory("h6")).toBe(false);
+  expect(usesSixHourHistory("h6")).toBe(true);
+  expect(usesSixHourHistory("m1")).toBe(false);
+  expect(usesSixHourHistory("h1")).toBe(false);
   expect(usesIntradayHistory("h12")).toBe(false);
   expect(usesIntradayHistory("d1")).toBe(false);
+  expect(usesSixHourHistory("h12")).toBe(false);
+  expect(usesSixHourHistory("d1")).toBe(false);
 });
 
 test("1H history maps intraday timestamps and ignores daily closes", async () => {
@@ -32,6 +41,10 @@ test("1H history maps intraday timestamps and ignores daily closes", async () =>
       getPriceIntradayForCoin: async () => {
         calls.push("intraday");
         return [{ timestamp: "2026-10-02T17:05:00.000Z", price: "100.5" }];
+      },
+      getPriceIntradaySeriesForCoin: async () => {
+        calls.push("series");
+        return [];
       },
     },
   );
@@ -54,6 +67,9 @@ test("24H history reads price_intraday across the requested window", async () =>
           { timestamp: "2026-10-02T18:00:00.000Z", price: "210" },
         ];
       },
+      getPriceIntradaySeriesForCoin: async () => {
+        throw new Error("24H must not read the 7D series");
+      },
     },
   );
 
@@ -64,7 +80,7 @@ test("24H history reads price_intraday across the requested window", async () =>
   ]);
 });
 
-test("7D and 1Y history keep using daily closes", async () => {
+test("30D and 1Y history keep using daily closes", async () => {
   const calls: string[] = [];
   const readers = {
     getPriceDailyForCoin: async () => {
@@ -75,11 +91,15 @@ test("7D and 1Y history keep using daily closes", async () => {
       calls.push("intraday");
       return [{ timestamp: "2026-10-02T17:05:00.000Z", price: "1" }];
     },
+    getPriceIntradaySeriesForCoin: async () => {
+      calls.push("series");
+      return [{ timestamp: "2026-10-02T17:05:00.000Z", price: "9" }];
+    },
   };
 
-  const week = await readPriceHistory(
+  const month = await readPriceHistory(
     "coin-btc",
-    { interval: "h6", start: NOW - 7 * 24 * HOUR, end: NOW },
+    { interval: "h12", start: NOW - 30 * 24 * HOUR, end: NOW },
     readers,
   );
   const year = await readPriceHistory(
@@ -89,8 +109,39 @@ test("7D and 1Y history keep using daily closes", async () => {
   );
 
   expect(calls).toEqual(["daily", "daily"]);
-  expect(week.prices).toEqual([[Date.parse("2026-10-01T00:00:00.000Z"), 42]]);
+  expect(month.prices).toEqual([[Date.parse("2026-10-01T00:00:00.000Z"), 42]]);
   expect(year.prices[0][1]).toBe(42);
+});
+
+test("7D history buckets stored intraday points and ignores daily closes", async () => {
+  const calls: string[] = [];
+  const history = await readPriceHistory(
+    "coin-btc",
+    { interval: "h6", start: NOW - 7 * 24 * HOUR, end: NOW },
+    {
+      getPriceDailyForCoin: async () => {
+        calls.push("daily");
+        return [{ date: "2026-10-01", close: "42" }];
+      },
+      getPriceIntradayForCoin: async () => {
+        calls.push("intraday");
+        return [{ timestamp: "2026-10-02T12:00:00.000Z", price: "1" }];
+      },
+      getPriceIntradaySeriesForCoin: async () => {
+        calls.push("series");
+        return [
+          { timestamp: "2026-10-02T11:00:00.000Z", price: "10" },
+          { timestamp: "2026-10-02T17:00:00.000Z", price: "12" },
+        ];
+      },
+    },
+  );
+
+  expect(calls).toEqual(["series"]);
+  expect(history.prices).toEqual([
+    [Date.parse("2026-10-02T11:00:00.000Z"), 10],
+    [Date.parse("2026-10-02T17:00:00.000Z"), 12],
+  ]);
 });
 
 test("intraday refill runs unless the last hour already has enough recent points", () => {

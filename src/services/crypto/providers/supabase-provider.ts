@@ -64,6 +64,7 @@ export function createSupabaseProvider(): CryptoDataProvider {
       return readPriceHistory(coin.id, request, {
         getPriceDailyForCoin: queries.getPriceDailyForCoin,
         getPriceIntradayForCoin: queries.getPriceIntradayForCoin,
+        getPriceIntradaySeriesForCoin: queries.getPriceIntradaySeriesForCoin,
       });
     },
 
