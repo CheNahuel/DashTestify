@@ -22,15 +22,17 @@ interface CoinGeckoPrice {
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 const DAY_MS = 24 * 60 * 60 * 1000;
-const MIN_RECENT_POINTS = 48;
+const HOUR_MS = 60 * 60 * 1000;
+// Keep in sync with src/sync/intraday-points.ts. Ten 5-minute points cover 1H.
+const MIN_LAST_HOUR_POINTS = 10;
 const TAIL_MAX_AGE_MS = 15 * 60 * 1000;
 
 function intradayTailIsFresh(
-  recentCount: number | null,
+  lastHourCount: number | null,
   newestTimestamp: string | null,
   now = Date.now(),
 ): boolean {
-  if (recentCount == null || recentCount < MIN_RECENT_POINTS) return false;
+  if (lastHourCount == null || lastHourCount < MIN_LAST_HOUR_POINTS) return false;
   if (!newestTimestamp) return false;
   const ageMs = now - new Date(newestTimestamp).getTime();
   return Number.isFinite(ageMs) && ageMs < TAIL_MAX_AGE_MS;
@@ -38,11 +40,12 @@ function intradayTailIsFresh(
 
 async function backfillLastDay(coin: Coin) {
   const since = new Date(Date.now() - DAY_MS).toISOString();
+  const hourStart = new Date(Date.now() - HOUR_MS).toISOString();
   const { count, error: countError } = await supabase
     .from("price_intraday")
     .select("id", { count: "exact", head: true })
     .eq("coin_id", coin.id)
-    .gte("timestamp", since);
+    .gte("timestamp", hourStart);
 
   if (countError) {
     console.warn(
@@ -117,6 +120,7 @@ async function backfillLastDay(coin: Coin) {
       new Date(row.timestamp).toISOString()
     ),
   );
+  const seen = new Set<string>();
 
   const rows = ((data.prices ?? []) as number[][])
     .filter(([time, price]) => time >= start && time <= now && Number.isFinite(price))
@@ -128,7 +132,11 @@ async function backfillLastDay(coin: Coin) {
       volume_24h: volumes.get(time) ?? null,
       change_24h: null,
     }))
-    .filter((row) => !existingTimes.has(row.timestamp));
+    .filter((row) => {
+      if (existingTimes.has(row.timestamp) || seen.has(row.timestamp)) return false;
+      seen.add(row.timestamp);
+      return true;
+    });
 
   for (let index = 0; index < rows.length; index += 100) {
     const batch = rows.slice(index, index + 100);
